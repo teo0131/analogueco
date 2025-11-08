@@ -25,8 +25,20 @@ const Index = () => {
     const savedDeletedOrders = localStorage.getItem('deletedOrders');
 
     if (savedOrderNumber) setOrderNumber(parseInt(savedOrderNumber));
-    if (savedCompletedOrders) setCompletedOrders(JSON.parse(savedCompletedOrders));
-    if (savedDeletedOrders) setDeletedOrders(JSON.parse(savedDeletedOrders));
+    if (savedCompletedOrders) {
+      const orders = JSON.parse(savedCompletedOrders).map((order: CompletedOrder) => ({
+        ...order,
+        timestamp: new Date(order.timestamp)
+      }));
+      setCompletedOrders(orders);
+    }
+    if (savedDeletedOrders) {
+      const orders = JSON.parse(savedDeletedOrders).map((order: CompletedOrder) => ({
+        ...order,
+        timestamp: new Date(order.timestamp)
+      }));
+      setDeletedOrders(orders);
+    }
   }, []);
 
   // Save to localStorage whenever data changes
