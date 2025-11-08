@@ -1,0 +1,106 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Trash2, ShoppingCart } from "lucide-react";
+import { MenuItem } from "@/data/menuItems";
+
+interface CurrentOrderProps {
+  items: MenuItem[];
+  comment: string;
+  onCommentChange: (comment: string) => void;
+  onRemoveItem: (index: number) => void;
+  onCompleteOrder: () => void;
+  orderNumber: number;
+}
+
+export const CurrentOrder = ({
+  items,
+  comment,
+  onCommentChange,
+  onRemoveItem,
+  onCompleteOrder,
+  orderNumber,
+}: CurrentOrderProps) => {
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const total = items.reduce((sum, item) => sum + item.price, 0);
+
+  return (
+    <Card className="sticky top-4">
+      <CardHeader className="bg-primary text-primary-foreground">
+        <CardTitle className="flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5" />
+          Orden #{orderNumber}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-6">
+        {items.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            Selecciona items del menú para comenzar
+          </p>
+        ) : (
+          <>
+            <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+              {items.map((item, index) => (
+                <div
+                  key={`${item.id}-${index}`}
+                  className="flex justify-between items-center p-2 rounded-lg bg-muted/50 group hover:bg-muted transition-colors"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{item.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-sm">{formatPrice(item.price)}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onRemoveItem(index)}
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t pt-4 mb-4">
+              <div className="flex justify-between items-center text-xl font-bold">
+                <span>Total:</span>
+                <span className="text-primary">{formatPrice(total)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="comment">Comentario de la orden</Label>
+              <Textarea
+                id="comment"
+                placeholder="Notas sobre la orden..."
+                value={comment}
+                onChange={(e) => onCommentChange(e.target.value)}
+                className="resize-none"
+                rows={3}
+              />
+            </div>
+
+            <Button
+              onClick={onCompleteOrder}
+              className="w-full bg-accent hover:bg-accent/90"
+              size="lg"
+            >
+              Completar Orden
+            </Button>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

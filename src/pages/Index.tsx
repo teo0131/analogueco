@@ -1,12 +1,139 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { menuItems, categories, MenuItem } from "@/data/menuItems";
+import { MenuItemButton } from "@/components/MenuItemButton";
+import { CurrentOrder } from "@/components/CurrentOrder";
+import { OrderHistory, CompletedOrder } from "@/components/OrderHistory";
+import { OrderDetail } from "@/components/OrderDetail";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import fraternoLogo from "@/assets/fraterno-brand.png";
 
 const Index = () => {
+  const [currentItems, setCurrentItems] = useState<MenuItem[]>([]);
+  const [comment, setComment] = useState("");
+  const [orderNumber, setOrderNumber] = useState(1);
+  const [completedOrders, setCompletedOrders] = useState<CompletedOrder[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<CompletedOrder | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const handleAddItem = (item: MenuItem) => {
+    setCurrentItems([...currentItems, item]);
+    toast.success(`${item.name} añadido a la orden`);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    const newItems = [...currentItems];
+    const removedItem = newItems.splice(index, 1)[0];
+    setCurrentItems(newItems);
+    toast.info(`${removedItem.name} removido de la orden`);
+  };
+
+  const handleCompleteOrder = () => {
+    if (currentItems.length === 0) {
+      toast.error("Agrega items a la orden primero");
+      return;
+    }
+
+    const total = currentItems.reduce((sum, item) => sum + item.price, 0);
+    const newOrder: CompletedOrder = {
+      id: Date.now(),
+      orderNumber,
+      items: currentItems.map(item => ({ name: item.name, price: item.price })),
+      total,
+      comment,
+      timestamp: new Date(),
+    };
+
+    setCompletedOrders([newOrder, ...completedOrders]);
+    setCurrentItems([]);
+    setComment("");
+    setOrderNumber(orderNumber + 1);
+    toast.success(`Orden #${orderNumber} completada`);
+  };
+
+  const handleSelectOrder = (order: CompletedOrder) => {
+    setSelectedOrder(order);
+    setIsDetailOpen(true);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-primary text-primary-foreground py-6 px-4 shadow-lg">
+        <div className="container mx-auto">
+          <div className="flex items-center gap-4 mb-2">
+            <img src={fraternoLogo} alt="Fraterno Café" className="h-16 w-auto" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">FRATERNO CAFÉ</h1>
+              <p className="text-sm opacity-90">Simulador de Facturación</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto py-8 px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Menu Section */}
+          <div className="lg:col-span-2">
+            <Tabs defaultValue={categories[0]} className="w-full">
+              <TabsList className="w-full flex-wrap h-auto gap-2 bg-muted p-2">
+                {categories.map((category) => (
+                  <TabsTrigger
+                    key={category}
+                    value={category}
+                    className="flex-1 min-w-[120px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    {category}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {categories.map((category) => (
+                <TabsContent key={category} value={category} className="mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {menuItems
+                      .filter((item) => item.category === category)
+                      .map((item) => (
+                        <MenuItemButton
+                          key={item.id}
+                          item={item}
+                          onAdd={handleAddItem}
+                        />
+                      ))}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+
+          {/* Current Order Section */}
+          <div>
+            <CurrentOrder
+              items={currentItems}
+              comment={comment}
+              onCommentChange={setComment}
+              onRemoveItem={handleRemoveItem}
+              onCompleteOrder={handleCompleteOrder}
+              orderNumber={orderNumber}
+            />
+          </div>
+        </div>
+
+        {/* Order History Section */}
+        <div className="mt-8">
+          <OrderHistory
+            orders={completedOrders}
+            onSelectOrder={handleSelectOrder}
+          />
+        </div>
       </div>
+
+      {/* Order Detail Dialog */}
+      <OrderDetail
+        order={selectedOrder}
+        open={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+      />
     </div>
   );
 };
