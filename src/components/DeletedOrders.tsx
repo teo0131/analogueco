@@ -1,24 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, ChevronRight, Trash2 } from "lucide-react";
+import { Trash2, ChevronRight, RotateCcw } from "lucide-react";
+import { CompletedOrder } from "./OrderHistory";
 
-export interface CompletedOrder {
-  id: number;
-  orderNumber: number;
-  items: Array<{ name: string; price: number }>;
-  total: number;
-  comment: string;
-  timestamp: Date;
-}
-
-interface OrderHistoryProps {
+interface DeletedOrdersProps {
   orders: CompletedOrder[];
   onSelectOrder: (order: CompletedOrder) => void;
-  onDeleteOrder: (orderId: number) => void;
+  onRestoreOrder: (orderId: number) => void;
 }
 
-export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder }: OrderHistoryProps) => {
+export const DeletedOrders = ({ orders, onSelectOrder, onRestoreOrder }: DeletedOrdersProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -32,22 +24,22 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder }: OrderHist
     return new Intl.DateTimeFormat('es-CO', {
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
+    }).format(new Date(date));
   };
 
   return (
     <Card>
-      <CardHeader className="bg-secondary">
+      <CardHeader className="bg-destructive/10">
         <CardTitle className="flex items-center gap-2">
-          <History className="h-5 w-5" />
-          Historial de Órdenes
+          <Trash2 className="h-5 w-5" />
+          Órdenes Eliminadas
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[600px]">
           {orders.length === 0 ? (
             <p className="text-muted-foreground text-center py-8 px-4">
-              No hay órdenes completadas aún
+              No hay órdenes eliminadas
             </p>
           ) : (
             <div className="space-y-2 p-4">
@@ -56,7 +48,7 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder }: OrderHist
                   <Button
                     variant="outline"
                     onClick={() => onSelectOrder(order)}
-                    className="w-full h-auto flex items-center justify-between p-4 hover:bg-muted"
+                    className="w-full h-auto flex items-center justify-between p-4 hover:bg-muted opacity-60"
                   >
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2 mb-1">
@@ -71,15 +63,15 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder }: OrderHist
                     <ChevronRight className="h-5 w-5 flex-shrink-0" />
                   </Button>
                   <Button
-                    variant="destructive"
+                    variant="default"
                     size="icon"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDeleteOrder(order.id);
+                      onRestoreOrder(order.id);
                     }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <RotateCcw className="h-4 w-4" />
                   </Button>
                 </div>
               ))}

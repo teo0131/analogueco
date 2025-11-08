@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { menuItems, categories, MenuItem } from "@/data/menuItems";
 import { MenuItemButton } from "@/components/MenuItemButton";
 import { CurrentOrder } from "@/components/CurrentOrder";
 import { OrderHistory, CompletedOrder } from "@/components/OrderHistory";
+import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -13,8 +14,33 @@ const Index = () => {
   const [comment, setComment] = useState("");
   const [orderNumber, setOrderNumber] = useState(1);
   const [completedOrders, setCompletedOrders] = useState<CompletedOrder[]>([]);
+  const [deletedOrders, setDeletedOrders] = useState<CompletedOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<CompletedOrder | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedOrderNumber = localStorage.getItem('orderNumber');
+    const savedCompletedOrders = localStorage.getItem('completedOrders');
+    const savedDeletedOrders = localStorage.getItem('deletedOrders');
+
+    if (savedOrderNumber) setOrderNumber(parseInt(savedOrderNumber));
+    if (savedCompletedOrders) setCompletedOrders(JSON.parse(savedCompletedOrders));
+    if (savedDeletedOrders) setDeletedOrders(JSON.parse(savedDeletedOrders));
+  }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('orderNumber', orderNumber.toString());
+  }, [orderNumber]);
+
+  useEffect(() => {
+    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+  }, [completedOrders]);
+
+  useEffect(() => {
+    localStorage.setItem('deletedOrders', JSON.stringify(deletedOrders));
+  }, [deletedOrders]);
 
   const handleAddItem = (item: MenuItem) => {
     setCurrentItems([...currentItems, item]);
@@ -54,6 +80,24 @@ const Index = () => {
   const handleSelectOrder = (order: CompletedOrder) => {
     setSelectedOrder(order);
     setIsDetailOpen(true);
+  };
+
+  const handleDeleteOrder = (orderId: number) => {
+    const orderToDelete = completedOrders.find(order => order.id === orderId);
+    if (orderToDelete) {
+      setCompletedOrders(completedOrders.filter(order => order.id !== orderId));
+      setDeletedOrders([orderToDelete, ...deletedOrders]);
+      toast.info(`Orden #${orderToDelete.orderNumber} eliminada`);
+    }
+  };
+
+  const handleRestoreOrder = (orderId: number) => {
+    const orderToRestore = deletedOrders.find(order => order.id === orderId);
+    if (orderToRestore) {
+      setDeletedOrders(deletedOrders.filter(order => order.id !== orderId));
+      setCompletedOrders([orderToRestore, ...completedOrders]);
+      toast.success(`Orden #${orderToRestore.orderNumber} restaurada`);
+    }
   };
 
   return (
@@ -121,10 +165,30 @@ const Index = () => {
 
         {/* Order History Section */}
         <div className="mt-8">
-          <OrderHistory
-            orders={completedOrders}
-            onSelectOrder={handleSelectOrder}
-          />
+          <Tabs defaultValue="active" className="w-full">
+            <TabsList className="w-full bg-muted">
+              <TabsTrigger value="active" className="flex-1">
+                Órdenes Activas
+              </TabsTrigger>
+              <TabsTrigger value="deleted" className="flex-1">
+                Órdenes Eliminadas
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="active" className="mt-4">
+              <OrderHistory
+                orders={completedOrders}
+                onSelectOrder={handleSelectOrder}
+                onDeleteOrder={handleDeleteOrder}
+              />
+            </TabsContent>
+            <TabsContent value="deleted" className="mt-4">
+              <DeletedOrders
+                orders={deletedOrders}
+                onSelectOrder={handleSelectOrder}
+                onRestoreOrder={handleRestoreOrder}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
