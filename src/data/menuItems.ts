@@ -39,10 +39,21 @@ export const menuItems: MenuItem[] = [
   // Bebidas Frías
   { id: "agua", name: "Agua", price: 2000, description: "Agua embotellada", category: "Bebidas Frías" },
   { id: "cold-brew", name: "Cold Brew", price: 5000, description: "Café de extracción en frío, suave y refrescante", category: "Bebidas Frías" },
-  { id: "cervezas", name: "Cervezas Nacionales", price: 4500, description: "Selección de cervezas colombianas", category: "Bebidas Frías" },
+  { id: "cervezas", name: "Todas las Cervezas", price: 4500, description: "Selección de cervezas", category: "Bebidas Frías" },
   { id: "gaseosas-postobon", name: "Gaseosas Postobón", price: 2500, description: "Variedad de sabores Postobón", category: "Bebidas Frías" },
   { id: "gaseosas-coca", name: "Gaseosas Coca Cola", price: 2500, description: "Productos Coca Cola", category: "Bebidas Frías" },
   { id: "pony-malta", name: "Pony Malta", price: 3800, description: "Bebida de malta", category: "Bebidas Frías" },
+  { id: "vive-100", name: "Vive 100", price: 3800, description: "Bebida de frutas", category: "Bebidas Frías" },
+  { id: "malta-grande", name: "Malta Grande", price: 3800, description: "Malta grande", category: "Bebidas Frías" },
+  { id: "hits", name: "Hits", price: 3800, description: "Bebida Hits", category: "Bebidas Frías" },
+  { id: "gatorade", name: "Gatorade", price: 5000, description: "Bebida deportiva", category: "Bebidas Frías" },
+  { id: "hatsu", name: "Hatsu", price: 6500, description: "Té Hatsu", category: "Bebidas Frías" },
+  { id: "soda-hatsu", name: "Soda Hatsu", price: 4500, description: "Soda Hatsu", category: "Bebidas Frías" },
+  { id: "malta-mini", name: "Malta Mini", price: 2500, description: "Malta mini", category: "Bebidas Frías" },
+  { id: "colombiana-manzana", name: "Colombiana y Manzana", price: 2500, description: "Gaseosas Colombiana y Manzana", category: "Bebidas Frías" },
+  { id: "coca-cola", name: "Coca Cola", price: 2500, description: "Coca Cola", category: "Bebidas Frías" },
+  { id: "coca-cola-zorro", name: "Coca Cola Zorro", price: 2500, description: "Coca Cola personal", category: "Bebidas Frías" },
+  { id: "bretana", name: "Bretaña", price: 3500, description: "Agua Bretaña", category: "Bebidas Frías" },
   
   // Helados
   { id: "helado-tradicional", name: "Helado Popsy Tradicional", price: 6500, description: "Helados Popsy sabores tradicionales", category: "Helados Popsy" },
