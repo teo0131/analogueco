@@ -9,7 +9,7 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Package } from "lucide-react";
 import { toast } from "sonner";
 import fraternoLogo from "@/assets/fraterno-brand.png";
 
@@ -140,15 +140,25 @@ const Index = () => {
                 <p className="text-sm opacity-90">Sistema POS + Inventario</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleLogout}
-              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Cerrar Sesión
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate("/inventario/ingreso")}
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Ingresar al Inventario
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleLogout}
+                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
         </div>
       </header>
