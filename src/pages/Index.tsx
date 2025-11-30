@@ -144,6 +144,14 @@ const Index = () => {
               <Button 
                 variant="secondary"
                 size="sm"
+                onClick={() => navigate("/productos")}
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Gestión Productos
+              </Button>
+              <Button 
+                variant="secondary"
+                size="sm"
                 onClick={() => navigate("/inventario/ingreso")}
               >
                 <Package className="mr-2 h-4 w-4" />
