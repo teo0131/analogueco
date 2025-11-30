@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { menuItems, categories, MenuItem } from "@/data/menuItems";
 import { MenuItemButton } from "@/components/MenuItemButton";
 import { CurrentOrder } from "@/components/CurrentOrder";
@@ -6,10 +8,13 @@ import { OrderHistory, CompletedOrder } from "@/components/OrderHistory";
 import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import fraternoLogo from "@/assets/fraterno-brand.png";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [currentItems, setCurrentItems] = useState<MenuItem[]>([]);
   const [comment, setComment] = useState("");
   const [orderNumber, setOrderNumber] = useState(1);
@@ -17,6 +22,16 @@ const Index = () => {
   const [deletedOrders, setDeletedOrders] = useState<CompletedOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<CompletedOrder | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Error al cerrar sesión");
+    } else {
+      toast.success("Sesión cerrada");
+      navigate("/auth");
+    }
+  };
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -117,12 +132,23 @@ const Index = () => {
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-6 px-4 shadow-lg">
         <div className="container mx-auto">
-          <div className="flex items-center gap-4 mb-2">
-            <img src={fraternoLogo} alt="Fraterno Café" className="h-16 w-auto" />
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">FRATERNO CAFÉ</h1>
-              <p className="text-sm opacity-90">Simulador de Facturación</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <img src={fraternoLogo} alt="Fraterno Café" className="h-16 w-auto" />
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">FRATERNO CAFÉ</h1>
+                <p className="text-sm opacity-90">Sistema POS + Inventario</p>
+              </div>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleLogout}
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Cerrar Sesión
+            </Button>
           </div>
         </div>
       </header>
