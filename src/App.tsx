@@ -10,6 +10,7 @@ import ProductosManagement from "./pages/ProductosManagement";
 import HistorialMovimientos from "./pages/HistorialMovimientos";
 import ProveedoresManagement from "./pages/ProveedoresManagement";
 import RecetasManagement from "./pages/RecetasManagement";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -68,6 +69,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <RecetasManagement />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
               </ProtectedRoute>
             } 
           />
