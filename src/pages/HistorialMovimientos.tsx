@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Calendar, Filter } from "lucide-react";
+import { ArrowLeft, Calendar, Filter, Download, FileSpreadsheet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { utils, writeFile } from "xlsx";
+import { toast } from "sonner";
 
 const HistorialMovimientos = () => {
   const navigate = useNavigate();
@@ -103,6 +105,88 @@ const HistorialMovimientos = () => {
       default:
         return "outline";
     }
+  };
+
+  const exportToExcel = () => {
+    if (!movimientos || movimientos.length === 0) {
+      toast.error("No hay datos para exportar");
+      return;
+    }
+
+    const exportData = movimientos.map((mov) => ({
+      Fecha: format(new Date(mov.fecha), "dd/MM/yyyy HH:mm", { locale: es }),
+      Producto: mov.productos?.nombre,
+      Tipo: getTipoLabel(mov.tipo_movimiento),
+      Cantidad: `${mov.tipo_movimiento === "salida_venta" || mov.tipo_movimiento === "consumo" ? "-" : "+"}${mov.cantidad} ${mov.productos?.unidad_inventario}`,
+      "Costo Unitario": mov.costo_unitario_referencia
+        ? `$${Number(mov.costo_unitario_referencia).toLocaleString("es-CO")}`
+        : "-",
+      "Stock Resultante": `${mov.stock_resultante} ${mov.productos?.unidad_inventario}`,
+      Referencia: mov.referencia || "-",
+      Notas: mov.notas || "-",
+    }));
+
+    const worksheet = utils.json_to_sheet(exportData);
+    const workbook = utils.book_new();
+    utils.book_append_sheet(workbook, worksheet, "Movimientos");
+
+    const fileName = `movimientos_inventario_${format(new Date(), "yyyy-MM-dd")}.xlsx`;
+    writeFile(workbook, fileName);
+    toast.success("Archivo Excel exportado correctamente");
+  };
+
+  const exportToCSV = () => {
+    if (!movimientos || movimientos.length === 0) {
+      toast.error("No hay datos para exportar");
+      return;
+    }
+
+    const headers = [
+      "Fecha",
+      "Producto",
+      "Tipo",
+      "Cantidad",
+      "Costo Unitario",
+      "Stock Resultante",
+      "Referencia",
+      "Notas",
+    ];
+
+    const rows = movimientos.map((mov) => [
+      format(new Date(mov.fecha), "dd/MM/yyyy HH:mm", { locale: es }),
+      mov.productos?.nombre,
+      getTipoLabel(mov.tipo_movimiento),
+      `${mov.tipo_movimiento === "salida_venta" || mov.tipo_movimiento === "consumo" ? "-" : "+"}${mov.cantidad} ${mov.productos?.unidad_inventario}`,
+      mov.costo_unitario_referencia
+        ? `$${Number(mov.costo_unitario_referencia).toLocaleString("es-CO")}`
+        : "-",
+      `${mov.stock_resultante} ${mov.productos?.unidad_inventario}`,
+      mov.referencia || "-",
+      mov.notas || "-",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `movimientos_inventario_${format(new Date(), "yyyy-MM-dd")}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Archivo CSV exportado correctamente");
   };
 
   return (
@@ -201,9 +285,21 @@ const HistorialMovimientos = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              Movimientos ({movimientos?.length || 0})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                Movimientos ({movimientos?.length || 0})
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={exportToCSV}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportToExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Exportar Excel
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[600px]">
