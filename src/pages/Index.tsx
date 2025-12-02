@@ -9,7 +9,7 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package, History, Building2, ChefHat } from "lucide-react";
+import { LogOut, Package, History, Building2, ChefHat, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import fraternoLogo from "@/assets/fraterno-brand.png";
 
@@ -241,6 +241,14 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate("/dashboard")}
+              >
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
               <Button 
                 variant="secondary"
                 size="sm"
