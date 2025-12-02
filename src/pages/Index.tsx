@@ -8,7 +8,8 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package, History, Building2, ChefHat, BarChart3, Menu, FileDown, Settings, Box } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { LogOut, Package, History, Building2, ChefHat, BarChart3, Menu, FileDown, Settings, Box, Store } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -42,6 +43,9 @@ const Index = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [storeName, setStoreName] = useState("");
+  const [storeNameInput, setStoreNameInput] = useState("");
+  const [savingStoreName, setSavingStoreName] = useState(false);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -61,6 +65,17 @@ const Index = () => {
         if (!user) return;
 
         setUserName(user.email?.split("@")[0] || "Usuario");
+
+        // Load user settings (store name)
+        const { data: settingsData } = await supabase
+          .from("user_settings")
+          .select("store_name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (settingsData?.store_name) {
+          setStoreName(settingsData.store_name);
+        }
 
         // Load menu items
         const { data: menuData, error: menuError } = await supabase
@@ -412,7 +427,7 @@ const Index = () => {
                 <Box className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">AnalogueCo</h1>
+                <h1 className="text-2xl font-bold tracking-tight">{storeName || "AnalogueCo"}</h1>
                 <p className="text-sm opacity-90">Hola, {userName}</p>
               </div>
             </div>
@@ -465,8 +480,61 @@ const Index = () => {
 
       <div className="container mx-auto py-8 px-4">
         {menuItems.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 max-w-md mx-auto">
             <h2 className="text-2xl font-semibold mb-4">¡Bienvenido a tu POS!</h2>
+            
+            {!storeName && (
+              <div className="mb-6 p-4 bg-muted rounded-lg">
+                <label className="block text-sm font-medium mb-2 text-left">
+                  <Store className="inline h-4 w-4 mr-1" />
+                  Nombre de tu comercio
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    value={storeNameInput}
+                    onChange={(e) => setStoreNameInput(e.target.value)}
+                    placeholder="Ej: Mi Cafetería"
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={async () => {
+                      if (!storeNameInput.trim()) {
+                        toast.error("Ingresa un nombre para tu comercio");
+                        return;
+                      }
+                      setSavingStoreName(true);
+                      try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) return;
+                        
+                        const { error } = await supabase
+                          .from("user_settings")
+                          .upsert({
+                            user_id: user.id,
+                            store_name: storeNameInput.trim()
+                          }, { onConflict: 'user_id' });
+                        
+                        if (error) throw error;
+                        setStoreName(storeNameInput.trim());
+                        toast.success("Nombre guardado");
+                      } catch (error) {
+                        toast.error("Error al guardar");
+                      } finally {
+                        setSavingStoreName(false);
+                      }
+                    }}
+                    disabled={savingStoreName}
+                  >
+                    {savingStoreName ? "..." : "Guardar"}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {storeName && (
+              <p className="text-lg font-medium text-primary mb-4">{storeName}</p>
+            )}
+            
             <p className="text-muted-foreground mb-6">
               Aún no tienes items en tu menú. Crea tu primer item para comenzar a vender.
             </p>
