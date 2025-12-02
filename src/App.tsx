@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import IngresoInventario from "./pages/IngresoInventario";
 import ProductosManagement from "./pages/ProductosManagement";
+import HistorialMovimientos from "./pages/HistorialMovimientos";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -41,6 +42,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <ProductosManagement />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/inventario/historial" 
+            element={
+              <ProtectedRoute>
+                <HistorialMovimientos />
               </ProtectedRoute>
             } 
           />

@@ -9,7 +9,7 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package } from "lucide-react";
+import { LogOut, Package, History } from "lucide-react";
 import { toast } from "sonner";
 import fraternoLogo from "@/assets/fraterno-brand.png";
 
@@ -156,6 +156,14 @@ const Index = () => {
               >
                 <Package className="mr-2 h-4 w-4" />
                 Ingresar al Inventario
+              </Button>
+              <Button 
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate("/inventario/historial")}
+              >
+                <History className="mr-2 h-4 w-4" />
+                Historial Kardex
               </Button>
               <Button 
                 variant="outline" 
