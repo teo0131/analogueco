@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import fraternoLogo from "@/assets/fraterno-brand.png";
+import { Box } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -87,9 +87,11 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <img src={fraternoLogo} alt="Fraterno Café" className="h-16 w-auto" />
+            <div className="h-16 w-16 bg-primary rounded-xl flex items-center justify-center">
+              <Box className="h-10 w-10 text-primary-foreground" />
+            </div>
           </div>
-          <CardTitle className="text-2xl">Sistema POS + Inventario</CardTitle>
+          <CardTitle className="text-2xl">AnalogueCo</CardTitle>
           <CardDescription>
             Ingresa o crea tu cuenta para continuar
           </CardDescription>

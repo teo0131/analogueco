@@ -8,7 +8,7 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package, History, Building2, ChefHat, BarChart3, Menu, FileDown, Settings } from "lucide-react";
+import { LogOut, Package, History, Building2, ChefHat, BarChart3, Menu, FileDown, Settings, Box } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -408,8 +408,11 @@ const Index = () => {
         <div className="container mx-auto">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
+              <div className="h-10 w-10 bg-primary-foreground rounded-lg flex items-center justify-center">
+                <Box className="h-6 w-6 text-primary" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Mi POS</h1>
+                <h1 className="text-2xl font-bold tracking-tight">AnalogueCo</h1>
                 <p className="text-sm opacity-90">Hola, {userName}</p>
               </div>
             </div>
