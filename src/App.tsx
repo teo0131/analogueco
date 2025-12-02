@@ -9,6 +9,7 @@ import IngresoInventario from "./pages/IngresoInventario";
 import ProductosManagement from "./pages/ProductosManagement";
 import HistorialMovimientos from "./pages/HistorialMovimientos";
 import ProveedoresManagement from "./pages/ProveedoresManagement";
+import RecetasManagement from "./pages/RecetasManagement";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -59,6 +60,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <ProveedoresManagement />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/recetas" 
+            element={
+              <ProtectedRoute>
+                <RecetasManagement />
               </ProtectedRoute>
             } 
           />
