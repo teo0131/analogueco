@@ -59,6 +59,51 @@ export type Database = {
           },
         ]
       }
+      detalle_ordenes_pos: {
+        Row: {
+          cantidad: number
+          id: string
+          menu_item_id: string | null
+          nombre_item: string
+          orden_id: string
+          precio_unitario: number
+          subtotal: number
+        }
+        Insert: {
+          cantidad?: number
+          id?: string
+          menu_item_id?: string | null
+          nombre_item: string
+          orden_id: string
+          precio_unitario: number
+          subtotal: number
+        }
+        Update: {
+          cantidad?: number
+          id?: string
+          menu_item_id?: string | null
+          nombre_item?: string
+          orden_id?: string
+          precio_unitario?: number
+          subtotal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_ordenes_pos_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_ordenes_pos_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_pos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       detalle_recetas: {
         Row: {
           cantidad_insumo_por_unidad: number
@@ -136,6 +181,45 @@ export type Database = {
           },
         ]
       }
+      menu_items: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          descripcion: string | null
+          es_activo: boolean
+          id: string
+          nombre: string
+          orden_display: number | null
+          precio: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          descripcion?: string | null
+          es_activo?: boolean
+          id?: string
+          nombre: string
+          orden_display?: number | null
+          precio?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          descripcion?: string | null
+          es_activo?: boolean
+          id?: string
+          nombre?: string
+          orden_display?: number | null
+          precio?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       movimientos_inventario: {
         Row: {
           cantidad: number
@@ -185,6 +269,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ordenes_eliminadas_pos: {
+        Row: {
+          comentario: string | null
+          fecha_eliminacion: string
+          fecha_orden: string
+          id: string
+          motivo_eliminacion: string | null
+          numero_orden: number
+          orden_original_id: string | null
+          total: number
+          user_id: string
+        }
+        Insert: {
+          comentario?: string | null
+          fecha_eliminacion?: string
+          fecha_orden: string
+          id?: string
+          motivo_eliminacion?: string | null
+          numero_orden: number
+          orden_original_id?: string | null
+          total?: number
+          user_id: string
+        }
+        Update: {
+          comentario?: string | null
+          fecha_eliminacion?: string
+          fecha_orden?: string
+          id?: string
+          motivo_eliminacion?: string | null
+          numero_orden?: number
+          orden_original_id?: string | null
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ordenes_pos: {
+        Row: {
+          comentario: string | null
+          created_at: string
+          fecha: string
+          id: string
+          numero_orden: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string
+          fecha?: string
+          id?: string
+          numero_orden: number
+          total?: number
+          user_id: string
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string
+          fecha?: string
+          id?: string
+          numero_orden?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       productos: {
         Row: {
