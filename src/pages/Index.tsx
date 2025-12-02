@@ -9,7 +9,7 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package, History, Building2 } from "lucide-react";
+import { LogOut, Package, History, Building2, ChefHat } from "lucide-react";
 import { toast } from "sonner";
 import fraternoLogo from "@/assets/fraterno-brand.png";
 
@@ -81,27 +81,127 @@ const Index = () => {
     toast.info(`${removedItem.name} removido de la orden`);
   };
 
-  const handleCompleteOrder = () => {
+  const handleCompleteOrder = async () => {
     if (currentItems.length === 0) {
       toast.error("Agrega items a la orden primero");
       return;
     }
 
-    const total = currentItems.reduce((sum, item) => sum + item.price, 0);
-    const newOrder: CompletedOrder = {
-      id: Date.now(),
-      orderNumber,
-      items: currentItems.map(item => ({ name: item.name, price: item.price })),
-      total,
-      comment,
-      timestamp: new Date(),
-    };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuario no autenticado");
+        return;
+      }
 
-    setCompletedOrders([newOrder, ...completedOrders]);
-    setCurrentItems([]);
-    setComment("");
-    setOrderNumber(orderNumber + 1);
-    toast.success(`Orden #${orderNumber} completada`);
+      // Process inventory deductions for prepared products
+      for (const item of currentItems) {
+        // Check if this menu item corresponds to a prepared product with a recipe
+        const { data: productos } = await supabase
+          .from("productos")
+          .select(`
+            id,
+            nombre,
+            tipo_producto,
+            stock_actual,
+            recetas!recetas_producto_final_id_fkey (
+              id,
+              detalle_recetas (
+                insumo_id,
+                cantidad_insumo_por_unidad,
+                insumo:productos!detalle_recetas_insumo_id_fkey (
+                  id,
+                  nombre,
+                  stock_actual,
+                  costo_promedio,
+                  unidad_inventario
+                )
+              )
+            )
+          `)
+          .eq("nombre", item.name)
+          .eq("tipo_producto", "preparado")
+          .eq("user_id", user.id);
+
+        // If product has a recipe, deduct ingredients
+        if (productos && productos.length > 0) {
+          const producto = productos[0];
+          const receta = producto.recetas;
+          
+          if (receta && typeof receta === 'object' && 'detalle_recetas' in receta) {
+            for (const detalle of receta.detalle_recetas) {
+              const insumo = detalle.insumo;
+              const cantidadRequerida = detalle.cantidad_insumo_por_unidad;
+              
+              // Check if there's enough stock
+              if (insumo.stock_actual < cantidadRequerida) {
+                toast.error(
+                  `Stock insuficiente de ${insumo.nombre} para preparar ${item.name}. ` +
+                  `Requerido: ${cantidadRequerida} ${insumo.unidad_inventario}, ` +
+                  `Disponible: ${insumo.stock_actual} ${insumo.unidad_inventario}`
+                );
+                return;
+              }
+
+              // Update stock
+              const nuevoStock = insumo.stock_actual - cantidadRequerida;
+              const { error: updateError } = await supabase
+                .from("productos")
+                .update({ stock_actual: nuevoStock })
+                .eq("id", insumo.id);
+
+              if (updateError) {
+                console.error("Error updating stock:", updateError);
+                toast.error(`Error al actualizar stock de ${insumo.nombre}`);
+                return;
+              }
+
+              // Register inventory movement (consumo)
+              const { error: movimientoError } = await supabase
+                .from("movimientos_inventario")
+                .insert({
+                  producto_id: insumo.id,
+                  tipo_movimiento: "consumo",
+                  cantidad: cantidadRequerida,
+                  stock_resultante: nuevoStock,
+                  costo_unitario_referencia: insumo.costo_promedio,
+                  referencia: `Venta POS - Orden #${orderNumber}`,
+                  notas: `Consumo para preparar: ${item.name}`,
+                  user_id: user.id,
+                });
+
+              if (movimientoError) {
+                console.error("Error registering movement:", movimientoError);
+                toast.error(`Error al registrar movimiento de ${insumo.nombre}`);
+                return;
+              }
+            }
+
+            toast.success(`Insumos descontados para ${item.name}`);
+          }
+        }
+      }
+
+      // Complete the order
+      const total = currentItems.reduce((sum, item) => sum + item.price, 0);
+      const newOrder: CompletedOrder = {
+        id: Date.now(),
+        orderNumber,
+        items: currentItems.map(item => ({ name: item.name, price: item.price })),
+        total,
+        comment,
+        timestamp: new Date(),
+      };
+
+      setCompletedOrders([newOrder, ...completedOrders]);
+      setCurrentItems([]);
+      setComment("");
+      setOrderNumber(orderNumber + 1);
+      toast.success(`Orden #${orderNumber} completada con éxito`);
+    } catch (error) {
+      console.error("Error completing order:", error);
+      toast.error("Error al completar la orden");
+    }
   };
 
   const handleSelectOrder = (order: CompletedOrder) => {
@@ -147,7 +247,7 @@ const Index = () => {
                 onClick={() => navigate("/productos")}
               >
                 <Package className="mr-2 h-4 w-4" />
-                Gestión Productos
+                Productos
               </Button>
               <Button 
                 variant="secondary"
@@ -160,10 +260,18 @@ const Index = () => {
               <Button 
                 variant="secondary"
                 size="sm"
+                onClick={() => navigate("/recetas")}
+              >
+                <ChefHat className="mr-2 h-4 w-4" />
+                Recetas
+              </Button>
+              <Button 
+                variant="secondary"
+                size="sm"
                 onClick={() => navigate("/inventario/ingreso")}
               >
                 <Package className="mr-2 h-4 w-4" />
-                Ingresar al Inventario
+                Ingreso
               </Button>
               <Button 
                 variant="secondary"
@@ -171,7 +279,7 @@ const Index = () => {
                 onClick={() => navigate("/inventario/historial")}
               >
                 <History className="mr-2 h-4 w-4" />
-                Historial Kardex
+                Kardex
               </Button>
               <Button 
                 variant="outline" 
