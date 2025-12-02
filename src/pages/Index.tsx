@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { menuItems, categories, MenuItem } from "@/data/menuItems";
 import { MenuItemButton } from "@/components/MenuItemButton";
 import { CurrentOrder } from "@/components/CurrentOrder";
 import { OrderHistory, CompletedOrder } from "@/components/OrderHistory";
@@ -9,12 +8,31 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package, History, Building2, ChefHat, BarChart3 } from "lucide-react";
+import { LogOut, Package, History, Building2, ChefHat, BarChart3, Menu, FileDown, Settings } from "lucide-react";
 import { toast } from "sonner";
-import fraternoLogo from "@/assets/fraterno-brand.png";
+import * as XLSX from "xlsx";
+
+interface MenuItemDB {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  precio: number;
+  categoria: string | null;
+  es_activo: boolean;
+}
+
+interface MenuItem {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+}
 
 const Index = () => {
   const navigate = useNavigate();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [currentItems, setCurrentItems] = useState<MenuItem[]>([]);
   const [comment, setComment] = useState("");
   const [orderNumber, setOrderNumber] = useState(1);
@@ -22,6 +40,8 @@ const Index = () => {
   const [deletedOrders, setDeletedOrders] = useState<CompletedOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<CompletedOrder | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("");
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -33,41 +53,99 @@ const Index = () => {
     }
   };
 
-  // Load data from localStorage on mount
+  // Load menu items and orders from database
   useEffect(() => {
-    const savedOrderNumber = localStorage.getItem('orderNumber');
-    const savedCompletedOrders = localStorage.getItem('completedOrders');
-    const savedDeletedOrders = localStorage.getItem('deletedOrders');
+    const loadData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-    if (savedOrderNumber) setOrderNumber(parseInt(savedOrderNumber));
-    if (savedCompletedOrders) {
-      const orders = JSON.parse(savedCompletedOrders).map((order: CompletedOrder) => ({
-        ...order,
-        timestamp: new Date(order.timestamp)
-      }));
-      setCompletedOrders(orders);
-    }
-    if (savedDeletedOrders) {
-      const orders = JSON.parse(savedDeletedOrders).map((order: CompletedOrder) => ({
-        ...order,
-        timestamp: new Date(order.timestamp)
-      }));
-      setDeletedOrders(orders);
-    }
+        setUserName(user.email?.split("@")[0] || "Usuario");
+
+        // Load menu items
+        const { data: menuData, error: menuError } = await supabase
+          .from("menu_items")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("es_activo", true)
+          .order("categoria")
+          .order("orden_display");
+
+        if (menuError) throw menuError;
+
+        if (menuData && menuData.length > 0) {
+          const items: MenuItem[] = menuData.map((item: MenuItemDB) => ({
+            id: item.id,
+            name: item.nombre,
+            price: item.precio,
+            description: item.descripcion || "",
+            category: item.categoria || "Sin Categoría",
+          }));
+          setMenuItems(items);
+          setCategories(Array.from(new Set(items.map(item => item.category))));
+        }
+
+        // Load completed orders
+        const { data: ordersData, error: ordersError } = await supabase
+          .from("ordenes_pos")
+          .select(`
+            *,
+            detalle_ordenes_pos (*)
+          `)
+          .eq("user_id", user.id)
+          .order("fecha", { ascending: false });
+
+        if (ordersError) throw ordersError;
+
+        if (ordersData) {
+          const orders: CompletedOrder[] = ordersData.map((order: any) => ({
+            id: order.id,
+            orderNumber: order.numero_orden,
+            items: order.detalle_ordenes_pos.map((d: any) => ({
+              name: d.nombre_item,
+              price: d.precio_unitario,
+            })),
+            total: order.total,
+            comment: order.comentario || "",
+            timestamp: new Date(order.fecha),
+          }));
+          setCompletedOrders(orders);
+          
+          // Set next order number
+          const maxOrder = Math.max(0, ...ordersData.map((o: any) => o.numero_orden));
+          setOrderNumber(maxOrder + 1);
+        }
+
+        // Load deleted orders
+        const { data: deletedData, error: deletedError } = await supabase
+          .from("ordenes_eliminadas_pos")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("fecha_eliminacion", { ascending: false });
+
+        if (deletedError) throw deletedError;
+
+        if (deletedData) {
+          const deleted: CompletedOrder[] = deletedData.map((order: any) => ({
+            id: order.id,
+            orderNumber: order.numero_orden,
+            items: [],
+            total: order.total,
+            comment: order.comentario || "",
+            timestamp: new Date(order.fecha_orden),
+          }));
+          setDeletedOrders(deleted);
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast.error("Error al cargar datos");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
-
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    localStorage.setItem('orderNumber', orderNumber.toString());
-  }, [orderNumber]);
-
-  useEffect(() => {
-    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
-  }, [completedOrders]);
-
-  useEffect(() => {
-    localStorage.setItem('deletedOrders', JSON.stringify(deletedOrders));
-  }, [deletedOrders]);
 
   const handleAddItem = (item: MenuItem) => {
     setCurrentItems([...currentItems, item]);
@@ -96,7 +174,6 @@ const Index = () => {
 
       // Process inventory deductions for prepared products
       for (const item of currentItems) {
-        // Check if this menu item corresponds to a prepared product with a recipe
         const { data: productos } = await supabase
           .from("productos")
           .select(`
@@ -123,7 +200,6 @@ const Index = () => {
           .eq("tipo_producto", "preparado")
           .eq("user_id", user.id);
 
-        // If product has a recipe, deduct ingredients
         if (productos && productos.length > 0) {
           const producto = productos[0];
           const receta = producto.recetas;
@@ -133,17 +209,13 @@ const Index = () => {
               const insumo = detalle.insumo;
               const cantidadRequerida = detalle.cantidad_insumo_por_unidad;
               
-              // Check if there's enough stock
               if (insumo.stock_actual < cantidadRequerida) {
                 toast.error(
-                  `Stock insuficiente de ${insumo.nombre} para preparar ${item.name}. ` +
-                  `Requerido: ${cantidadRequerida} ${insumo.unidad_inventario}, ` +
-                  `Disponible: ${insumo.stock_actual} ${insumo.unidad_inventario}`
+                  `Stock insuficiente de ${insumo.nombre} para preparar ${item.name}`
                 );
                 return;
               }
 
-              // Update stock
               const nuevoStock = insumo.stock_actual - cantidadRequerida;
               const { error: updateError } = await supabase
                 .from("productos")
@@ -151,12 +223,10 @@ const Index = () => {
                 .eq("id", insumo.id);
 
               if (updateError) {
-                console.error("Error updating stock:", updateError);
                 toast.error(`Error al actualizar stock de ${insumo.nombre}`);
                 return;
               }
 
-              // Register inventory movement (consumo)
               const { error: movimientoError } = await supabase
                 .from("movimientos_inventario")
                 .insert({
@@ -171,21 +241,51 @@ const Index = () => {
                 });
 
               if (movimientoError) {
-                console.error("Error registering movement:", movimientoError);
                 toast.error(`Error al registrar movimiento de ${insumo.nombre}`);
                 return;
               }
             }
-
             toast.success(`Insumos descontados para ${item.name}`);
           }
         }
       }
 
-      // Complete the order
+      // Save order to database
       const total = currentItems.reduce((sum, item) => sum + item.price, 0);
-      const newOrder: CompletedOrder = {
-        id: Date.now(),
+      
+      const { data: newOrder, error: orderError } = await supabase
+        .from("ordenes_pos")
+        .insert({
+          user_id: user.id,
+          numero_orden: orderNumber,
+          total,
+          comentario: comment || null,
+          fecha: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Save order details
+      const detalles = currentItems.map(item => ({
+        orden_id: newOrder.id,
+        menu_item_id: item.id,
+        nombre_item: item.name,
+        precio_unitario: item.price,
+        cantidad: 1,
+        subtotal: item.price,
+      }));
+
+      const { error: detalleError } = await supabase
+        .from("detalle_ordenes_pos")
+        .insert(detalles);
+
+      if (detalleError) throw detalleError;
+
+      // Update local state
+      const completedOrder: CompletedOrder = {
+        id: newOrder.id,
         orderNumber,
         items: currentItems.map(item => ({ name: item.name, price: item.price })),
         total,
@@ -193,7 +293,7 @@ const Index = () => {
         timestamp: new Date(),
       };
 
-      setCompletedOrders([newOrder, ...completedOrders]);
+      setCompletedOrders([completedOrder, ...completedOrders]);
       setCurrentItems([]);
       setComment("");
       setOrderNumber(orderNumber + 1);
@@ -209,85 +309,142 @@ const Index = () => {
     setIsDetailOpen(true);
   };
 
-  const handleDeleteOrder = (orderId: number) => {
+  const handleDeleteOrder = async (orderId: number | string) => {
     const orderToDelete = completedOrders.find(order => order.id === orderId);
-    if (orderToDelete) {
+    if (!orderToDelete) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Save to deleted orders table
+      await supabase.from("ordenes_eliminadas_pos").insert({
+        user_id: user.id,
+        orden_original_id: typeof orderId === 'string' ? orderId : null,
+        numero_orden: orderToDelete.orderNumber,
+        total: orderToDelete.total,
+        comentario: orderToDelete.comment,
+        fecha_orden: orderToDelete.timestamp.toISOString(),
+      });
+
+      // Delete from main table
+      await supabase.from("ordenes_pos").delete().eq("id", String(orderId));
+
       setCompletedOrders(completedOrders.filter(order => order.id !== orderId));
       setDeletedOrders([orderToDelete, ...deletedOrders]);
       toast.info(`Orden #${orderToDelete.orderNumber} eliminada`);
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast.error("Error al eliminar orden");
     }
   };
 
-  const handleRestoreOrder = (orderId: number) => {
+  const handleRestoreOrder = async (orderId: number | string) => {
     const orderToRestore = deletedOrders.find(order => order.id === orderId);
-    if (orderToRestore) {
+    if (!orderToRestore) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Re-insert into main orders table
+      const { data: newOrder, error } = await supabase
+        .from("ordenes_pos")
+        .insert({
+          user_id: user.id,
+          numero_orden: orderToRestore.orderNumber,
+          total: orderToRestore.total,
+          comentario: orderToRestore.comment || null,
+          fecha: orderToRestore.timestamp.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Delete from eliminated table
+      await supabase.from("ordenes_eliminadas_pos").delete().eq("id", String(orderId));
+
+      const restoredOrder = { ...orderToRestore, id: newOrder.id };
       setDeletedOrders(deletedOrders.filter(order => order.id !== orderId));
-      setCompletedOrders([orderToRestore, ...completedOrders]);
+      setCompletedOrders([restoredOrder, ...completedOrders]);
       toast.success(`Orden #${orderToRestore.orderNumber} restaurada`);
+    } catch (error) {
+      console.error("Error restoring order:", error);
+      toast.error("Error al restaurar orden");
     }
   };
+
+  const handleExportToExcel = () => {
+    const data = completedOrders.map(order => ({
+      "Número Orden": order.orderNumber,
+      "Fecha": order.timestamp.toLocaleString("es-CO"),
+      "Items": order.items.map(i => i.name).join(", "),
+      "Total": order.total,
+      "Comentario": order.comment || "",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+    
+    const date = new Date().toISOString().split("T")[0];
+    XLSX.writeFile(wb, `ventas_${date}.xlsx`);
+    toast.success("Reporte exportado a Excel");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-6 px-4 shadow-lg">
+      <header className="bg-primary text-primary-foreground py-4 px-4 shadow-lg">
         <div className="container mx-auto">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <img src={fraternoLogo} alt="Fraterno Café" className="h-16 w-auto" />
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">FRATERNO CAFÉ</h1>
-                <p className="text-sm opacity-90">Sistema POS + Inventario</p>
+                <h1 className="text-2xl font-bold tracking-tight">Mi POS</h1>
+                <p className="text-sm opacity-90">Hola, {userName}</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate("/dashboard")}
-              >
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={() => navigate("/menu")}>
+                <Menu className="mr-2 h-4 w-4" />
+                Mi Menú
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => navigate("/dashboard")}>
                 <BarChart3 className="mr-2 h-4 w-4" />
                 Dashboard
               </Button>
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate("/productos")}
-              >
+              <Button variant="secondary" size="sm" onClick={() => navigate("/productos")}>
                 <Package className="mr-2 h-4 w-4" />
                 Productos
               </Button>
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate("/proveedores")}
-              >
+              <Button variant="secondary" size="sm" onClick={() => navigate("/proveedores")}>
                 <Building2 className="mr-2 h-4 w-4" />
                 Proveedores
               </Button>
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate("/recetas")}
-              >
+              <Button variant="secondary" size="sm" onClick={() => navigate("/recetas")}>
                 <ChefHat className="mr-2 h-4 w-4" />
                 Recetas
               </Button>
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate("/inventario/ingreso")}
-              >
+              <Button variant="secondary" size="sm" onClick={() => navigate("/inventario/ingreso")}>
                 <Package className="mr-2 h-4 w-4" />
                 Ingreso
               </Button>
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate("/inventario/historial")}
-              >
+              <Button variant="secondary" size="sm" onClick={() => navigate("/inventario/historial")}>
                 <History className="mr-2 h-4 w-4" />
                 Kardex
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleExportToExcel}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Excel
               </Button>
               <Button 
                 variant="outline" 
@@ -296,7 +453,7 @@ const Index = () => {
                 className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
+                Salir
               </Button>
             </div>
           </div>
@@ -304,80 +461,95 @@ const Index = () => {
       </header>
 
       <div className="container mx-auto py-8 px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Menu Section */}
-          <div className="lg:col-span-2">
-            <Tabs defaultValue={categories[0]} className="w-full">
-              <TabsList className="w-full flex-wrap h-auto gap-2 bg-muted p-2">
-                {categories.map((category) => (
-                  <TabsTrigger
-                    key={category}
-                    value={category}
-                    className="flex-1 min-w-[120px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  >
-                    {category}
+        {menuItems.length === 0 ? (
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-semibold mb-4">¡Bienvenido a tu POS!</h2>
+            <p className="text-muted-foreground mb-6">
+              Aún no tienes items en tu menú. Crea tu primer item para comenzar a vender.
+            </p>
+            <Button onClick={() => navigate("/menu")}>
+              <Menu className="mr-2 h-4 w-4" />
+              Configurar Mi Menú
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Menu Section */}
+              <div className="lg:col-span-2">
+                <Tabs defaultValue={categories[0]} className="w-full">
+                  <TabsList className="w-full flex-wrap h-auto gap-2 bg-muted p-2">
+                    {categories.map((category) => (
+                      <TabsTrigger
+                        key={category}
+                        value={category}
+                        className="flex-1 min-w-[120px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      >
+                        {category}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+
+                  {categories.map((category) => (
+                    <TabsContent key={category} value={category} className="mt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {menuItems
+                          .filter((item) => item.category === category)
+                          .map((item) => (
+                            <MenuItemButton
+                              key={item.id}
+                              item={item}
+                              onAdd={handleAddItem}
+                            />
+                          ))}
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
+
+              {/* Current Order Section */}
+              <div>
+                <CurrentOrder
+                  items={currentItems}
+                  comment={comment}
+                  onCommentChange={setComment}
+                  onRemoveItem={handleRemoveItem}
+                  onCompleteOrder={handleCompleteOrder}
+                  orderNumber={orderNumber}
+                />
+              </div>
+            </div>
+
+            {/* Order History Section */}
+            <div className="mt-8">
+              <Tabs defaultValue="active" className="w-full">
+                <TabsList className="w-full bg-muted">
+                  <TabsTrigger value="active" className="flex-1">
+                    Órdenes Activas ({completedOrders.length})
                   </TabsTrigger>
-                ))}
-              </TabsList>
-
-              {categories.map((category) => (
-                <TabsContent key={category} value={category} className="mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {menuItems
-                      .filter((item) => item.category === category)
-                      .map((item) => (
-                        <MenuItemButton
-                          key={item.id}
-                          item={item}
-                          onAdd={handleAddItem}
-                        />
-                      ))}
-                  </div>
+                  <TabsTrigger value="deleted" className="flex-1">
+                    Eliminadas ({deletedOrders.length})
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="active" className="mt-4">
+                  <OrderHistory
+                    orders={completedOrders}
+                    onSelectOrder={handleSelectOrder}
+                    onDeleteOrder={handleDeleteOrder}
+                  />
                 </TabsContent>
-              ))}
-            </Tabs>
-          </div>
-
-          {/* Current Order Section */}
-          <div>
-            <CurrentOrder
-              items={currentItems}
-              comment={comment}
-              onCommentChange={setComment}
-              onRemoveItem={handleRemoveItem}
-              onCompleteOrder={handleCompleteOrder}
-              orderNumber={orderNumber}
-            />
-          </div>
-        </div>
-
-        {/* Order History Section */}
-        <div className="mt-8">
-          <Tabs defaultValue="active" className="w-full">
-            <TabsList className="w-full bg-muted">
-              <TabsTrigger value="active" className="flex-1">
-                Órdenes Activas
-              </TabsTrigger>
-              <TabsTrigger value="deleted" className="flex-1">
-                Órdenes Eliminadas
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="active" className="mt-4">
-              <OrderHistory
-                orders={completedOrders}
-                onSelectOrder={handleSelectOrder}
-                onDeleteOrder={handleDeleteOrder}
-              />
-            </TabsContent>
-            <TabsContent value="deleted" className="mt-4">
-              <DeletedOrders
-                orders={deletedOrders}
-                onSelectOrder={handleSelectOrder}
-                onRestoreOrder={handleRestoreOrder}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
+                <TabsContent value="deleted" className="mt-4">
+                  <DeletedOrders
+                    orders={deletedOrders}
+                    onSelectOrder={handleSelectOrder}
+                    onRestoreOrder={handleRestoreOrder}
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Order Detail Dialog */}

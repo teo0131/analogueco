@@ -7,7 +7,7 @@ import { CompletedOrder } from "./OrderHistory";
 interface DeletedOrdersProps {
   orders: CompletedOrder[];
   onSelectOrder: (order: CompletedOrder) => void;
-  onRestoreOrder: (orderId: number) => void;
+  onRestoreOrder: (orderId: string | number) => void;
 }
 
 export const DeletedOrders = ({ orders, onSelectOrder, onRestoreOrder }: DeletedOrdersProps) => {

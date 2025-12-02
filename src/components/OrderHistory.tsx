@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, ChevronRight, Trash2 } from "lucide-react";
 
 export interface CompletedOrder {
-  id: number;
+  id: string | number;
   orderNumber: number;
   items: Array<{ name: string; price: number }>;
   total: number;
@@ -15,7 +15,7 @@ export interface CompletedOrder {
 interface OrderHistoryProps {
   orders: CompletedOrder[];
   onSelectOrder: (order: CompletedOrder) => void;
-  onDeleteOrder: (orderId: number) => void;
+  onDeleteOrder: (orderId: string | number) => void;
 }
 
 export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder }: OrderHistoryProps) => {
