@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import IngresoInventario from "./pages/IngresoInventario";
 import ProductosManagement from "./pages/ProductosManagement";
 import HistorialMovimientos from "./pages/HistorialMovimientos";
+import ProveedoresManagement from "./pages/ProveedoresManagement";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -50,6 +51,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <HistorialMovimientos />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/proveedores" 
+            element={
+              <ProtectedRoute>
+                <ProveedoresManagement />
               </ProtectedRoute>
             } 
           />

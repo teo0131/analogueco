@@ -9,7 +9,7 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package, History } from "lucide-react";
+import { LogOut, Package, History, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import fraternoLogo from "@/assets/fraterno-brand.png";
 
@@ -148,6 +148,14 @@ const Index = () => {
               >
                 <Package className="mr-2 h-4 w-4" />
                 Gestión Productos
+              </Button>
+              <Button 
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate("/proveedores")}
+              >
+                <Building2 className="mr-2 h-4 w-4" />
+                Proveedores
               </Button>
               <Button 
                 variant="secondary"
