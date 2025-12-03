@@ -9,7 +9,7 @@ import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, Package, History, Building2, ChefHat, BarChart3, Menu, FileDown, Settings, Box, Store } from "lucide-react";
+import { LogOut, Package, History, Building2, ChefHat, BarChart3, Menu, FileDown, Settings, Box, Store, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -459,6 +459,10 @@ const Index = () => {
               <Button variant="secondary" size="sm" onClick={() => navigate("/inventario/historial")}>
                 <History className="mr-2 h-4 w-4" />
                 Kardex
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => navigate("/historial-diario")}>
+                <Calendar className="mr-2 h-4 w-4" />
+                Ventas Diarias
               </Button>
               <Button variant="secondary" size="sm" onClick={handleExportToExcel}>
                 <FileDown className="mr-2 h-4 w-4" />
