@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bot, Send, Loader2, Sparkles, X, Maximize2, Minimize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 type Message = {
   role: "user" | "assistant";
@@ -28,6 +29,7 @@ export const AIAssistant = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -106,17 +108,54 @@ export const AIAssistant = () => {
     }
   };
 
+  // Save conversation to database
+  const saveConversation = async (updatedMessages: Message[]) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      if (conversationId) {
+        // Update existing conversation
+        await supabase
+          .from("chat_conversations")
+          .update({ 
+            messages: updatedMessages as unknown as any,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", conversationId);
+      } else {
+        // Create new conversation
+        const { data, error } = await supabase
+          .from("chat_conversations")
+          .insert({
+            user_id: user.id,
+            user_email: user.email,
+            messages: updatedMessages as unknown as any,
+          })
+          .select("id")
+          .single();
+
+        if (data && !error) {
+          setConversationId(data.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error saving conversation:", error);
+    }
+  };
+
   const handleSend = async (customPrompt?: string) => {
     const messageText = customPrompt || input.trim();
     if (!messageText) return;
 
     const userMsg: Message = { role: "user", content: messageText };
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setInput("");
     setIsLoading(true);
 
     try {
-      await streamChat([...messages, userMsg]);
+      await streamChat(updatedMessages);
     } catch (error) {
       toast({
         title: "Error",
@@ -127,6 +166,13 @@ export const AIAssistant = () => {
       setIsLoading(false);
     }
   };
+
+  // Save messages when they change (after streaming completes)
+  useEffect(() => {
+    if (messages.length > 0 && !isLoading) {
+      saveConversation(messages);
+    }
+  }, [messages, isLoading]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -157,7 +203,10 @@ export const AIAssistant = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setMessages([])}
+              onClick={() => {
+                setMessages([]);
+                setConversationId(null);
+              }}
             >
               <X className="h-4 w-4" />
             </Button>

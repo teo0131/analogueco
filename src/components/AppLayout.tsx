@@ -20,6 +20,7 @@ import {
   Moon,
   Receipt,
   Users,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ const navItems = [
 
 const adminNavItems = [
   { path: "/admin/usuarios", label: "Usuarios", icon: Users },
+  { path: "/admin/chat-insights", label: "Chat IA", icon: MessageSquare },
 ];
 
 const AppLayout = () => {
