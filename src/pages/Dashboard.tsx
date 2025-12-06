@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { useMemo } from "react";
+import { AIAssistant } from "@/components/AIAssistant";
 
 type MovimientoInventario = {
   id: string;
@@ -222,12 +223,17 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto py-6 px-4 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <TrendingUp className="h-8 w-8" />
-          Dashboard de Análisis
-        </h1>
-        <p className="text-muted-foreground">Métricas de inventario, ventas y consumos</p>
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <TrendingUp className="h-8 w-8" />
+            Dashboard de Análisis
+          </h1>
+          <p className="text-muted-foreground">Métricas de inventario, ventas y consumos</p>
+        </div>
+        <div className="lg:w-[450px]">
+          <AIAssistant />
+        </div>
       </div>
 
         {/* KPIs Row */}
