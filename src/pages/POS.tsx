@@ -9,9 +9,16 @@ import { OrderDetail } from "@/components/OrderDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, Package, History, Building2, ChefHat, BarChart3, Menu, FileDown, Settings, Box, Store, Calendar } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileDown, Menu, Store, Calculator, X } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface MenuItemDB {
   id: string;
@@ -30,7 +37,7 @@ interface MenuItem {
   category: string;
 }
 
-const Index = () => {
+const POS = () => {
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -42,20 +49,14 @@ const Index = () => {
   const [selectedOrder, setSelectedOrder] = useState<CompletedOrder | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
   const [storeNameInput, setStoreNameInput] = useState("");
   const [savingStoreName, setSavingStoreName] = useState(false);
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Error al cerrar sesión");
-    } else {
-      toast.success("Sesión cerrada");
-      navigate("/auth");
-    }
-  };
+  // Change calculator state
+  const [showChangeCalculator, setShowChangeCalculator] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [changeAmount, setChangeAmount] = useState<number | null>(null);
 
   // Load menu items and orders from database
   useEffect(() => {
@@ -63,8 +64,6 @@ const Index = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-
-        setUserName(user.email?.split("@")[0] || "Usuario");
 
         // Load user settings (store name)
         const { data: settingsData } = await supabase
@@ -161,6 +160,8 @@ const Index = () => {
 
     loadData();
   }, []);
+
+  const currentTotal = currentItems.reduce((sum, item) => sum + item.price, 0);
 
   const handleAddItem = (item: MenuItem) => {
     setCurrentItems([...currentItems, item]);
@@ -312,6 +313,9 @@ const Index = () => {
       setCurrentItems([]);
       setComment("");
       setOrderNumber(orderNumber + 1);
+      setShowChangeCalculator(false);
+      setPaymentAmount("");
+      setChangeAmount(null);
       toast.success(`Orden #${orderNumber} completada con éxito`);
     } catch (error) {
       console.error("Error completing order:", error);
@@ -408,6 +412,23 @@ const Index = () => {
     toast.success("Reporte exportado a Excel");
   };
 
+  const handleCalculateChange = () => {
+    const payment = parseFloat(paymentAmount);
+    if (isNaN(payment) || payment < currentTotal) {
+      toast.error("El monto debe ser mayor o igual al total");
+      return;
+    }
+    setChangeAmount(payment - currentTotal);
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -417,215 +438,169 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground py-4 px-4 shadow-lg">
-        <div className="container mx-auto">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 bg-primary-foreground rounded-lg flex items-center justify-center">
-                <Box className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">{storeName || "AnalogueCo"}</h1>
-                <p className="text-sm opacity-90">Hola, {userName}</p>
+    <div className="container mx-auto py-6 px-4">
+      {menuItems.length === 0 ? (
+        <div className="text-center py-12 max-w-md mx-auto">
+          <h2 className="text-2xl font-semibold mb-4">¡Bienvenido a tu POS!</h2>
+          
+          {!storeName && (
+            <div className="mb-6 p-4 bg-muted rounded-lg">
+              <label className="block text-sm font-medium mb-2 text-left">
+                <Store className="inline h-4 w-4 mr-1" />
+                Nombre de tu comercio
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={storeNameInput}
+                  onChange={(e) => setStoreNameInput(e.target.value)}
+                  placeholder="Ej: Mi Cafetería"
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={async () => {
+                    if (!storeNameInput.trim()) {
+                      toast.error("Ingresa un nombre para tu comercio");
+                      return;
+                    }
+                    setSavingStoreName(true);
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (!user) return;
+                      
+                      const { error } = await supabase
+                        .from("user_settings")
+                        .upsert({
+                          user_id: user.id,
+                          store_name: storeNameInput.trim()
+                        }, { onConflict: 'user_id' });
+                      
+                      if (error) throw error;
+                      setStoreName(storeNameInput.trim());
+                      toast.success("Nombre guardado");
+                    } catch (error) {
+                      toast.error("Error al guardar");
+                    } finally {
+                      setSavingStoreName(false);
+                    }
+                  }}
+                  disabled={savingStoreName}
+                >
+                  {savingStoreName ? "..." : "Guardar"}
+                </Button>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" size="sm" onClick={() => navigate("/menu")}>
-                <Menu className="mr-2 h-4 w-4" />
-                Mi Menú
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => navigate("/dashboard")}>
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => navigate("/productos")}>
-                <Package className="mr-2 h-4 w-4" />
-                Productos
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => navigate("/proveedores")}>
-                <Building2 className="mr-2 h-4 w-4" />
-                Proveedores
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => navigate("/recetas")}>
-                <ChefHat className="mr-2 h-4 w-4" />
-                Recetas
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => navigate("/inventario/ingreso")}>
-                <Package className="mr-2 h-4 w-4" />
-                Ingreso
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => navigate("/inventario/historial")}>
-                <History className="mr-2 h-4 w-4" />
-                Kardex
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => navigate("/historial-diario")}>
-                <Calendar className="mr-2 h-4 w-4" />
-                Ventas Diarias
-              </Button>
-              <Button variant="secondary" size="sm" onClick={handleExportToExcel}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Excel
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleLogout}
-                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Salir
-              </Button>
-            </div>
-          </div>
+          )}
+          
+          {storeName && (
+            <p className="text-lg font-medium text-primary mb-4">{storeName}</p>
+          )}
+          
+          <p className="text-muted-foreground mb-6">
+            Aún no tienes items en tu menú. Crea tu primer item para comenzar a vender.
+          </p>
+          <Button onClick={() => navigate("/menu")}>
+            <Menu className="mr-2 h-4 w-4" />
+            Configurar Mi Menú
+          </Button>
         </div>
-      </header>
-
-      <div className="container mx-auto py-8 px-4">
-        {menuItems.length === 0 ? (
-          <div className="text-center py-12 max-w-md mx-auto">
-            <h2 className="text-2xl font-semibold mb-4">¡Bienvenido a tu POS!</h2>
-            
-            {!storeName && (
-              <div className="mb-6 p-4 bg-muted rounded-lg">
-                <label className="block text-sm font-medium mb-2 text-left">
-                  <Store className="inline h-4 w-4 mr-1" />
-                  Nombre de tu comercio
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    value={storeNameInput}
-                    onChange={(e) => setStoreNameInput(e.target.value)}
-                    placeholder="Ej: Mi Cafetería"
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={async () => {
-                      if (!storeNameInput.trim()) {
-                        toast.error("Ingresa un nombre para tu comercio");
-                        return;
-                      }
-                      setSavingStoreName(true);
-                      try {
-                        const { data: { user } } = await supabase.auth.getUser();
-                        if (!user) return;
-                        
-                        const { error } = await supabase
-                          .from("user_settings")
-                          .upsert({
-                            user_id: user.id,
-                            store_name: storeNameInput.trim()
-                          }, { onConflict: 'user_id' });
-                        
-                        if (error) throw error;
-                        setStoreName(storeNameInput.trim());
-                        toast.success("Nombre guardado");
-                      } catch (error) {
-                        toast.error("Error al guardar");
-                      } finally {
-                        setSavingStoreName(false);
-                      }
-                    }}
-                    disabled={savingStoreName}
-                  >
-                    {savingStoreName ? "..." : "Guardar"}
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {storeName && (
-              <p className="text-lg font-medium text-primary mb-4">{storeName}</p>
-            )}
-            
-            <p className="text-muted-foreground mb-6">
-              Aún no tienes items en tu menú. Crea tu primer item para comenzar a vender.
-            </p>
-            <Button onClick={() => navigate("/menu")}>
-              <Menu className="mr-2 h-4 w-4" />
-              Configurar Mi Menú
+      ) : (
+        <>
+          {/* Export Button */}
+          <div className="flex justify-end mb-4">
+            <Button variant="outline" size="sm" onClick={handleExportToExcel}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar a Excel
             </Button>
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Menu Section */}
-              <div className="lg:col-span-2">
-                <Tabs defaultValue={categories[0]} className="w-full">
-                  <TabsList className="w-full flex-wrap h-auto gap-2 bg-muted p-2">
-                    {categories.map((category) => (
-                      <TabsTrigger
-                        key={category}
-                        value={category}
-                        className="flex-1 min-w-[120px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                      >
-                        {category}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
 
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Menu Section */}
+            <div className="lg:col-span-2">
+              <Tabs defaultValue={categories[0]} className="w-full">
+                <TabsList className="w-full flex-wrap h-auto gap-2 bg-muted p-2">
                   {categories.map((category) => (
-                    <TabsContent key={category} value={category} className="mt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {menuItems
-                          .filter((item) => item.category === category)
-                          .map((item) => (
-                            <MenuItemButton
-                              key={item.id}
-                              item={item}
-                              onAdd={handleAddItem}
-                            />
-                          ))}
-                      </div>
-                    </TabsContent>
+                    <TabsTrigger
+                      key={category}
+                      value={category}
+                      className="flex-1 min-w-[120px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      {category}
+                    </TabsTrigger>
                   ))}
-                </Tabs>
-              </div>
-
-              {/* Current Order Section */}
-              <div>
-                <CurrentOrder
-                  items={currentItems}
-                  comment={comment}
-                  onCommentChange={setComment}
-                  onRemoveItem={handleRemoveItem}
-                  onCompleteOrder={handleCompleteOrder}
-                  orderNumber={orderNumber}
-                />
-              </div>
-            </div>
-
-            {/* Order History Section */}
-            <div className="mt-8">
-              <Tabs defaultValue="active" className="w-full">
-                <TabsList className="w-full bg-muted">
-                  <TabsTrigger value="active" className="flex-1">
-                    Órdenes Activas ({completedOrders.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="deleted" className="flex-1">
-                    Eliminadas ({deletedOrders.length})
-                  </TabsTrigger>
                 </TabsList>
-                <TabsContent value="active" className="mt-4">
-                  <OrderHistory
-                    orders={completedOrders}
-                    onSelectOrder={handleSelectOrder}
-                    onDeleteOrder={handleDeleteOrder}
-                  />
-                </TabsContent>
-                <TabsContent value="deleted" className="mt-4">
-                  <DeletedOrders
-                    orders={deletedOrders}
-                    onSelectOrder={handleSelectOrder}
-                    onRestoreOrder={handleRestoreOrder}
-                  />
-                </TabsContent>
+
+                {categories.map((category) => (
+                  <TabsContent key={category} value={category} className="mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {menuItems
+                        .filter((item) => item.category === category)
+                        .map((item) => (
+                          <MenuItemButton
+                            key={item.id}
+                            item={item}
+                            onAdd={handleAddItem}
+                          />
+                        ))}
+                    </div>
+                  </TabsContent>
+                ))}
               </Tabs>
             </div>
-          </>
-        )}
-      </div>
+
+            {/* Current Order Section */}
+            <div className="space-y-4">
+              <CurrentOrder
+                items={currentItems}
+                comment={comment}
+                onCommentChange={setComment}
+                onRemoveItem={handleRemoveItem}
+                onCompleteOrder={handleCompleteOrder}
+                orderNumber={orderNumber}
+              />
+
+              {/* Change Calculator Button */}
+              {currentItems.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowChangeCalculator(true)}
+                >
+                  <Calculator className="mr-2 h-4 w-4" />
+                  Calcular Cambio
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Order History Section */}
+          <div className="mt-8">
+            <Tabs defaultValue="active" className="w-full">
+              <TabsList className="w-full bg-muted">
+                <TabsTrigger value="active" className="flex-1">
+                  Órdenes Activas ({completedOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="deleted" className="flex-1">
+                  Eliminadas ({deletedOrders.length})
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="active" className="mt-4">
+                <OrderHistory
+                  orders={completedOrders}
+                  onSelectOrder={handleSelectOrder}
+                  onDeleteOrder={handleDeleteOrder}
+                />
+              </TabsContent>
+              <TabsContent value="deleted" className="mt-4">
+                <DeletedOrders
+                  orders={deletedOrders}
+                  onSelectOrder={handleSelectOrder}
+                  onRestoreOrder={handleRestoreOrder}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </>
+      )}
 
       {/* Order Detail Dialog */}
       <OrderDetail
@@ -633,8 +608,53 @@ const Index = () => {
         open={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
       />
+
+      {/* Change Calculator Dialog */}
+      <Dialog open={showChangeCalculator} onOpenChange={setShowChangeCalculator}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Calcular Cambio
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Total a pagar</p>
+              <p className="text-2xl font-bold text-primary">{formatPrice(currentTotal)}</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Monto recibido
+              </label>
+              <Input
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => {
+                  setPaymentAmount(e.target.value);
+                  setChangeAmount(null);
+                }}
+                placeholder="Ingresa el monto"
+                className="text-lg"
+              />
+            </div>
+
+            <Button onClick={handleCalculateChange} className="w-full">
+              Calcular
+            </Button>
+
+            {changeAmount !== null && (
+              <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-sm text-muted-foreground">Devuelta</p>
+                <p className="text-3xl font-bold text-primary">{formatPrice(changeAmount)}</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default Index;
+export default POS;

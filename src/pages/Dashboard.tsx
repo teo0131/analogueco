@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, TrendingUp, Package, AlertTriangle, ChefHat, DollarSign } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { TrendingUp, Package, AlertTriangle, ChefHat, DollarSign } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,8 +31,6 @@ type Producto = {
 };
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-
   // Fetch movimientos últimos 30 días
   const { data: movimientos } = useQuery({
     queryKey: ["dashboard-movimientos"],
@@ -225,26 +221,14 @@ const Dashboard = () => {
   const COLORS = ["#10b981", "#ef4444", "#f59e0b", "#8b5cf6"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate("/")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <TrendingUp className="h-8 w-8" />
-                Dashboard de Análisis
-              </h1>
-              <p className="text-muted-foreground">Métricas de inventario, ventas y consumos</p>
-            </div>
-          </div>
-        </div>
+    <div className="container mx-auto py-6 px-4 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <TrendingUp className="h-8 w-8" />
+          Dashboard de Análisis
+        </h1>
+        <p className="text-muted-foreground">Métricas de inventario, ventas y consumos</p>
+      </div>
 
         {/* KPIs Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -467,7 +451,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
   );
 };
