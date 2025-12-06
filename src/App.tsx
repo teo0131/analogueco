@@ -15,6 +15,7 @@ import ProveedoresManagement from "./pages/ProveedoresManagement";
 import RecetasManagement from "./pages/RecetasManagement";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import ConfiguracionFiscal from "./pages/ConfiguracionFiscal";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/inventario/ingreso" element={<IngresoInventario />} />
             <Route path="/inventario/historial" element={<HistorialMovimientos />} />
             <Route path="/historial-diario" element={<HistorialDiario />} />
+            <Route path="/configuracion-fiscal" element={<ConfiguracionFiscal />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

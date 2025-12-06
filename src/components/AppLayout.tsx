@@ -17,6 +17,7 @@ import {
   Home,
   Sun,
   Moon,
+  Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ const navItems = [
   { path: "/inventario/ingreso", label: "Ingreso", icon: Package },
   { path: "/inventario/historial", label: "Kardex", icon: History },
   { path: "/historial-diario", label: "Ventas Diarias", icon: Calendar },
+  { path: "/configuracion-fiscal", label: "Datos Fiscales", icon: Receipt },
 ];
 
 const AppLayout = () => {

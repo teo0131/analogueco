@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, ChevronRight, Trash2 } from "lucide-react";
+import { History, ChevronRight, Trash2, FileText } from "lucide-react";
 
 export interface CompletedOrder {
   id: string | number;
@@ -16,9 +16,10 @@ interface OrderHistoryProps {
   orders: CompletedOrder[];
   onSelectOrder: (order: CompletedOrder) => void;
   onDeleteOrder: (orderId: string | number) => void;
+  onGenerateInvoice?: (order: CompletedOrder) => void;
 }
 
-export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder }: OrderHistoryProps) => {
+export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder, onGenerateInvoice }: OrderHistoryProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -70,17 +71,31 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder }: OrderHist
                     </div>
                     <ChevronRight className="h-5 w-5 flex-shrink-0" />
                   </Button>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteOrder(order.id);
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    {onGenerateInvoice && (
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onGenerateInvoice(order);
+                        }}
+                        title="Generar Factura"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteOrder(order.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

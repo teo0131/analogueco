@@ -6,6 +6,7 @@ import { CurrentOrder } from "@/components/CurrentOrder";
 import { OrderHistory, CompletedOrder } from "@/components/OrderHistory";
 import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
+import { GenerarFactura } from "@/components/factura/GenerarFactura";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,10 @@ const POS = () => {
   const [showChangeCalculator, setShowChangeCalculator] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [changeAmount, setChangeAmount] = useState<number | null>(null);
+
+  // Invoice state
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceOrder, setInvoiceOrder] = useState<CompletedOrder | null>(null);
 
   // Load menu items and orders from database
   useEffect(() => {
@@ -421,6 +426,14 @@ const POS = () => {
     setChangeAmount(payment - currentTotal);
   };
 
+  const handleGenerateInvoice = (order: CompletedOrder) => {
+    setInvoiceOrder({
+      ...order,
+      id: String(order.id),
+    });
+    setShowInvoiceModal(true);
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
@@ -588,6 +601,7 @@ const POS = () => {
                   orders={completedOrders}
                   onSelectOrder={handleSelectOrder}
                   onDeleteOrder={handleDeleteOrder}
+                  onGenerateInvoice={handleGenerateInvoice}
                 />
               </TabsContent>
               <TabsContent value="deleted" className="mt-4">
@@ -608,6 +622,25 @@ const POS = () => {
         open={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
       />
+
+      {/* Invoice Generation Modal */}
+      {invoiceOrder && (
+        <GenerarFactura
+          orden={{
+            id: String(invoiceOrder.id),
+            orderNumber: invoiceOrder.orderNumber,
+            items: invoiceOrder.items,
+            total: invoiceOrder.total,
+            comment: invoiceOrder.comment,
+            timestamp: invoiceOrder.timestamp,
+          }}
+          open={showInvoiceModal}
+          onClose={() => {
+            setShowInvoiceModal(false);
+            setInvoiceOrder(null);
+          }}
+        />
+      )}
 
       {/* Change Calculator Dialog */}
       <Dialog open={showChangeCalculator} onOpenChange={setShowChangeCalculator}>
