@@ -18,6 +18,8 @@ import NotFound from "./pages/NotFound";
 import ConfiguracionFiscal from "./pages/ConfiguracionFiscal";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
+import PendingApproval from "./pages/PendingApproval";
+import AdminUsuarios from "./pages/AdminUsuarios";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/pending-approval" element={<PendingApproval />} />
           
           {/* Redirect root to /home */}
           <Route path="/" element={<Navigate to="/home" replace />} />
@@ -52,6 +55,7 @@ const App = () => (
             <Route path="/inventario/historial" element={<HistorialMovimientos />} />
             <Route path="/historial-diario" element={<HistorialDiario />} />
             <Route path="/configuracion-fiscal" element={<ConfiguracionFiscal />} />
+            <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

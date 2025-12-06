@@ -5,25 +5,55 @@ import { Session } from "@supabase/supabase-js";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireAdmin?: boolean;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isApproved, setIsApproved] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
+    const checkAuth = async (currentSession: Session | null) => {
+      if (!currentSession?.user) {
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+
+      setSession(currentSession);
+
+      // Check if user is approved
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_approved")
+        .eq("user_id", currentSession.user.id)
+        .single();
+
+      setIsApproved(profile?.is_approved ?? false);
+
+      // Check if user is admin
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", currentSession.user.id);
+
+      const hasAdminRole = roles?.some(r => r.role === "admin") ?? false;
+      setIsAdmin(hasAdminRole);
+      setLoading(false);
+    };
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setSession(session);
-        setLoading(false);
+        checkAuth(session);
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
+      checkAuth(session);
     });
 
     return () => subscription.unsubscribe();
@@ -42,6 +72,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!session) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // If user is not approved and not admin, show pending page
+  if (isApproved === false && !isAdmin) {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
+  // If route requires admin and user is not admin
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;
