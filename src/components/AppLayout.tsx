@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,8 @@ import {
   Box,
   ShoppingCart,
   Home,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,8 +36,14 @@ const navItems = [
 const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -112,15 +121,31 @@ const AppLayout = () => {
               </div>
             </nav>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-primary-foreground hover:bg-primary-foreground/20"
-            >
-              <LogOut className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Salir</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              {mounted && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Salir</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
