@@ -10,9 +10,9 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       {/* Hero Section with Full Banner */}
       <div className="relative h-[70vh] min-h-[500px] overflow-hidden">
-        {/* Background Image */}
+        {/* Background Image with Slow Zoom Animation */}
         <div 
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center animate-slow-zoom"
           style={{ backgroundImage: `url(${coffeeHeroImage})` }}
         />
         
