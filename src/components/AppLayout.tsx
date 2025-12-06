@@ -91,7 +91,10 @@ const AppLayout = () => {
               >
                 <Box className="h-5 w-5 text-primary" />
               </div>
-              <div className="hidden sm:block">
+              <div 
+                className="hidden sm:block cursor-pointer"
+                onClick={() => navigate("/home")}
+              >
                 <h1 className="text-lg font-bold tracking-tight">{storeName || "AnalogueCo"}</h1>
                 <p className="text-xs opacity-80">Hola, {userName}</p>
               </div>
