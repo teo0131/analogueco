@@ -20,6 +20,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 import PendingApproval from "./pages/PendingApproval";
 import AdminUsuarios from "./pages/AdminUsuarios";
+import AdminChatInsights from "./pages/AdminChatInsights";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/historial-diario" element={<HistorialDiario />} />
             <Route path="/configuracion-fiscal" element={<ConfiguracionFiscal />} />
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+            <Route path="/admin/chat-insights" element={<AdminChatInsights />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
