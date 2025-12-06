@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   LogOut,
   Package,
@@ -18,6 +19,7 @@ import {
   Sun,
   Moon,
   Receipt,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,10 +37,15 @@ const navItems = [
   { path: "/configuracion-fiscal", label: "Datos Fiscales", icon: Receipt },
 ];
 
+const adminNavItems = [
+  { path: "/admin/usuarios", label: "Usuarios", icon: Users },
+];
+
 const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { isAdmin } = useUserRole();
   const [mounted, setMounted] = useState(false);
   const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
@@ -104,6 +111,26 @@ const AppLayout = () => {
             <nav className="flex-1 flex justify-center">
               <div className="flex flex-wrap gap-1 justify-center max-w-4xl">
                 {navItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  const Icon = item.icon;
+                  return (
+                    <Button
+                      key={item.path}
+                      variant={isActive ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => navigate(item.path)}
+                      className={`text-xs px-2 py-1 h-8 ${
+                        isActive 
+                          ? "bg-primary-foreground text-primary" 
+                          : "text-primary-foreground hover:bg-primary-foreground/20"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5 mr-1" />
+                      <span className="hidden md:inline">{item.label}</span>
+                    </Button>
+                  );
+                })}
+                {isAdmin && adminNavItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   const Icon = item.icon;
                   return (
