@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      datos_fiscales: {
+        Row: {
+          ciudad: string | null
+          consecutivo_actual: number | null
+          created_at: string
+          direccion: string | null
+          email: string | null
+          fecha_resolucion: string | null
+          id: string
+          leyenda_legal: string | null
+          logo_url: string | null
+          nit: string | null
+          nombre_comercial: string
+          numero_resolucion_dian: string | null
+          politica_cambios: string | null
+          prefijo_factura: string | null
+          rango_autorizado_desde: number | null
+          rango_autorizado_hasta: number | null
+          razon_social: string | null
+          regimen_tributario: string | null
+          telefono: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ciudad?: string | null
+          consecutivo_actual?: number | null
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          fecha_resolucion?: string | null
+          id?: string
+          leyenda_legal?: string | null
+          logo_url?: string | null
+          nit?: string | null
+          nombre_comercial?: string
+          numero_resolucion_dian?: string | null
+          politica_cambios?: string | null
+          prefijo_factura?: string | null
+          rango_autorizado_desde?: number | null
+          rango_autorizado_hasta?: number | null
+          razon_social?: string | null
+          regimen_tributario?: string | null
+          telefono?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ciudad?: string | null
+          consecutivo_actual?: number | null
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          fecha_resolucion?: string | null
+          id?: string
+          leyenda_legal?: string | null
+          logo_url?: string | null
+          nit?: string | null
+          nombre_comercial?: string
+          numero_resolucion_dian?: string | null
+          politica_cambios?: string | null
+          prefijo_factura?: string | null
+          rango_autorizado_desde?: number | null
+          rango_autorizado_hasta?: number | null
+          razon_social?: string | null
+          regimen_tributario?: string | null
+          telefono?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       detalle_entradas: {
         Row: {
           cantidad: number
@@ -55,6 +127,50 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detalle_facturas_fisicas: {
+        Row: {
+          cantidad: number
+          descripcion: string
+          descuento: number
+          factura_id: string
+          id: string
+          iva: number
+          precio_unitario: number
+          total: number
+          unidad: string | null
+        }
+        Insert: {
+          cantidad?: number
+          descripcion: string
+          descuento?: number
+          factura_id: string
+          id?: string
+          iva?: number
+          precio_unitario?: number
+          total?: number
+          unidad?: string | null
+        }
+        Update: {
+          cantidad?: number
+          descripcion?: string
+          descuento?: number
+          factura_id?: string
+          id?: string
+          iva?: number
+          precio_unitario?: number
+          total?: number
+          unidad?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_facturas_fisicas_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_fisicas"
             referencedColumns: ["id"]
           },
         ]
@@ -177,6 +293,80 @@ export type Database = {
             columns: ["proveedor_id"]
             isOneToOne: false
             referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facturas_fisicas: {
+        Row: {
+          base_gravable: number
+          cliente_direccion: string | null
+          cliente_documento: string | null
+          cliente_nombre: string | null
+          created_at: string
+          descuento: number
+          fecha_expedicion: string
+          id: string
+          iva_total: number
+          medio_pago: string | null
+          mesa: string | null
+          numero_factura: string
+          orden_id: string | null
+          otros_impuestos: number
+          subtotal: number
+          total: number
+          total_en_letras: string | null
+          user_id: string
+          vendedor: string | null
+        }
+        Insert: {
+          base_gravable?: number
+          cliente_direccion?: string | null
+          cliente_documento?: string | null
+          cliente_nombre?: string | null
+          created_at?: string
+          descuento?: number
+          fecha_expedicion?: string
+          id?: string
+          iva_total?: number
+          medio_pago?: string | null
+          mesa?: string | null
+          numero_factura: string
+          orden_id?: string | null
+          otros_impuestos?: number
+          subtotal?: number
+          total?: number
+          total_en_letras?: string | null
+          user_id: string
+          vendedor?: string | null
+        }
+        Update: {
+          base_gravable?: number
+          cliente_direccion?: string | null
+          cliente_documento?: string | null
+          cliente_nombre?: string | null
+          created_at?: string
+          descuento?: number
+          fecha_expedicion?: string
+          id?: string
+          iva_total?: number
+          medio_pago?: string | null
+          mesa?: string | null
+          numero_factura?: string
+          orden_id?: string | null
+          otros_impuestos?: number
+          subtotal?: number
+          total?: number
+          total_en_letras?: string | null
+          user_id?: string
+          vendedor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_fisicas_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_pos"
             referencedColumns: ["id"]
           },
         ]
