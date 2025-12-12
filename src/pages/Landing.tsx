@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Box, ArrowRight, ShoppingCart, Package, BarChart3 } from "lucide-react";
 import coffeeHeroImage from "@/assets/coffee-woman-hero.jpg";
+import { AIAssistant } from "@/components/AIAssistant";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -9,7 +11,7 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section with Full Banner */}
-      <div className="relative h-[70vh] min-h-[500px] overflow-hidden">
+      <div className="relative h-[50vh] min-h-[350px] overflow-hidden">
         {/* Background Image with Slow Zoom Animation */}
         <div 
           className="absolute inset-0 bg-cover bg-center animate-slow-zoom"
@@ -22,22 +24,22 @@ const Landing = () => {
         {/* Content */}
         <div className="relative h-full container mx-auto px-4 flex flex-col items-center justify-center text-center">
           {/* Logo */}
-          <div className="h-20 w-20 bg-primary rounded-2xl flex items-center justify-center mb-8 shadow-xl">
-            <Box className="h-12 w-12 text-primary-foreground" />
+          <div className="h-16 w-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-xl">
+            <Box className="h-10 w-10 text-primary-foreground" />
           </div>
           
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 tracking-tight drop-shadow-lg">
             AnalogueCo
           </h1>
           
-          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl drop-shadow-md">
+          <p className="text-lg md:text-xl text-white/90 mb-6 max-w-2xl drop-shadow-md">
             Sistema POS y gestión de inventario todo en uno
           </p>
 
           <Button 
             size="lg" 
             onClick={() => navigate("/pos")}
-            className="text-lg px-8 py-6 shadow-lg"
+            className="text-lg px-8 py-5 shadow-lg"
           >
             Comenzar a facturar
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -45,10 +47,19 @@ const Landing = () => {
         </div>
       </div>
 
+      {/* AI Assistant Section */}
+      <div className="container mx-auto px-4 py-8">
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardContent className="p-0">
+            <AIAssistant />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Features Section */}
-      <div className="bg-muted/50 py-16">
+      <div className="bg-muted/50 py-12">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-semibold text-center mb-12">
+          <h2 className="text-2xl md:text-3xl font-semibold text-center mb-10">
             Todo lo que necesitas para tu negocio
           </h2>
           
@@ -73,7 +84,7 @@ const Landing = () => {
       </div>
 
       {/* Footer */}
-      <footer className="py-8 text-center text-muted-foreground">
+      <footer className="py-6 text-center text-muted-foreground">
         <p>© {new Date().getFullYear()} AnalogueCo. Todos los derechos reservados.</p>
       </footer>
     </div>

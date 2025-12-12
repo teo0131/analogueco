@@ -9,7 +9,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { useMemo } from "react";
-import { AIAssistant } from "@/components/AIAssistant";
 
 type MovimientoInventario = {
   id: string;
@@ -231,13 +230,6 @@ const Dashboard = () => {
         </h1>
         <p className="text-muted-foreground">Métricas de inventario, ventas y consumos</p>
       </div>
-
-      {/* AI Assistant - Prominente para usuarios */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
-        <CardContent className="p-0">
-          <AIAssistant />
-        </CardContent>
-      </Card>
 
         {/* KPIs Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
