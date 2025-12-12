@@ -299,9 +299,9 @@ export const AIAssistant = () => {
     }
   };
 
-  // Format message content to show executed actions nicely
+  // Format message content - hide JSON blocks completely
   const formatMessageContent = (content: string) => {
-    // Replace JSON blocks with a cleaner indicator
+    // Remove JSON blocks entirely and show executed action indicator
     const formatted = content.replace(/```json\s*\{[\s\S]*?\}```/g, (match) => {
       try {
         const jsonMatch = match.match(/```json\s*([\s\S]*?)```/);
@@ -310,15 +310,16 @@ export const AIAssistant = () => {
           if (parsed.type && parsed.data) {
             const actionKey = `${parsed.type}-${JSON.stringify(parsed.data)}`;
             const wasExecuted = executedActions.includes(actionKey);
-            return wasExecuted ? "\n✅ Acción ejecutada automáticamente\n" : "";
+            return wasExecuted ? "✅ ¡Listo!" : "";
           }
         }
       } catch {
-        // Keep original if parsing fails
+        // Hide anyway if it looks like action JSON
       }
-      return match;
+      return "";
     });
-    return formatted;
+    // Clean up extra whitespace
+    return formatted.replace(/\n{3,}/g, "\n\n").trim();
   };
 
   return (
