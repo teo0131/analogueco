@@ -223,18 +223,21 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto py-6 px-4 space-y-6">
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <TrendingUp className="h-8 w-8" />
-            Dashboard de Análisis
-          </h1>
-          <p className="text-muted-foreground">Métricas de inventario, ventas y consumos</p>
-        </div>
-        <div className="lg:w-[450px]">
-          <AIAssistant />
-        </div>
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <TrendingUp className="h-8 w-8" />
+          Dashboard de Análisis
+        </h1>
+        <p className="text-muted-foreground">Métricas de inventario, ventas y consumos</p>
       </div>
+
+      {/* AI Assistant - Prominente para usuarios */}
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardContent className="p-0">
+          <AIAssistant />
+        </CardContent>
+      </Card>
 
         {/* KPIs Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

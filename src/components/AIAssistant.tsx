@@ -17,11 +17,14 @@ type Message = {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
 
 const QUICK_ACTIONS = [
-  { label: "Agregar item al menú", prompt: "Quiero agregar un nuevo producto al menú: " },
-  { label: "Nuevo proveedor", prompt: "Necesito registrar un nuevo proveedor: " },
-  { label: "¿Cómo uso el POS?", prompt: "¿Cómo funciona el módulo de punto de venta?" },
-  { label: "Crear receta", prompt: "Quiero crear una receta para " },
-  { label: "Agregar producto inventario", prompt: "Necesito agregar un producto al inventario: " },
+  { label: "📦 Agregar item al menú", prompt: "Quiero agregar un nuevo producto al menú: " },
+  { label: "🏢 Nuevo proveedor", prompt: "Necesito registrar un nuevo proveedor: " },
+  { label: "💰 ¿Cómo uso el POS?", prompt: "¿Cómo funciona el módulo de punto de venta?" },
+  { label: "🍳 Crear receta", prompt: "Quiero crear una receta para " },
+  { label: "📊 Ver historial de ventas", prompt: "¿Cuál fue mi historial de ventas de hoy?" },
+  { label: "💵 Cambiar precios", prompt: "Quiero cambiar el precio del producto " },
+  { label: "📈 Resumen de mi negocio", prompt: "Dame un resumen del estado actual de mi negocio" },
+  { label: "❓ ¿Qué puedo hacer aquí?", prompt: "¿Qué funciones tiene AnalogueCo y cómo las uso?" },
 ];
 
 export const AIAssistant = () => {
@@ -183,13 +186,14 @@ export const AIAssistant = () => {
 
   return (
     <Card className={cn(
-      "flex flex-col transition-all duration-300",
-      isExpanded ? "h-[600px]" : "h-[400px]"
+      "flex flex-col transition-all duration-300 border-0 shadow-none bg-transparent",
+      isExpanded ? "h-[600px]" : "h-[350px]"
     )}>
-      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between px-4 pt-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Sparkles className="h-5 w-5 text-primary" />
-          Asistente AnalogueCo
+          Asistente IA de AnalogueCo
+          <Badge variant="secondary" className="ml-2 text-xs">Beta</Badge>
         </CardTitle>
         <div className="flex gap-2">
           <Button
@@ -213,24 +217,26 @@ export const AIAssistant = () => {
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-3 overflow-hidden">
+      <CardContent className="flex-1 flex flex-col gap-3 overflow-hidden px-4 pb-4">
         {messages.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="h-8 w-8 text-primary" />
+          <div className="flex-1 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Bot className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">¡Hola! Soy tu asistente de IA</h3>
+                <p className="text-sm text-muted-foreground">
+                  Pregúntame lo que necesites: agregar productos, cambiar precios, consultar histórico, o aprender a usar AnalogueCo.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold">¡Hola! Soy tu asistente</h3>
-              <p className="text-sm text-muted-foreground">
-                Te ayudo a gestionar tu negocio. Puedo agregar productos, explicarte cómo usar los módulos, ¡y mucho más!
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-2">
               {QUICK_ACTIONS.map((action) => (
                 <Badge
                   key={action.label}
-                  variant="secondary"
-                  className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                  variant="outline"
+                  className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-colors py-1.5 px-3"
                   onClick={() => setInput(action.prompt)}
                 >
                   {action.label}
