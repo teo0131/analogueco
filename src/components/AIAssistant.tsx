@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Send, Loader2, Sparkles, X, Maximize2, Minimize2 } from "lucide-react";
+import { Bot, Send, Loader2, Sparkles, X, Maximize2, Minimize2, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,10 +14,15 @@ type Message = {
   content: string;
 };
 
+type AIAction = {
+  type: "menu_item" | "proveedor" | "producto";
+  data: Record<string, any>;
+};
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
 
 const QUICK_ACTIONS = [
-  { label: "📦 Agregar item al menú", prompt: "Quiero agregar un nuevo producto al menú: " },
+  { label: "📦 Agregar item al menú", prompt: "Quiero agregar un nuevo producto al menú llamado Cappuccino a $8000" },
   { label: "🏢 Nuevo proveedor", prompt: "Necesito registrar un nuevo proveedor: " },
   { label: "💰 ¿Cómo uso el POS?", prompt: "¿Cómo funciona el módulo de punto de venta?" },
   { label: "🍳 Crear receta", prompt: "Quiero crear una receta para " },
@@ -27,12 +32,33 @@ const QUICK_ACTIONS = [
   { label: "❓ ¿Qué puedo hacer aquí?", prompt: "¿Qué funciones tiene AnalogueCo y cómo las uso?" },
 ];
 
+// Extract JSON actions from AI response
+const extractActions = (content: string): AIAction[] => {
+  const actions: AIAction[] = [];
+  const jsonRegex = /```json\s*([\s\S]*?)```/g;
+  let match;
+
+  while ((match = jsonRegex.exec(content)) !== null) {
+    try {
+      const parsed = JSON.parse(match[1].trim());
+      if (parsed.type && parsed.data) {
+        actions.push(parsed as AIAction);
+      }
+    } catch {
+      // Not valid JSON, skip
+    }
+  }
+
+  return actions;
+};
+
 export const AIAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [executedActions, setExecutedActions] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -41,6 +67,83 @@ export const AIAssistant = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Execute AI actions automatically
+  const executeAction = async (action: AIAction): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "Debes iniciar sesión para realizar esta acción",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      switch (action.type) {
+        case "menu_item": {
+          const { error } = await supabase.from("menu_items").insert({
+            user_id: user.id,
+            nombre: action.data.nombre,
+            precio: action.data.precio || 0,
+            categoria: action.data.categoria || null,
+            descripcion: action.data.descripcion || null,
+          });
+          if (error) throw error;
+          toast({
+            title: "✅ Item agregado al menú",
+            description: `"${action.data.nombre}" por $${action.data.precio?.toLocaleString() || 0}`,
+          });
+          return true;
+        }
+
+        case "proveedor": {
+          const { error } = await supabase.from("proveedores").insert({
+            user_id: user.id,
+            nombre: action.data.nombre,
+            documento: action.data.documento || null,
+            contacto: action.data.contacto || null,
+            observaciones: action.data.observaciones || null,
+          });
+          if (error) throw error;
+          toast({
+            title: "✅ Proveedor registrado",
+            description: `"${action.data.nombre}" agregado correctamente`,
+          });
+          return true;
+        }
+
+        case "producto": {
+          const { error } = await supabase.from("productos").insert({
+            user_id: user.id,
+            nombre: action.data.nombre,
+            unidad_inventario: action.data.unidad_inventario || "unidades",
+            stock_minimo: action.data.stock_minimo || 0,
+            categoria: action.data.categoria || null,
+            tipo_producto: action.data.tipo_producto || "retail",
+          });
+          if (error) throw error;
+          toast({
+            title: "✅ Producto creado",
+            description: `"${action.data.nombre}" agregado al inventario`,
+          });
+          return true;
+        }
+
+        default:
+          return false;
+      }
+    } catch (error) {
+      console.error("Error executing action:", error);
+      toast({
+        title: "Error",
+        description: `No se pudo ejecutar la acción: ${error instanceof Error ? error.message : "Error desconocido"}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
   const streamChat = async (userMessages: Message[]) => {
     const resp = await fetch(CHAT_URL, {
@@ -109,6 +212,8 @@ export const AIAssistant = () => {
         }
       }
     }
+
+    return assistantContent;
   };
 
   // Save conversation to database
@@ -118,7 +223,6 @@ export const AIAssistant = () => {
       if (!user) return;
 
       if (conversationId) {
-        // Update existing conversation
         await supabase
           .from("chat_conversations")
           .update({ 
@@ -127,7 +231,6 @@ export const AIAssistant = () => {
           })
           .eq("id", conversationId);
       } else {
-        // Create new conversation
         const { data, error } = await supabase
           .from("chat_conversations")
           .insert({
@@ -158,7 +261,19 @@ export const AIAssistant = () => {
     setIsLoading(true);
 
     try {
-      await streamChat(updatedMessages);
+      const assistantResponse = await streamChat(updatedMessages);
+      
+      // Check for actions in the response and execute them
+      const actions = extractActions(assistantResponse);
+      for (const action of actions) {
+        const actionKey = `${action.type}-${JSON.stringify(action.data)}`;
+        if (!executedActions.includes(actionKey)) {
+          const success = await executeAction(action);
+          if (success) {
+            setExecutedActions(prev => [...prev, actionKey]);
+          }
+        }
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -182,6 +297,28 @@ export const AIAssistant = () => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  // Format message content to show executed actions nicely
+  const formatMessageContent = (content: string) => {
+    // Replace JSON blocks with a cleaner indicator
+    const formatted = content.replace(/```json\s*\{[\s\S]*?\}```/g, (match) => {
+      try {
+        const jsonMatch = match.match(/```json\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[1].trim());
+          if (parsed.type && parsed.data) {
+            const actionKey = `${parsed.type}-${JSON.stringify(parsed.data)}`;
+            const wasExecuted = executedActions.includes(actionKey);
+            return wasExecuted ? "\n✅ Acción ejecutada automáticamente\n" : "";
+          }
+        }
+      } catch {
+        // Keep original if parsing fails
+      }
+      return match;
+    });
+    return formatted;
   };
 
   return (
@@ -210,6 +347,7 @@ export const AIAssistant = () => {
               onClick={() => {
                 setMessages([]);
                 setConversationId(null);
+                setExecutedActions([]);
               }}
             >
               <X className="h-4 w-4" />
@@ -227,7 +365,7 @@ export const AIAssistant = () => {
               <div>
                 <h3 className="font-semibold">¡Hola! Soy tu asistente de IA</h3>
                 <p className="text-sm text-muted-foreground">
-                  Pregúntame lo que necesites: agregar productos, cambiar precios, consultar histórico, o aprender a usar AnalogueCo.
+                  Puedo agregar productos, registrar proveedores y más. ¡Solo dime qué necesitas!
                 </p>
               </div>
             </div>
@@ -268,7 +406,7 @@ export const AIAssistant = () => {
                         : "bg-muted"
                     )}
                   >
-                    {msg.content}
+                    {msg.role === "assistant" ? formatMessageContent(msg.content) : msg.content}
                   </div>
                 </div>
               ))}
@@ -291,7 +429,7 @@ export const AIAssistant = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Escribe tu mensaje o selecciona una acción rápida..."
+            placeholder="Ej: Agrega un Cappuccino a $8000 al menú..."
             className="min-h-[60px] resize-none"
             disabled={isLoading}
           />
