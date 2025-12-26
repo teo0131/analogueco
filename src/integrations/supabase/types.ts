@@ -401,6 +401,36 @@ export type Database = {
           },
         ]
       }
+      gastos_operativos: {
+        Row: {
+          categoria: string
+          created_at: string
+          descripcion: string | null
+          fecha: string
+          id: string
+          monto: number
+          user_id: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          monto?: number
+          user_id: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          monto?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       menu_items: {
         Row: {
           categoria: string | null

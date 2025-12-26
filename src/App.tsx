@@ -21,6 +21,7 @@ import AppLayout from "./components/AppLayout";
 import PendingApproval from "./pages/PendingApproval";
 import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminChatInsights from "./pages/AdminChatInsights";
+import UtilidadDiaria from "./pages/UtilidadDiaria";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/inventario/ingreso" element={<IngresoInventario />} />
             <Route path="/inventario/historial" element={<HistorialMovimientos />} />
             <Route path="/historial-diario" element={<HistorialDiario />} />
+            <Route path="/utilidad" element={<UtilidadDiaria />} />
             <Route path="/configuracion-fiscal" element={<ConfiguracionFiscal />} />
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
             <Route path="/admin/chat-insights" element={<AdminChatInsights />} />
