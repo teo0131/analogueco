@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Trash2, ShoppingCart } from "lucide-react";
+import { Trash2, ShoppingCart, Banknote } from "lucide-react";
 import { MenuItem } from "@/data/menuItems";
 
 interface CurrentOrderProps {
@@ -14,6 +15,17 @@ interface CurrentOrderProps {
   orderNumber: number;
 }
 
+// Colombian bill denominations
+const BILL_DENOMINATIONS = [
+  { value: 100000, label: "$100.000" },
+  { value: 50000, label: "$50.000" },
+  { value: 20000, label: "$20.000" },
+  { value: 10000, label: "$10.000" },
+  { value: 5000, label: "$5.000" },
+  { value: 2000, label: "$2.000" },
+  { value: 1000, label: "$1.000" },
+];
+
 export const CurrentOrder = ({
   items,
   comment,
@@ -22,6 +34,8 @@ export const CurrentOrder = ({
   onCompleteOrder,
   orderNumber,
 }: CurrentOrderProps) => {
+  const [selectedBill, setSelectedBill] = useState<number | null>(null);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -32,6 +46,17 @@ export const CurrentOrder = ({
   };
 
   const total = items.reduce((sum, item) => sum + item.price, 0);
+  const change = selectedBill !== null && selectedBill >= total ? selectedBill - total : null;
+
+  const handleBillClick = (billValue: number) => {
+    if (billValue >= total) {
+      setSelectedBill(billValue);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedBill(null);
+  };
 
   return (
     <Card className="sticky top-4">
@@ -78,6 +103,60 @@ export const CurrentOrder = ({
                 <span className="text-primary">{formatPrice(total)}</span>
               </div>
             </div>
+
+            {/* Bill denominations for quick change calculation */}
+            <div className="mb-4">
+              <Label className="flex items-center gap-1 mb-2 text-sm text-muted-foreground">
+                <Banknote className="h-4 w-4" />
+                Paga con:
+              </Label>
+              <div className="grid grid-cols-4 gap-2">
+                {BILL_DENOMINATIONS.map((bill) => {
+                  const isDisabled = bill.value < total;
+                  const isSelected = selectedBill === bill.value;
+                  return (
+                    <Button
+                      key={bill.value}
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleBillClick(bill.value)}
+                      disabled={isDisabled}
+                      className={`text-xs font-medium ${
+                        isDisabled ? "opacity-50" : ""
+                      } ${isSelected ? "ring-2 ring-primary ring-offset-2" : ""}`}
+                    >
+                      {bill.label}
+                    </Button>
+                  );
+                })}
+                {selectedBill !== null && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="text-xs text-muted-foreground"
+                  >
+                    Limpiar
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Change display */}
+            {change !== null && (
+              <div className="mb-4 p-3 rounded-lg bg-accent/20 border border-accent">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Recibe:</span>
+                  <span className="font-bold">{formatPrice(selectedBill!)}</span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-sm font-medium text-accent-foreground">Devuelta:</span>
+                  <span className="text-lg font-bold text-accent-foreground">
+                    {formatPrice(change)}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2 mb-4">
               <Label htmlFor="comment">Comentario de la orden</Label>
