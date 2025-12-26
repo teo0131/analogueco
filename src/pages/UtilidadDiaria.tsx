@@ -72,9 +72,9 @@ export default function UtilidadDiaria() {
     }
   });
 
-  // Fetch compras/entradas del día (costo de insumos)
-  const { data: entradasHoy = [] } = useQuery({
-    queryKey: ["entradas-hoy", hoy],
+  // Fetch compras/entradas del día (costo de insumos de productos)
+  const { data: entradasProductosHoy = [] } = useQuery({
+    queryKey: ["entradas-productos-hoy", hoy],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -94,15 +94,45 @@ export default function UtilidadDiaria() {
     }
   });
 
+  // Fetch entradas de inventario del menú del día
+  const { data: entradasMenuHoy = [] } = useQuery({
+    queryKey: ["entradas-menu-hoy", hoy],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("entradas_menu")
+        .select(`
+          *,
+          detalles:detalle_entradas_menu(costo_total, menu_item:menu_items(nombre))
+        `)
+        .eq("user_id", user.id)
+        .eq("fecha", hoy);
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   // Calcular totales
   const totales = useMemo(() => {
     const totalVentas = ventasHoy.reduce((sum, v) => sum + Number(v.total || 0), 0);
     const totalGastosOperativos = gastosOperativos.reduce((sum, g) => sum + Number(g.monto || 0), 0);
-    const totalCostoInsumos = entradasHoy.reduce((sum, e) => {
+    
+    // Costo de insumos de productos (entradas_inventario)
+    const totalCostoProductos = entradasProductosHoy.reduce((sum, e) => {
+      const costoEntrada = e.detalles?.reduce((s: number, d: { costo_total: number }) => s + Number(d.costo_total || 0), 0) || 0;
+      return sum + costoEntrada;
+    }, 0);
+
+    // Costo de entradas del menú (entradas_menu)
+    const totalCostoMenu = entradasMenuHoy.reduce((sum, e) => {
       const costoEntrada = e.detalles?.reduce((s: number, d: { costo_total: number }) => s + Number(d.costo_total || 0), 0) || 0;
       return sum + costoEntrada;
     }, 0);
     
+    const totalCostoInsumos = totalCostoProductos + totalCostoMenu;
     const totalCostos = totalGastosOperativos + totalCostoInsumos;
     const utilidad = totalVentas - totalCostos;
     const margen = totalVentas > 0 ? (utilidad / totalVentas) * 100 : 0;
@@ -113,9 +143,10 @@ export default function UtilidadDiaria() {
       totalCostoInsumos,
       totalCostos,
       utilidad,
-      margen
+      margen,
+      entradasCount: entradasProductosHoy.length + entradasMenuHoy.length
     };
-  }, [ventasHoy, gastosOperativos, entradasHoy]);
+  }, [ventasHoy, gastosOperativos, entradasProductosHoy, entradasMenuHoy]);
 
   // Mutation para agregar gasto
   const agregarGastoMutation = useMutation({
@@ -277,7 +308,7 @@ export default function UtilidadDiaria() {
               {formatCurrency(totales.totalCostoInsumos)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {entradasHoy.length} compras
+              {totales.entradasCount} compras
             </p>
           </CardContent>
         </Card>
@@ -353,7 +384,7 @@ export default function UtilidadDiaria() {
             <CardTitle className="text-lg">Compras de Insumos</CardTitle>
           </CardHeader>
           <CardContent>
-            {entradasHoy.length === 0 ? (
+            {entradasProductosHoy.length === 0 && entradasMenuHoy.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-4">
                 No hay compras registradas hoy
               </p>
@@ -361,24 +392,40 @@ export default function UtilidadDiaria() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Proveedor</TableHead>
-                    <TableHead>Factura</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Descripción</TableHead>
                     <TableHead className="text-right">Costo Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entradasHoy.map((entrada) => {
+                  {entradasProductosHoy.map((entrada) => {
                     const costoTotal = entrada.detalles?.reduce(
                       (s: number, d: { costo_total: number }) => s + Number(d.costo_total || 0),
                       0
                     ) || 0;
                     return (
                       <TableRow key={entrada.id}>
-                        <TableCell className="font-medium">
-                          {entrada.proveedor?.nombre || "Sin proveedor"}
-                        </TableCell>
+                        <TableCell className="font-medium">Productos</TableCell>
                         <TableCell className="text-muted-foreground">
-                          {entrada.numero_factura_proveedor || "-"}
+                          {entrada.proveedor?.nombre || "Sin proveedor"}
+                          {entrada.numero_factura_proveedor && ` - ${entrada.numero_factura_proveedor}`}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(costoTotal)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {entradasMenuHoy.map((entrada) => {
+                    const costoTotal = entrada.detalles?.reduce(
+                      (s: number, d: { costo_total: number }) => s + Number(d.costo_total || 0),
+                      0
+                    ) || 0;
+                    return (
+                      <TableRow key={entrada.id}>
+                        <TableCell className="font-medium">Menú</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {entrada.notas || "Entrada de inventario"}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatCurrency(costoTotal)}

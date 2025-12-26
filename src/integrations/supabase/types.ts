@@ -161,6 +161,48 @@ export type Database = {
           },
         ]
       }
+      detalle_entradas_menu: {
+        Row: {
+          cantidad: number
+          costo_total: number
+          costo_unitario: number
+          entrada_id: string
+          id: string
+          menu_item_id: string
+        }
+        Insert: {
+          cantidad?: number
+          costo_total?: number
+          costo_unitario?: number
+          entrada_id: string
+          id?: string
+          menu_item_id: string
+        }
+        Update: {
+          cantidad?: number
+          costo_total?: number
+          costo_unitario?: number
+          entrada_id?: string
+          id?: string
+          menu_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_entradas_menu_entrada_id_fkey"
+            columns: ["entrada_id"]
+            isOneToOne: false
+            referencedRelation: "entradas_menu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_entradas_menu_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       detalle_facturas_fisicas: {
         Row: {
           cantidad: number
@@ -327,6 +369,33 @@ export type Database = {
           },
         ]
       }
+      entradas_menu: {
+        Row: {
+          created_at: string
+          fecha: string
+          id: string
+          notas: string | null
+          user_id: string
+          valor_total: number
+        }
+        Insert: {
+          created_at?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          user_id: string
+          valor_total?: number
+        }
+        Update: {
+          created_at?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          user_id?: string
+          valor_total?: number
+        }
+        Relationships: []
+      }
       facturas_fisicas: {
         Row: {
           base_gravable: number
@@ -434,6 +503,8 @@ export type Database = {
       menu_items: {
         Row: {
           categoria: string | null
+          costo_promedio: number
+          costo_unitario: number
           created_at: string
           descripcion: string | null
           es_activo: boolean
@@ -441,11 +512,14 @@ export type Database = {
           nombre: string
           orden_display: number | null
           precio: number
+          stock_actual: number
           updated_at: string
           user_id: string
         }
         Insert: {
           categoria?: string | null
+          costo_promedio?: number
+          costo_unitario?: number
           created_at?: string
           descripcion?: string | null
           es_activo?: boolean
@@ -453,11 +527,14 @@ export type Database = {
           nombre: string
           orden_display?: number | null
           precio?: number
+          stock_actual?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           categoria?: string | null
+          costo_promedio?: number
+          costo_unitario?: number
           created_at?: string
           descripcion?: string | null
           es_activo?: boolean
@@ -465,6 +542,7 @@ export type Database = {
           nombre?: string
           orden_display?: number | null
           precio?: number
+          stock_actual?: number
           updated_at?: string
           user_id?: string
         }

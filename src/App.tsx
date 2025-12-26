@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import POS from "./pages/POS";
 import Landing from "./pages/Landing";
 import IngresoInventario from "./pages/IngresoInventario";
+import IngresoMenuInventario from "./pages/IngresoMenuInventario";
 import ProductosManagement from "./pages/ProductosManagement";
 import HistorialMovimientos from "./pages/HistorialMovimientos";
 import ProveedoresManagement from "./pages/ProveedoresManagement";
@@ -53,7 +54,8 @@ const App = () => (
             <Route path="/productos" element={<ProductosManagement />} />
             <Route path="/proveedores" element={<ProveedoresManagement />} />
             <Route path="/recetas" element={<RecetasManagement />} />
-            <Route path="/inventario/ingreso" element={<IngresoInventario />} />
+            <Route path="/inventario/ingreso" element={<IngresoMenuInventario />} />
+            <Route path="/inventario/ingreso-productos" element={<IngresoInventario />} />
             <Route path="/inventario/historial" element={<HistorialMovimientos />} />
             <Route path="/historial-diario" element={<HistorialDiario />} />
             <Route path="/utilidad" element={<UtilidadDiaria />} />
