@@ -30,7 +30,6 @@ const navItems = [
   { path: "/pos", label: "Facturación", icon: ShoppingCart },
   { path: "/menu", label: "Mi Menú", icon: Menu },
   { path: "/dashboard", label: "Dashboard", icon: BarChart3 },
-  { path: "/productos", label: "Productos", icon: Package },
   { path: "/proveedores", label: "Proveedores", icon: Building2 },
   { path: "/recetas", label: "Recetas", icon: ChefHat },
   { path: "/inventario/ingreso", label: "Ingreso", icon: Package },
