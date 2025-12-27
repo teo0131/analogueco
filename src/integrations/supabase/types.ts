@@ -514,6 +514,7 @@ export type Database = {
           orden_display: number | null
           precio: number
           stock_actual: number
+          tipo_item: string
           updated_at: string
           user_id: string
         }
@@ -530,6 +531,7 @@ export type Database = {
           orden_display?: number | null
           precio?: number
           stock_actual?: number
+          tipo_item?: string
           updated_at?: string
           user_id: string
         }
@@ -546,6 +548,7 @@ export type Database = {
           orden_display?: number | null
           precio?: number
           stock_actual?: number
+          tipo_item?: string
           updated_at?: string
           user_id?: string
         }

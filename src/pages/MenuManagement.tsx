@@ -20,6 +20,7 @@ interface MenuItemDB {
   es_activo: boolean;
   orden_display: number | null;
   image_url: string | null;
+  tipo_item: string;
 }
 
 const MenuManagement = () => {
@@ -35,6 +36,7 @@ const MenuManagement = () => {
     categoria: "",
     es_activo: true,
     orden_display: "0",
+    tipo_item: "retail",
   });
 
   const fetchMenuItems = async () => {
@@ -73,6 +75,7 @@ const MenuManagement = () => {
         categoria: item.categoria || "",
         es_activo: item.es_activo,
         orden_display: item.orden_display?.toString() || "0",
+        tipo_item: item.tipo_item || "retail",
       });
     } else {
       setEditingItem(null);
@@ -83,6 +86,7 @@ const MenuManagement = () => {
         categoria: "",
         es_activo: true,
         orden_display: "0",
+        tipo_item: "retail",
       });
     }
     setIsDialogOpen(true);
@@ -105,6 +109,7 @@ const MenuManagement = () => {
         categoria: formData.categoria || null,
         es_activo: formData.es_activo,
         orden_display: parseInt(formData.orden_display) || 0,
+        tipo_item: formData.tipo_item,
         user_id: user.id,
       };
 
@@ -322,6 +327,21 @@ const MenuManagement = () => {
                     ))}
                   </datalist>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tipo_item">Tipo de Producto</Label>
+                <select
+                  id="tipo_item"
+                  value={formData.tipo_item}
+                  onChange={(e) => setFormData({ ...formData, tipo_item: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="retail">Retail (stock directo)</option>
+                  <option value="receta">Receta (descuenta insumos)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Retail: el stock se reduce unitariamente al vender. Receta: los insumos se descuentan según la receta configurada.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

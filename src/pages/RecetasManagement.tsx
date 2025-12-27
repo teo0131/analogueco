@@ -354,11 +354,11 @@ const RecetasManagement = () => {
           <Alert variant="destructive">
             <Coffee className="h-4 w-4" />
             <AlertDescription>
-              <strong>No hay insumos registrados.</strong> Primero debes crear productos tipo "Insumo" en{" "}
-              <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/inventario/productos")}>
-                Gestión de Productos
+              <strong>No hay insumos registrados.</strong> Primero debes crear insumos desde{" "}
+              <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/inventario/ingreso")}>
+                Ingreso de Inventario
               </Button>{" "}
-              para poder configurar recetas.
+              (tab Insumos) para poder configurar recetas.
             </AlertDescription>
           </Alert>
         ) : (
