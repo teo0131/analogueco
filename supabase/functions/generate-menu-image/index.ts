@@ -20,6 +20,8 @@ serve(async (req) => {
 
     const prompt = `A beautiful, appetizing, professional food photography style image of ${itemName}. Clean white background, soft lighting, high quality, minimal style, bakery item, cafe style, realistic food photography.`;
 
+    console.log("Generating image for:", itemName);
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -27,13 +29,15 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
+        model: "google/gemini-2.5-flash-image-preview",
         messages: [
           { role: "user", content: prompt }
         ],
         modalities: ["image", "text"]
       }),
     });
+
+    console.log("Response status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -56,11 +60,16 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log("AI response structure:", JSON.stringify(data, null, 2));
+    
     const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!imageUrl) {
+      console.error("No image URL found in response. Full response:", JSON.stringify(data));
       throw new Error("No image generated");
     }
+
+    console.log("Image generated successfully, URL length:", imageUrl.length);
 
     return new Response(JSON.stringify({ imageUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
