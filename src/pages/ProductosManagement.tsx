@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Search, Plus, Edit, AlertTriangle } from "lucide-react";
+import { Search, Plus, Edit, AlertTriangle, PackagePlus, ArrowLeft } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface Producto {
@@ -26,12 +27,20 @@ interface Producto {
 }
 
 const ProductosManagement = () => {
+  const navigate = useNavigate();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [filteredProductos, setFilteredProductos] = useState<Producto[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Producto | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Quick stock entry state
+  const [quickStockOpen, setQuickStockOpen] = useState(false);
+  const [quickStockProduct, setQuickStockProduct] = useState<Producto | null>(null);
+  const [quickStockQty, setQuickStockQty] = useState<number>(1);
+  const [quickStockCost, setQuickStockCost] = useState<number>(0);
+  const [savingStock, setSavingStock] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -168,6 +177,75 @@ const ProductosManagement = () => {
     }
   };
 
+  const handleOpenQuickStock = (producto: Producto) => {
+    setQuickStockProduct(producto);
+    setQuickStockQty(1);
+    setQuickStockCost(producto.costo_promedio || 0);
+    setQuickStockOpen(true);
+  };
+
+  const handleQuickStockSave = async () => {
+    if (!quickStockProduct) return;
+    if (quickStockQty <= 0) {
+      toast.error("La cantidad debe ser mayor a 0");
+      return;
+    }
+    if (quickStockCost <= 0) {
+      toast.error("El costo unitario debe ser mayor a 0");
+      return;
+    }
+
+    setSavingStock(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuario no autenticado");
+
+      // Calculate new weighted average cost
+      const stockAnterior = quickStockProduct.stock_actual;
+      const costoAnterior = quickStockProduct.costo_promedio;
+      const stockTotal = stockAnterior + quickStockQty;
+      const costoPromedio = stockTotal > 0 
+        ? ((stockAnterior * costoAnterior) + (quickStockQty * quickStockCost)) / stockTotal
+        : quickStockCost;
+
+      // Update product stock and cost
+      const { error: updateError } = await supabase
+        .from('productos')
+        .update({
+          stock_actual: stockTotal,
+          costo_promedio: costoPromedio
+        })
+        .eq('id', quickStockProduct.id);
+
+      if (updateError) throw updateError;
+
+      // Create inventory movement
+      const { error: movError } = await supabase
+        .from('movimientos_inventario')
+        .insert({
+          user_id: user.id,
+          producto_id: quickStockProduct.id,
+          tipo_movimiento: 'entrada',
+          referencia: 'Ingreso rápido desde productos',
+          cantidad: quickStockQty,
+          stock_resultante: stockTotal,
+          costo_unitario_referencia: quickStockCost,
+          notas: `Ingreso rápido - ${quickStockProduct.nombre}`
+        });
+
+      if (movError) throw movError;
+
+      toast.success(`Stock actualizado: +${quickStockQty} ${quickStockProduct.unidad_inventario}`);
+      setQuickStockOpen(false);
+      setQuickStockProduct(null);
+      fetchProductos();
+    } catch (error: any) {
+      toast.error("Error al actualizar stock: " + error.message);
+    } finally {
+      setSavingStock(false);
+    }
+  };
+
   const getStockBadge = (producto: Producto) => {
     if (producto.stock_actual <= 0) {
       return <Badge variant="destructive">Sin stock</Badge>;
@@ -186,12 +264,18 @@ const ProductosManagement = () => {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground">Gestión de Productos</h1>
-            <p className="text-muted-foreground mt-2">Administra tu catálogo de productos</p>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-4xl font-bold text-foreground">Gestión de Productos e Inventario</h1>
+              <p className="text-muted-foreground mt-2">Administra tu catálogo y stock de productos</p>
+            </div>
           </div>
-          <Button onClick={() => window.location.href = "/"} variant="outline">
-            Volver al Menú
+          <Button onClick={() => navigate("/ingreso-inventario")} variant="default" className="gap-2">
+            <PackagePlus className="h-4 w-4" />
+            Ingreso con Factura
           </Button>
         </div>
 
@@ -329,7 +413,7 @@ const ProductosManagement = () => {
                 <TableHead className="text-right">Stock</TableHead>
                 <TableHead className="text-right">Costo Prom.</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Acciones</TableHead>
+                <TableHead className="text-center">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -384,13 +468,27 @@ const ProductosManagement = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenDialog(producto)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenDialog(producto)}
+                          title="Editar producto"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {(producto.tipo_producto === 'retail' || producto.tipo_producto === 'insumo') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenQuickStock(producto)}
+                            title="Ingresar stock rápido"
+                            className="gap-1"
+                          >
+                            <PackagePlus className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -403,6 +501,67 @@ const ProductosManagement = () => {
           Mostrando {filteredProductos.length} de {productos.length} productos
         </div>
       </div>
+
+      {/* Quick Stock Entry Dialog */}
+      <Dialog open={quickStockOpen} onOpenChange={setQuickStockOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PackagePlus className="h-5 w-5" />
+              Ingreso Rápido de Stock
+            </DialogTitle>
+            <DialogDescription>
+              {quickStockProduct?.nombre}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-sm text-muted-foreground">Stock actual</div>
+              <div className="text-xl font-bold">
+                {quickStockProduct?.stock_actual} {quickStockProduct?.unidad_inventario}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="quickQty">Cantidad a ingresar</Label>
+                <Input
+                  id="quickQty"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={quickStockQty}
+                  onChange={(e) => setQuickStockQty(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="quickCost">Costo unitario</Label>
+                <Input
+                  id="quickCost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={quickStockCost}
+                  onChange={(e) => setQuickStockCost(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            <div className="p-3 bg-primary/10 rounded-lg">
+              <div className="text-sm text-muted-foreground">Nuevo stock</div>
+              <div className="text-xl font-bold text-primary">
+                {((quickStockProduct?.stock_actual || 0) + quickStockQty).toFixed(2)} {quickStockProduct?.unidad_inventario}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setQuickStockOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleQuickStockSave} disabled={savingStock}>
+                {savingStock ? "Guardando..." : "Guardar Ingreso"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
