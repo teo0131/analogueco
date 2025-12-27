@@ -11,14 +11,22 @@ serve(async (req) => {
   }
 
   try {
-    const { itemName } = await req.json();
+    const { itemName, customPrompt } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const prompt = `A beautiful, appetizing, professional food photography style image of ${itemName}. Clean white background, soft lighting, high quality, minimal style, bakery item, cafe style, realistic food photography.`;
+    // Base prompt that ensures only the product is shown, without additional items
+    let prompt = `Professional food photography of a single ${itemName}, isolated product only, no other food items, no accompaniments, no plates with multiple items. Clean white or neutral background, soft studio lighting, high-end commercial photography style, sharp focus on the product, appetizing presentation.`;
+    
+    // Add custom instructions if provided
+    if (customPrompt && customPrompt.trim()) {
+      prompt += ` Additional style: ${customPrompt.trim()}.`;
+    }
+    
+    prompt += ` Ultra realistic, 4K quality, professional food styling.`;
 
     console.log("Generating image for:", itemName);
 
