@@ -106,20 +106,43 @@ const Dashboard = () => {
     },
   });
 
-  // Get completed orders from localStorage for sales stats
-  const completedOrders = useMemo(() => {
-    const saved = localStorage.getItem('completedOrders');
-    if (!saved) return [];
-    return JSON.parse(saved);
-  }, []);
+  // Fetch completed orders from database
+  const { data: ordenesPOS } = useQuery({
+    queryKey: ["dashboard-ordenes"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
 
-  // Calculate productos más vendidos
+      const thirtyDaysAgo = subDays(new Date(), 30);
+
+      const { data, error } = await supabase
+        .from("ordenes_pos")
+        .select(`
+          *,
+          detalle_ordenes_pos (
+            nombre_item,
+            cantidad,
+            subtotal
+          )
+        `)
+        .eq("user_id", user.id)
+        .gte("fecha", thirtyDaysAgo.toISOString())
+        .order("fecha", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Calculate productos más vendidos from database
   const productosMasVendidos = useMemo(() => {
+    if (!ordenesPOS) return [];
+    
     const productCount: Record<string, number> = {};
     
-    completedOrders.forEach((order: any) => {
-      order.items.forEach((item: any) => {
-        productCount[item.name] = (productCount[item.name] || 0) + 1;
+    ordenesPOS.forEach((order: any) => {
+      order.detalle_ordenes_pos?.forEach((item: any) => {
+        productCount[item.nombre_item] = (productCount[item.nombre_item] || 0) + item.cantidad;
       });
     });
 
@@ -127,12 +150,13 @@ const Dashboard = () => {
       .map(([name, count]) => ({ name, cantidad: count }))
       .sort((a, b) => b.cantidad - a.cantidad)
       .slice(0, 10);
-  }, [completedOrders]);
+  }, [ordenesPOS]);
 
-  // Calculate ventas totales
+  // Calculate ventas totales from database
   const ventasTotales = useMemo(() => {
-    return completedOrders.reduce((sum: number, order: any) => sum + order.total, 0);
-  }, [completedOrders]);
+    if (!ordenesPOS) return 0;
+    return ordenesPOS.reduce((sum: number, order: any) => sum + Number(order.total), 0);
+  }, [ordenesPOS]);
 
   // Movimientos por tipo (últimos 30 días)
   const movimientosPorTipo = useMemo(() => {
@@ -243,7 +267,7 @@ const Dashboard = () => {
                 ${ventasTotales.toLocaleString("es-CO")}
               </div>
               <p className="text-xs text-muted-foreground">
-                {completedOrders.length} órdenes completadas
+                {ordenesPOS?.length || 0} órdenes (30 días)
               </p>
             </CardContent>
           </Card>
@@ -434,7 +458,7 @@ const Dashboard = () => {
                       <div>
                         <p className="font-medium">{producto.nombre}</p>
                         <p className="text-sm text-muted-foreground">
-                          Tipo: {producto.tipo_producto === "retail" ? "Insumo" : "Preparado"}
+                          Tipo: {producto.tipo_producto === "retail" ? "Retail" : producto.tipo_producto === "insumo" ? "Insumo" : "Preparado"}
                         </p>
                       </div>
                       <div className="text-right">
