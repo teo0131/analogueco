@@ -167,9 +167,19 @@ const MenuManagement = () => {
   };
 
   const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
+  const [imagePromptDialogOpen, setImagePromptDialogOpen] = useState(false);
+  const [selectedItemForImage, setSelectedItemForImage] = useState<MenuItemDB | null>(null);
+  const [customImagePrompt, setCustomImagePrompt] = useState("");
 
-  const handleGenerateImage = async (item: MenuItemDB) => {
+  const handleOpenImageDialog = (item: MenuItemDB) => {
+    setSelectedItemForImage(item);
+    setCustomImagePrompt("");
+    setImagePromptDialogOpen(true);
+  };
+
+  const handleGenerateImage = async (item: MenuItemDB, customPrompt?: string) => {
     setGeneratingImageFor(item.id);
+    setImagePromptDialogOpen(false);
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-menu-image`,
@@ -179,7 +189,10 @@ const MenuManagement = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ itemName: item.nombre }),
+          body: JSON.stringify({ 
+            itemName: item.nombre,
+            customPrompt: customPrompt || undefined
+          }),
         }
       );
 
@@ -405,9 +418,9 @@ const MenuManagement = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleGenerateImage(item)}
+                          onClick={() => handleOpenImageDialog(item)}
                           disabled={generatingImageFor === item.id}
-                          title="Generar imagen con IA"
+                          title="Generar/Editar imagen con IA"
                         >
                           {generatingImageFor === item.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -438,6 +451,68 @@ const MenuManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para prompt de imagen */}
+      <Dialog open={imagePromptDialogOpen} onOpenChange={setImagePromptDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Generar Imagen con IA</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedItemForImage?.image_url && (
+              <div className="w-full aspect-video rounded-lg overflow-hidden bg-muted">
+                <img 
+                  src={selectedItemForImage.image_url} 
+                  alt={selectedItemForImage.nombre}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+            <div>
+              <Label>Producto: {selectedItemForImage?.nombre}</Label>
+            </div>
+            <div>
+              <Label htmlFor="customPrompt">Instrucciones adicionales (opcional)</Label>
+              <Textarea
+                id="customPrompt"
+                placeholder="Ej: 'con chocolate derretido', 'estilo rústico', 'vista cenital'..."
+                value={customImagePrompt}
+                onChange={(e) => setCustomImagePrompt(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                La imagen mostrará solo el producto, sin acompañantes adicionales.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setImagePromptDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => selectedItemForImage && handleGenerateImage(selectedItemForImage, customImagePrompt)}
+                disabled={generatingImageFor !== null}
+              >
+                {generatingImageFor ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Generar Imagen
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
