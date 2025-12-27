@@ -13,13 +13,15 @@ interface Producto {
   codigo_barra?: string;
   unidad_inventario: string;
   stock_actual: number;
+  tipo_producto?: string;
 }
 
 interface ProductSearchProps {
   onProductSelect: (producto: Producto) => void;
+  filterType?: "all" | "retail" | "insumo" | "preparado";
 }
 
-export const ProductSearch = ({ onProductSelect }: ProductSearchProps) => {
+export const ProductSearch = ({ onProductSelect, filterType = "all" }: ProductSearchProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -37,12 +39,18 @@ export const ProductSearch = ({ onProductSelect }: ProductSearchProps) => {
   const searchProductos = async (query: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let queryBuilder = supabase
         .from('productos')
-        .select('id, nombre, codigo_barra, unidad_inventario, stock_actual')
+        .select('id, nombre, codigo_barra, unidad_inventario, stock_actual, tipo_producto')
         .or(`nombre.ilike.%${query}%,codigo_barra.ilike.%${query}%,codigo_interno.ilike.%${query}%`)
-        .eq('es_activo', true)
-        .limit(10);
+        .eq('es_activo', true);
+      
+      // Apply type filter if specified
+      if (filterType !== "all") {
+        queryBuilder = queryBuilder.eq('tipo_producto', filterType);
+      }
+      
+      const { data, error } = await queryBuilder.limit(10);
 
       if (error) throw error;
       setProductos(data || []);

@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, ArrowLeft, Plus, Trash2, Save, Scan } from "lucide-react";
+import { CalendarIcon, ArrowLeft, Plus, Trash2, Save, Scan, Coffee, Package } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProveedorSelector } from "@/components/inventory/ProveedorSelector";
@@ -23,6 +24,7 @@ interface ProductoEntrada {
   producto_nombre: string;
   codigo_barra?: string;
   unidad: string;
+  tipo_producto?: string;
   cantidad_empaque: number;
   unidades_por_empaque: number;
   cantidad_total: number;
@@ -41,12 +43,19 @@ const IngresoInventario = () => {
   const [saving, setSaving] = useState(false);
 
   const handleAddProducto = (producto: any) => {
+    // Check if product already exists in the list
+    if (productos.some(p => p.producto_id === producto.id)) {
+      toast.error("Este producto ya está en la lista");
+      return;
+    }
+    
     const newProducto: ProductoEntrada = {
       id: crypto.randomUUID(),
       producto_id: producto.id,
       producto_nombre: producto.nombre,
       codigo_barra: producto.codigo_barra,
       unidad: producto.unidad_inventario,
+      tipo_producto: producto.tipo_producto,
       cantidad_empaque: 1,
       unidades_por_empaque: 1,
       cantidad_total: 1,
@@ -309,8 +318,33 @@ const IngresoInventario = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Búsqueda/Escaneo */}
-            <ProductSearch onProductSelect={handleAddProducto} />
+            {/* Tabs para tipo de producto */}
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="all" className="gap-2">
+                  <Package className="h-4 w-4" />
+                  Todos
+                </TabsTrigger>
+                <TabsTrigger value="retail" className="gap-2">
+                  <Package className="h-4 w-4" />
+                  Retail
+                </TabsTrigger>
+                <TabsTrigger value="insumo" className="gap-2">
+                  <Coffee className="h-4 w-4" />
+                  Insumos
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all">
+                <ProductSearch onProductSelect={handleAddProducto} filterType="all" />
+              </TabsContent>
+              <TabsContent value="retail">
+                <ProductSearch onProductSelect={handleAddProducto} filterType="retail" />
+              </TabsContent>
+              <TabsContent value="insumo">
+                <ProductSearch onProductSelect={handleAddProducto} filterType="insumo" />
+              </TabsContent>
+            </Tabs>
 
             {/* Tabla de Productos */}
             <div className="border rounded-lg overflow-x-auto">
@@ -339,9 +373,14 @@ const IngresoInventario = () => {
                         <td className="p-3">
                           <div className="font-medium">{producto.producto_nombre}</div>
                           <div className="text-sm text-muted-foreground">
-                            {producto.codigo_barra && `Código: ${producto.codigo_barra}`}
-                            {' • '}
+                            {producto.codigo_barra && `Código: ${producto.codigo_barra} • `}
                             {producto.unidad}
+                            {producto.tipo_producto === 'insumo' && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                                <Coffee className="h-3 w-3 mr-1" />
+                                Insumo
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="p-3">
