@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wand2, ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface MenuItemDB {
@@ -19,6 +19,7 @@ interface MenuItemDB {
   categoria: string | null;
   es_activo: boolean;
   orden_display: number | null;
+  image_url: string | null;
 }
 
 const MenuManagement = () => {
@@ -165,6 +166,48 @@ const MenuManagement = () => {
     }
   };
 
+  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
+
+  const handleGenerateImage = async (item: MenuItemDB) => {
+    setGeneratingImageFor(item.id);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-menu-image`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ itemName: item.nombre }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error generating image");
+      }
+
+      const data = await response.json();
+      
+      // Update the menu item with the image URL
+      const { error } = await supabase
+        .from("menu_items")
+        .update({ image_url: data.imageUrl })
+        .eq("id", item.id);
+
+      if (error) throw error;
+      
+      toast.success(`Imagen generada para ${item.nombre}`);
+      fetchMenuItems();
+    } catch (error) {
+      console.error("Error generating image:", error);
+      toast.error("Error al generar imagen");
+    } finally {
+      setGeneratingImageFor(null);
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -192,13 +235,33 @@ const MenuManagement = () => {
     <div className="container mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Gestión de Menú</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nuevo Item
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={async () => {
+              const itemsSinImagen = menuItems.filter(item => !item.image_url);
+              if (itemsSinImagen.length === 0) {
+                toast.info("Todos los items ya tienen imagen");
+                return;
+              }
+              toast.info(`Generando ${itemsSinImagen.length} imágenes...`);
+              for (const item of itemsSinImagen) {
+                await handleGenerateImage(item);
+              }
+              toast.success("Imágenes generadas");
+            }}
+            disabled={generatingImageFor !== null}
+          >
+            <Wand2 className="mr-2 h-4 w-4" />
+            Generar Todas las Imágenes
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleOpenDialog()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nuevo Item
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingItem ? "Editar Item" : "Nuevo Item"}</DialogTitle>
@@ -272,6 +335,7 @@ const MenuManagement = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
       <Card>
         <CardHeader>
@@ -298,6 +362,7 @@ const MenuManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">Imagen</TableHead>
                   <TableHead>Nombre</TableHead>
                   <TableHead>Categoría</TableHead>
                   <TableHead className="text-right">Precio</TableHead>
@@ -308,6 +373,15 @@ const MenuManagement = () => {
               <TableBody>
                 {filteredItems.map((item) => (
                   <TableRow key={item.id} className={!item.es_activo ? "opacity-50" : ""}>
+                    <TableCell>
+                      <div className="w-12 h-12 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.nombre} className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{item.nombre}</p>
@@ -327,7 +401,20 @@ const MenuManagement = () => {
                       />
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleGenerateImage(item)}
+                          disabled={generatingImageFor === item.id}
+                          title="Generar imagen con IA"
+                        >
+                          {generatingImageFor === item.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Wand2 className="h-4 w-4 text-primary" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

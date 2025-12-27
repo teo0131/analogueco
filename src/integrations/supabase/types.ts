@@ -509,6 +509,7 @@ export type Database = {
           descripcion: string | null
           es_activo: boolean
           id: string
+          image_url: string | null
           nombre: string
           orden_display: number | null
           precio: number
@@ -524,6 +525,7 @@ export type Database = {
           descripcion?: string | null
           es_activo?: boolean
           id?: string
+          image_url?: string | null
           nombre: string
           orden_display?: number | null
           precio?: number
@@ -539,6 +541,7 @@ export type Database = {
           descripcion?: string | null
           es_activo?: boolean
           id?: string
+          image_url?: string | null
           nombre?: string
           orden_display?: number | null
           precio?: number
