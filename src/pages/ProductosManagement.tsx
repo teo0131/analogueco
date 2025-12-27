@@ -18,7 +18,7 @@ interface Producto {
   codigo_barra: string | null;
   categoria: string | null;
   unidad_inventario: string;
-  tipo_producto: "retail" | "preparado";
+  tipo_producto: "retail" | "preparado" | "insumo";
   stock_actual: number;
   stock_minimo: number;
   costo_promedio: number;
@@ -39,7 +39,7 @@ const ProductosManagement = () => {
     codigo_barra: "",
     categoria: "",
     unidad_inventario: "unidad",
-    tipo_producto: "retail" as "retail" | "preparado",
+    tipo_producto: "retail" as "retail" | "preparado" | "insumo",
     stock_minimo: 0,
     es_activo: true,
   });
@@ -262,7 +262,7 @@ const ProductosManagement = () => {
                       <Label htmlFor="tipo_producto">Tipo de Producto</Label>
                       <Select
                         value={formData.tipo_producto}
-                        onValueChange={(value: "retail" | "preparado") =>
+                        onValueChange={(value: "retail" | "preparado" | "insumo") =>
                           setFormData({ ...formData, tipo_producto: value })
                         }
                       >
@@ -272,6 +272,7 @@ const ProductosManagement = () => {
                         <SelectContent>
                           <SelectItem value="retail">Retail (Compra-Venta)</SelectItem>
                           <SelectItem value="preparado">Preparado (Con Receta)</SelectItem>
+                          <SelectItem value="insumo">Insumo (Ingrediente para recetas)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -360,7 +361,7 @@ const ProductosManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {producto.tipo_producto === "retail" ? "Retail" : "Preparado"}
+                        {producto.tipo_producto === "retail" ? "Retail" : producto.tipo_producto === "preparado" ? "Preparado" : "Insumo"}
                       </Badge>
                     </TableCell>
                     <TableCell>{producto.categoria || "-"}</TableCell>

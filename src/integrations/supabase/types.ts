@@ -779,22 +779,32 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          producto_final_id: string
+          menu_item_id: string | null
+          producto_final_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          producto_final_id: string
+          menu_item_id?: string | null
+          producto_final_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          producto_final_id?: string
+          menu_item_id?: string | null
+          producto_final_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recetas_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recetas_producto_final_id_fkey"
             columns: ["producto_final_id"]
@@ -866,7 +876,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       tipo_movimiento: "entrada" | "salida_venta" | "ajuste" | "consumo"
-      tipo_producto: "retail" | "preparado"
+      tipo_producto: "retail" | "preparado" | "insumo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -996,7 +1006,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       tipo_movimiento: ["entrada", "salida_venta", "ajuste", "consumo"],
-      tipo_producto: ["retail", "preparado"],
+      tipo_producto: ["retail", "preparado", "insumo"],
     },
   },
 } as const

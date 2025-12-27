@@ -195,80 +195,68 @@ const POS = () => {
         return;
       }
 
-      // Process inventory deductions for prepared products
+      // Process inventory deductions based on recipes linked to menu items
       for (const item of currentItems) {
-        const { data: productos } = await supabase
-          .from("productos")
+        // Check if there's a recipe for this menu item
+        const { data: recetaData } = await supabase
+          .from("recetas")
           .select(`
             id,
-            nombre,
-            tipo_producto,
-            stock_actual,
-            recetas!recetas_producto_final_id_fkey (
-              id,
-              detalle_recetas (
-                insumo_id,
-                cantidad_insumo_por_unidad,
-                insumo:productos!detalle_recetas_insumo_id_fkey (
-                  id,
-                  nombre,
-                  stock_actual,
-                  costo_promedio,
-                  unidad_inventario
-                )
+            detalle_recetas (
+              insumo_id,
+              cantidad_insumo_por_unidad,
+              insumo:productos!detalle_recetas_insumo_id_fkey (
+                id,
+                nombre,
+                stock_actual,
+                costo_promedio,
+                unidad_inventario
               )
             )
           `)
-          .eq("nombre", item.name)
-          .eq("tipo_producto", "preparado")
-          .eq("user_id", user.id);
+          .eq("menu_item_id", item.id)
+          .maybeSingle();
 
-        if (productos && productos.length > 0) {
-          const producto = productos[0];
-          const receta = producto.recetas;
-          
-          if (receta && typeof receta === 'object' && 'detalle_recetas' in receta) {
-            for (const detalle of receta.detalle_recetas) {
-              const insumo = detalle.insumo;
-              const cantidadRequerida = detalle.cantidad_insumo_por_unidad;
-              
-              if (insumo.stock_actual < cantidadRequerida) {
-                toast.error(
-                  `Stock insuficiente de ${insumo.nombre} para preparar ${item.name}`
-                );
-                return;
-              }
-
-              const nuevoStock = insumo.stock_actual - cantidadRequerida;
-              const { error: updateError } = await supabase
-                .from("productos")
-                .update({ stock_actual: nuevoStock })
-                .eq("id", insumo.id);
-
-              if (updateError) {
-                toast.error(`Error al actualizar stock de ${insumo.nombre}`);
-                return;
-              }
-
-              const { error: movimientoError } = await supabase
-                .from("movimientos_inventario")
-                .insert({
-                  producto_id: insumo.id,
-                  tipo_movimiento: "consumo",
-                  cantidad: cantidadRequerida,
-                  stock_resultante: nuevoStock,
-                  costo_unitario_referencia: insumo.costo_promedio,
-                  referencia: `Venta POS - Orden #${orderNumber}`,
-                  notas: `Consumo para preparar: ${item.name}`,
-                  user_id: user.id,
-                });
-
-              if (movimientoError) {
-                toast.error(`Error al registrar movimiento de ${insumo.nombre}`);
-                return;
-              }
+        if (recetaData && recetaData.detalle_recetas) {
+          for (const detalle of recetaData.detalle_recetas) {
+            const insumo = detalle.insumo as any;
+            const cantidadRequerida = detalle.cantidad_insumo_por_unidad;
+            
+            if (insumo.stock_actual < cantidadRequerida) {
+              toast.error(
+                `Stock insuficiente de ${insumo.nombre} para preparar ${item.name}`
+              );
+              return;
             }
-            toast.success(`Insumos descontados para ${item.name}`);
+
+            const nuevoStock = insumo.stock_actual - cantidadRequerida;
+            const { error: updateError } = await supabase
+              .from("productos")
+              .update({ stock_actual: nuevoStock })
+              .eq("id", insumo.id);
+
+            if (updateError) {
+              toast.error(`Error al actualizar stock de ${insumo.nombre}`);
+              return;
+            }
+
+            const { error: movimientoError } = await supabase
+              .from("movimientos_inventario")
+              .insert({
+                producto_id: insumo.id,
+                tipo_movimiento: "consumo",
+                cantidad: cantidadRequerida,
+                stock_resultante: nuevoStock,
+                costo_unitario_referencia: insumo.costo_promedio,
+                referencia: `Venta POS - Orden #${orderNumber}`,
+                notas: `Consumo para preparar: ${item.name}`,
+                user_id: user.id,
+              });
+
+            if (movimientoError) {
+              toast.error(`Error al registrar movimiento de ${insumo.nombre}`);
+              return;
+            }
           }
         }
       }
