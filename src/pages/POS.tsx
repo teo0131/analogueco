@@ -36,6 +36,7 @@ interface MenuItem {
   price: number;
   description: string;
   category: string;
+  image_url?: string;
 }
 
 const POS = () => {
@@ -99,6 +100,7 @@ const POS = () => {
             price: item.precio,
             description: item.descripcion || "",
             category: item.categoria || "Sin Categoría",
+            image_url: (item as any).image_url || undefined,
           }));
           setMenuItems(items);
           setCategories(Array.from(new Set(items.map(item => item.category))));
@@ -544,7 +546,7 @@ const POS = () => {
 
                 {categories.map((category) => (
                   <TabsContent key={category} value={category} className="mt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {menuItems
                         .filter((item) => item.category === category)
                         .map((item) => (
