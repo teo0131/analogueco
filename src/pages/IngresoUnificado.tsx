@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, ArrowLeft, Plus, Trash2, Save, Package, Coffee, ShoppingBag } from "lucide-react";
+import { CalendarIcon, ArrowLeft, Plus, Trash2, Save, Package, Coffee, ShoppingBag, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProveedorSelector } from "@/components/inventory/ProveedorSelector";
@@ -74,8 +74,15 @@ const IngresoUnificado = () => {
 
   // Estado para eliminar insumo
   const [insumoToDelete, setInsumoToDelete] = useState<Insumo | null>(null);
-  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [showDeletePinDialog, setShowDeletePinDialog] = useState(false);
   const [deletingInsumo, setDeletingInsumo] = useState(false);
+
+  // Estado para ajustar stock
+  const [showAdjustStockDialog, setShowAdjustStockDialog] = useState(false);
+  const [showAdjustPinDialog, setShowAdjustPinDialog] = useState(false);
+  const [itemToAdjust, setItemToAdjust] = useState<{ id: string; nombre: string; stock_actual: number; tipo: 'menu' | 'insumo'; unidad?: string } | null>(null);
+  const [newStockValue, setNewStockValue] = useState("");
+  const [adjustmentNote, setAdjustmentNote] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -403,7 +410,89 @@ const IngresoUnificado = () => {
   const handleDeleteInsumoClick = (insumo: Insumo, e: React.MouseEvent) => {
     e.stopPropagation();
     setInsumoToDelete(insumo);
-    setShowPinDialog(true);
+    setShowDeletePinDialog(true);
+  };
+
+  // Funciones para ajuste de stock
+  const handleAdjustStockClick = (item: { id: string; nombre: string; stock_actual: number; tipo: 'menu' | 'insumo'; unidad?: string }, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setItemToAdjust(item);
+    setNewStockValue(item.stock_actual.toString());
+    setAdjustmentNote("");
+    setShowAdjustStockDialog(true);
+  };
+
+  const handleConfirmAdjustStock = () => {
+    if (!itemToAdjust) return;
+    const newStock = parseFloat(newStockValue);
+    if (isNaN(newStock) || newStock < 0) {
+      toast.error("Ingresa un valor de stock válido");
+      return;
+    }
+    setShowAdjustStockDialog(false);
+    setShowAdjustPinDialog(true);
+  };
+
+  const handleAdjustStockConfirm = async () => {
+    if (!itemToAdjust) return;
+
+    const newStock = parseFloat(newStockValue);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuario no autenticado");
+
+      if (itemToAdjust.tipo === 'insumo') {
+        // Actualizar stock del insumo
+        const { error: updateError } = await supabase
+          .from('productos')
+          .update({ stock_actual: newStock })
+          .eq('id', itemToAdjust.id);
+
+        if (updateError) throw updateError;
+
+        // Registrar movimiento de ajuste
+        const { error: movError } = await supabase
+          .from('movimientos_inventario')
+          .insert({
+            user_id: user.id,
+            producto_id: itemToAdjust.id,
+            tipo_movimiento: 'ajuste',
+            cantidad: newStock - itemToAdjust.stock_actual,
+            stock_resultante: newStock,
+            notas: adjustmentNote || `Ajuste manual de stock: ${itemToAdjust.stock_actual} → ${newStock}`
+          });
+
+        if (movError) throw movError;
+
+        // Actualizar estado local
+        setInsumos(insumos.map(i => 
+          i.id === itemToAdjust.id ? { ...i, stock_actual: newStock } : i
+        ));
+      } else {
+        // Actualizar stock del menu item
+        const { error: updateError } = await supabase
+          .from('menu_items')
+          .update({ stock_actual: newStock })
+          .eq('id', itemToAdjust.id);
+
+        if (updateError) throw updateError;
+
+        // Actualizar estado local
+        setMenuItems(menuItems.map(i => 
+          i.id === itemToAdjust.id ? { ...i, stock_actual: newStock } : i
+        ));
+      }
+
+      toast.success("Stock ajustado correctamente");
+    } catch (error: any) {
+      console.error("Error adjusting stock:", error);
+      toast.error(error.message || "Error al ajustar stock");
+    } finally {
+      setItemToAdjust(null);
+      setNewStockValue("");
+      setAdjustmentNote("");
+    }
   };
 
   const handleDeleteInsumoConfirm = async () => {
@@ -520,19 +609,34 @@ const IngresoUnificado = () => {
                         {items.map((item) => {
                           const yaAgregado = productos.some(p => p.item_id === item.id && p.tipo === 'menu');
                           return (
-                            <Button
-                              key={item.id}
-                              variant={yaAgregado ? "secondary" : "outline"}
-                              size="sm"
-                              className="w-full justify-between text-left"
-                              onClick={() => handleAddMenuItem(item)}
-                              disabled={yaAgregado}
-                            >
-                              <span className="truncate">{item.nombre}</span>
-                              <span className="text-xs text-muted-foreground ml-2">
-                                Stock: {item.stock_actual}
-                              </span>
-                            </Button>
+                            <div key={item.id} className="flex items-center gap-1">
+                              <Button
+                                variant={yaAgregado ? "secondary" : "outline"}
+                                size="sm"
+                                className="flex-1 justify-between text-left"
+                                onClick={() => handleAddMenuItem(item)}
+                                disabled={yaAgregado}
+                              >
+                                <span className="truncate">{item.nombre}</span>
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  Stock: {item.stock_actual}
+                                </span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                onClick={(e) => handleAdjustStockClick({ 
+                                  id: item.id, 
+                                  nombre: item.nombre, 
+                                  stock_actual: item.stock_actual, 
+                                  tipo: 'menu' 
+                                }, e)}
+                                title="Ajustar stock"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
                           );
                         })}
                       </div>
@@ -587,6 +691,21 @@ const IngresoUnificado = () => {
                               <span className="text-xs text-muted-foreground ml-2">
                                 {insumo.stock_actual} {insumo.unidad_inventario}
                               </span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              onClick={(e) => handleAdjustStockClick({ 
+                                id: insumo.id, 
+                                nombre: insumo.nombre, 
+                                stock_actual: insumo.stock_actual, 
+                                tipo: 'insumo',
+                                unidad: insumo.unidad_inventario 
+                              }, e)}
+                              title="Ajustar stock"
+                            >
+                              <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -878,14 +997,77 @@ const IngresoUnificado = () => {
 
         {/* PIN Verification Dialog para eliminar insumo */}
         <PinVerificationDialog
-          open={showPinDialog}
+          open={showDeletePinDialog}
           onOpenChange={(open) => {
-            setShowPinDialog(open);
+            setShowDeletePinDialog(open);
             if (!open) setInsumoToDelete(null);
           }}
           onSuccess={handleDeleteInsumoConfirm}
           title="Eliminar Insumo"
           description={`¿Estás seguro de eliminar "${insumoToDelete?.nombre}"? Ingresa tu PIN de seguridad.`}
+        />
+
+        {/* Dialog para ajustar stock */}
+        <Dialog open={showAdjustStockDialog} onOpenChange={setShowAdjustStockDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Ajustar Stock</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="text-sm text-muted-foreground">
+                Producto: <span className="font-medium text-foreground">{itemToAdjust?.nombre}</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Stock actual: <span className="font-medium text-foreground">{itemToAdjust?.stock_actual} {itemToAdjust?.unidad || 'unidades'}</span>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-stock">Nuevo Stock *</Label>
+                <Input
+                  id="new-stock"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newStockValue}
+                  onChange={(e) => setNewStockValue(e.target.value)}
+                  placeholder="Ingresa el stock real"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adjustment-note">Nota del ajuste (opcional)</Label>
+                <Textarea
+                  id="adjustment-note"
+                  value={adjustmentNote}
+                  onChange={(e) => setAdjustmentNote(e.target.value)}
+                  placeholder="Ej: Conteo físico, merma, etc."
+                  rows={2}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAdjustStockDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleConfirmAdjustStock}>
+                Continuar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* PIN Verification Dialog para ajustar stock */}
+        <PinVerificationDialog
+          open={showAdjustPinDialog}
+          onOpenChange={(open) => {
+            setShowAdjustPinDialog(open);
+            if (!open) {
+              setItemToAdjust(null);
+              setNewStockValue("");
+              setAdjustmentNote("");
+            }
+          }}
+          onSuccess={handleAdjustStockConfirm}
+          title="Confirmar Ajuste de Stock"
+          description={`Ingresa tu PIN para ajustar el stock de "${itemToAdjust?.nombre}" de ${itemToAdjust?.stock_actual} a ${newStockValue}.`}
         />
       </div>
     </div>
