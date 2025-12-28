@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { History, ChevronRight, Trash2, FileText, AlertTriangle } from "lucide-react";
+import { PinVerificationDialog } from "./PinVerificationDialog";
 
 export interface CompletedOrder {
   id: string | number;
@@ -23,6 +24,8 @@ interface OrderHistoryProps {
 
 export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder, onGenerateInvoice }: OrderHistoryProps) => {
   const [orderToDelete, setOrderToDelete] = useState<CompletedOrder | null>(null);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -40,10 +43,20 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder, onGenerateI
     }).format(date);
   };
 
+  const handleDeleteClick = (order: CompletedOrder) => {
+    setOrderToDelete(order);
+    setShowPinDialog(true);
+  };
+
+  const handlePinSuccess = () => {
+    setShowConfirmDialog(true);
+  };
+
   const handleConfirmDelete = () => {
     if (orderToDelete) {
       onDeleteOrder(orderToDelete.id);
       setOrderToDelete(null);
+      setShowConfirmDialog(false);
     }
   };
 
@@ -102,7 +115,7 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder, onGenerateI
                         size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setOrderToDelete(order);
+                          handleDeleteClick(order);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -116,8 +129,23 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder, onGenerateI
         </CardContent>
       </Card>
 
+      {/* PIN Verification Dialog */}
+      <PinVerificationDialog
+        open={showPinDialog}
+        onOpenChange={(open) => {
+          setShowPinDialog(open);
+          if (!open) setOrderToDelete(null);
+        }}
+        onSuccess={handlePinSuccess}
+        title="Eliminar Orden"
+        description={`Ingresa tu PIN para eliminar la Orden #${orderToDelete?.orderNumber}`}
+      />
+
       {/* Diálogo de confirmación para eliminar orden */}
-      <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
+      <AlertDialog open={showConfirmDialog} onOpenChange={(open) => {
+        setShowConfirmDialog(open);
+        if (!open) setOrderToDelete(null);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
