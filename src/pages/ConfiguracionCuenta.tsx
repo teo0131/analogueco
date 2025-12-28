@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { User, Lock, Store, Save, Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
+import { User, Lock, Store, Save, Eye, EyeOff, CheckCircle, AlertCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 export default function ConfiguracionCuenta() {
   const queryClient = useQueryClient();
@@ -18,6 +19,9 @@ export default function ConfiguracionCuenta() {
   const [showCurrentPin, setShowCurrentPin] = useState(false);
   const [showNewPin, setShowNewPin] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [showEmailPinDialog, setShowEmailPinDialog] = useState(false);
+  const [changingEmail, setChangingEmail] = useState(false);
 
   // Fetch user settings
   const { data: settings, isLoading } = useQuery({
@@ -137,6 +141,55 @@ export default function ConfiguracionCuenta() {
     updatePinMutation.mutate({ currentPin, newPin });
   };
 
+  const handleChangeEmailClick = () => {
+    if (!newEmail.trim()) {
+      toast.error("Ingresa el nuevo correo electrónico");
+      return;
+    }
+
+    if (newEmail === userEmail) {
+      toast.error("El nuevo correo debe ser diferente al actual");
+      return;
+    }
+
+    // Validar formato de email básico
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      toast.error("Ingresa un correo electrónico válido");
+      return;
+    }
+
+    // Si tiene PIN configurado, pedir verificación
+    if (settings?.pin_seguridad) {
+      setShowEmailPinDialog(true);
+    } else {
+      handleChangeEmailConfirm();
+    }
+  };
+
+  const handleChangeEmailConfirm = async () => {
+    setChangingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: newEmail,
+      });
+
+      if (error) throw error;
+
+      toast.success(
+        "Se ha enviado un enlace de confirmación a ambos correos. Revisa tu bandeja de entrada para confirmar el cambio.",
+        { duration: 8000 }
+      );
+      setNewEmail("");
+    } catch (error: any) {
+      console.error("Error changing email:", error);
+      toast.error(error.message || "Error al cambiar el correo electrónico");
+    } finally {
+      setChangingEmail(false);
+      setShowEmailPinDialog(false);
+    }
+  };
+
   const hasPin = !!settings?.pin_seguridad;
 
   if (isLoading) {
@@ -169,12 +222,49 @@ export default function ConfiguracionCuenta() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Correo Electrónico</Label>
+            <Label>Correo Electrónico Actual</Label>
             <Input value={userEmail} disabled className="bg-muted" />
-            <p className="text-xs text-muted-foreground">
-              El correo electrónico no se puede cambiar
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cambiar correo electrónico */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Cambiar Correo Electrónico
+          </CardTitle>
+          <CardDescription>
+            Transfiere tu cuenta a otro correo. Se enviará un enlace de confirmación a ambos correos.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              <AlertCircle className="h-4 w-4 inline mr-2" />
+              Deberás confirmar el cambio desde ambos correos (actual y nuevo) para completar la transferencia.
             </p>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="new-email">Nuevo Correo Electrónico</Label>
+            <Input
+              id="new-email"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="nuevo@correo.com"
+            />
+          </div>
+
+          <Button
+            onClick={handleChangeEmailClick}
+            disabled={changingEmail || !newEmail.trim()}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            {changingEmail ? "Enviando..." : "Cambiar Correo"}
+          </Button>
         </CardContent>
       </Card>
 
@@ -326,6 +416,15 @@ export default function ConfiguracionCuenta() {
           </div>
         </CardContent>
       </Card>
+
+      {/* PIN verification dialog for email change */}
+      <PinVerificationDialog
+        open={showEmailPinDialog}
+        onOpenChange={setShowEmailPinDialog}
+        onSuccess={handleChangeEmailConfirm}
+        title="Verificar PIN"
+        description="Ingresa tu PIN de seguridad para confirmar el cambio de correo"
+      />
     </div>
   );
 }
