@@ -22,6 +22,7 @@ import {
   Users,
   MessageSquare,
   TrendingUp,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,6 +39,7 @@ const navItems = [
   { path: "/historial-diario", label: "Ventas Diarias", icon: Calendar },
   { path: "/utilidad", label: "Utilidad", icon: TrendingUp },
   { path: "/configuracion-fiscal", label: "Datos Fiscales", icon: Receipt },
+  { path: "/configuracion-cuenta", label: "Mi Cuenta", icon: Settings },
 ];
 
 const adminNavItems = [
