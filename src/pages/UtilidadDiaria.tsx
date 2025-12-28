@@ -35,7 +35,7 @@ export default function UtilidadDiaria() {
   const hoy = format(new Date(), "yyyy-MM-dd");
   const hoyDisplay = format(new Date(), "EEEE, d 'de' MMMM", { locale: es });
 
-  // Fetch ventas del día (ordenes_pos)
+  // Fetch ventas del día (ordenes_pos) con detalles para calcular utilidad bruta
   const { data: ventasHoy = [] } = useQuery({
     queryKey: ["ventas-hoy", hoy],
     queryFn: async () => {
@@ -44,10 +44,35 @@ export default function UtilidadDiaria() {
 
       const { data, error } = await supabase
         .from("ordenes_pos")
-        .select("*")
+        .select(`
+          *,
+          detalles:detalle_ordenes_pos(
+            cantidad,
+            precio_unitario,
+            subtotal,
+            menu_item_id
+          )
+        `)
         .eq("user_id", user.id)
         .gte("fecha", `${hoy}T00:00:00`)
         .lt("fecha", `${hoy}T23:59:59`);
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch menu_items para obtener costo_promedio
+  const { data: menuItems = [] } = useQuery({
+    queryKey: ["menu-items-costos"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("menu_items")
+        .select("id, costo_promedio, costo_unitario")
+        .eq("user_id", user.id);
 
       if (error) throw error;
       return data || [];
@@ -115,9 +140,42 @@ export default function UtilidadDiaria() {
     }
   });
 
+  // Mapa de costos por menu_item_id
+  const costosMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    menuItems.forEach((item) => {
+      const costo = Number(item.costo_promedio) || Number(item.costo_unitario) || 0;
+      map[item.id] = costo;
+    });
+    return map;
+  }, [menuItems]);
+
+  // Calcular utilidad bruta por venta
+  const ventasConUtilidad = useMemo(() => {
+    return ventasHoy.map((venta) => {
+      const detalles = venta.detalles || [];
+      let costoTotal = 0;
+      
+      detalles.forEach((det: { cantidad: number; menu_item_id: string | null }) => {
+        if (det.menu_item_id) {
+          const costoUnitario = costosMap[det.menu_item_id] || 0;
+          costoTotal += costoUnitario * det.cantidad;
+        }
+      });
+      
+      const utilidadBruta = Number(venta.total) - costoTotal;
+      return {
+        ...venta,
+        costoTotal,
+        utilidadBruta
+      };
+    });
+  }, [ventasHoy, costosMap]);
+
   // Calcular totales
   const totales = useMemo(() => {
-    const totalVentas = ventasHoy.reduce((sum, v) => sum + Number(v.total || 0), 0);
+    const totalVentas = ventasConUtilidad.reduce((sum, v) => sum + Number(v.total || 0), 0);
+    const totalUtilidadBruta = ventasConUtilidad.reduce((sum, v) => sum + v.utilidadBruta, 0);
     const totalGastosOperativos = gastosOperativos.reduce((sum, g) => sum + Number(g.monto || 0), 0);
     
     // Costo de insumos de productos (entradas_inventario)
@@ -136,9 +194,12 @@ export default function UtilidadDiaria() {
     const totalCostos = totalGastosOperativos + totalCostoInsumos;
     const utilidad = totalVentas - totalCostos;
     const margen = totalVentas > 0 ? (utilidad / totalVentas) * 100 : 0;
+    const margenBruto = totalVentas > 0 ? (totalUtilidadBruta / totalVentas) * 100 : 0;
 
     return {
       totalVentas,
+      totalUtilidadBruta,
+      margenBruto,
       totalGastosOperativos,
       totalCostoInsumos,
       totalCostos,
@@ -146,7 +207,7 @@ export default function UtilidadDiaria() {
       margen,
       entradasCount: entradasProductosHoy.length + entradasMenuHoy.length
     };
-  }, [ventasHoy, gastosOperativos, entradasProductosHoy, entradasMenuHoy]);
+  }, [ventasConUtilidad, gastosOperativos, entradasProductosHoy, entradasMenuHoy]);
 
   // Mutation para agregar gasto
   const agregarGastoMutation = useMutation({
@@ -267,7 +328,7 @@ export default function UtilidadDiaria() {
       </div>
 
       {/* KPIs Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ventas del Día</CardTitle>
@@ -278,7 +339,22 @@ export default function UtilidadDiaria() {
               {formatCurrency(totales.totalVentas)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {ventasHoy.length} órdenes
+              {ventasConUtilidad.length} órdenes
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className={totales.totalUtilidadBruta >= 0 ? "border-blue-500/50" : "border-red-500/50"}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Utilidad Bruta</CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${totales.totalUtilidadBruta >= 0 ? "text-blue-600" : "text-red-600"}`}>
+              {formatCurrency(totales.totalUtilidadBruta)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Margen: {totales.margenBruto.toFixed(1)}%
             </p>
           </CardContent>
         </Card>
@@ -332,6 +408,61 @@ export default function UtilidadDiaria() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Ventas con utilidad bruta */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Ventas del Día - Utilidad Bruta</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {ventasConUtilidad.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-4">
+              No hay ventas registradas hoy
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Orden #</TableHead>
+                  <TableHead>Hora</TableHead>
+                  <TableHead className="text-right">Venta</TableHead>
+                  <TableHead className="text-right">Costo</TableHead>
+                  <TableHead className="text-right">Utilidad Bruta</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ventasConUtilidad.map((venta) => (
+                  <TableRow key={venta.id}>
+                    <TableCell className="font-medium">#{venta.numero_orden}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {format(new Date(venta.fecha), "HH:mm")}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(Number(venta.total))}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {formatCurrency(venta.costoTotal)}
+                    </TableCell>
+                    <TableCell className={`text-right font-medium ${venta.utilidadBruta >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                      {formatCurrency(venta.utilidadBruta)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-muted/50 font-bold">
+                  <TableCell colSpan={2}>Total</TableCell>
+                  <TableCell className="text-right">{formatCurrency(totales.totalVentas)}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {formatCurrency(ventasConUtilidad.reduce((sum, v) => sum + v.costoTotal, 0))}
+                  </TableCell>
+                  <TableCell className={`text-right ${totales.totalUtilidadBruta >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                    {formatCurrency(totales.totalUtilidadBruta)}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Resumen de costos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
