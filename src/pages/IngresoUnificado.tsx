@@ -18,6 +18,7 @@ import { CalendarIcon, ArrowLeft, Plus, Trash2, Save, Package, Coffee, ShoppingB
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProveedorSelector } from "@/components/inventory/ProveedorSelector";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 interface MenuItem {
   id: string;
@@ -70,6 +71,11 @@ const IngresoUnificado = () => {
     unidad_inventario: "unidad",
     stock_minimo: "0"
   });
+
+  // Estado para eliminar insumo
+  const [insumoToDelete, setInsumoToDelete] = useState<Insumo | null>(null);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [deletingInsumo, setDeletingInsumo] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -394,6 +400,37 @@ const IngresoUnificado = () => {
     }
   };
 
+  const handleDeleteInsumoClick = (insumo: Insumo, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInsumoToDelete(insumo);
+    setShowPinDialog(true);
+  };
+
+  const handleDeleteInsumoConfirm = async () => {
+    if (!insumoToDelete) return;
+
+    setDeletingInsumo(true);
+    try {
+      const { error } = await supabase
+        .from('productos')
+        .delete()
+        .eq('id', insumoToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Insumo eliminado");
+      setInsumos(insumos.filter(i => i.id !== insumoToDelete.id));
+      // También remover de productos si está agregado
+      setProductos(productos.filter(p => !(p.item_id === insumoToDelete.id && p.tipo === 'insumo')));
+    } catch (error: any) {
+      console.error("Error deleting insumo:", error);
+      toast.error(error.message || "Error al eliminar insumo");
+    } finally {
+      setDeletingInsumo(false);
+      setInsumoToDelete(null);
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -538,19 +575,28 @@ const IngresoUnificado = () => {
                       {filteredInsumos.map((insumo) => {
                         const yaAgregado = productos.some(p => p.item_id === insumo.id && p.tipo === 'insumo');
                         return (
-                          <Button
-                            key={insumo.id}
-                            variant={yaAgregado ? "secondary" : "outline"}
-                            size="sm"
-                            className="w-full justify-between text-left"
-                            onClick={() => handleAddInsumo(insumo)}
-                            disabled={yaAgregado}
-                          >
-                            <span className="truncate">{insumo.nombre}</span>
-                            <span className="text-xs text-muted-foreground ml-2">
-                              {insumo.stock_actual} {insumo.unidad_inventario}
-                            </span>
-                          </Button>
+                          <div key={insumo.id} className="flex items-center gap-1">
+                            <Button
+                              variant={yaAgregado ? "secondary" : "outline"}
+                              size="sm"
+                              className="flex-1 justify-between text-left"
+                              onClick={() => handleAddInsumo(insumo)}
+                              disabled={yaAgregado}
+                            >
+                              <span className="truncate">{insumo.nombre}</span>
+                              <span className="text-xs text-muted-foreground ml-2">
+                                {insumo.stock_actual} {insumo.unidad_inventario}
+                              </span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => handleDeleteInsumoClick(insumo, e)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         );
                       })}
                     </>
@@ -829,6 +875,18 @@ const IngresoUnificado = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* PIN Verification Dialog para eliminar insumo */}
+        <PinVerificationDialog
+          open={showPinDialog}
+          onOpenChange={(open) => {
+            setShowPinDialog(open);
+            if (!open) setInsumoToDelete(null);
+          }}
+          onSuccess={handleDeleteInsumoConfirm}
+          title="Eliminar Insumo"
+          description={`¿Estás seguro de eliminar "${insumoToDelete?.nombre}"? Ingresa tu PIN de seguridad.`}
+        />
       </div>
     </div>
   );
