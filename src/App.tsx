@@ -16,6 +16,7 @@ import RecetasManagement from "./pages/RecetasManagement";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import ConfiguracionFiscal from "./pages/ConfiguracionFiscal";
+import ConfiguracionCuenta from "./pages/ConfiguracionCuenta";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 import PendingApproval from "./pages/PendingApproval";
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/historial-diario" element={<HistorialDiario />} />
             <Route path="/utilidad" element={<UtilidadDiaria />} />
             <Route path="/configuracion-fiscal" element={<ConfiguracionFiscal />} />
+            <Route path="/configuracion-cuenta" element={<ConfiguracionCuenta />} />
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
             <Route path="/admin/chat-insights" element={<AdminChatInsights />} />
           </Route>
