@@ -33,6 +33,7 @@ const navItems = [
   { path: "/proveedores", label: "Proveedores", icon: Building2 },
   { path: "/recetas", label: "Recetas", icon: ChefHat },
   { path: "/inventario/ingreso", label: "Ingreso", icon: Package },
+  { path: "/inventario/historial-ingresos", label: "Historial Ingresos", icon: Calendar },
   { path: "/inventario/historial", label: "Kardex", icon: History },
   { path: "/historial-diario", label: "Ventas Diarias", icon: Calendar },
   { path: "/utilidad", label: "Utilidad", icon: TrendingUp },

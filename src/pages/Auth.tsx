@@ -7,13 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Box } from "lucide-react";
+import { Box, Lock } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [pinSeguridad, setPinSeguridad] = useState("");
 
   useEffect(() => {
     // Check if user is already logged in
@@ -60,8 +61,14 @@ const Auth = () => {
       return;
     }
 
+    if (pinSeguridad.length !== 4 || !/^\d{4}$/.test(pinSeguridad)) {
+      toast.error("El PIN debe ser de exactamente 4 dígitos numéricos");
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    
+    const { data: signupData, error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -69,16 +76,33 @@ const Auth = () => {
       },
     });
 
-    if (error) {
-      if (error.message.includes("already registered")) {
+    if (signupError) {
+      if (signupError.message.includes("already registered")) {
         toast.error("Este correo ya está registrado. Intenta iniciar sesión.");
       } else {
-        toast.error(error.message);
+        toast.error(signupError.message);
       }
-    } else {
-      toast.success("¡Cuenta creada exitosamente! Iniciando sesión...");
-      navigate("/");
+      setLoading(false);
+      return;
     }
+
+    // Si el registro fue exitoso, guardar el PIN en user_settings
+    if (signupData.user) {
+      const { error: settingsError } = await supabase
+        .from("user_settings")
+        .upsert({
+          user_id: signupData.user.id,
+          pin_seguridad: pinSeguridad,
+        }, { onConflict: "user_id" });
+
+      if (settingsError) {
+        console.error("Error saving PIN:", settingsError);
+        // No bloqueamos el registro por esto, el usuario puede configurarlo después
+      }
+    }
+
+    toast.success("¡Cuenta creada exitosamente! Iniciando sesión...");
+    navigate("/");
     setLoading(false);
   };
 
@@ -161,6 +185,31 @@ const Auth = () => {
                     required
                     minLength={6}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-pin" className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    PIN de Seguridad (4 dígitos)
+                  </Label>
+                  <Input
+                    id="signup-pin"
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    placeholder="••••"
+                    value={pinSeguridad}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      setPinSeguridad(value);
+                    }}
+                    disabled={loading}
+                    required
+                    className="text-center text-xl tracking-widest"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Este PIN se usará para eliminar órdenes e ingresos
+                  </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Cargando..." : "Crear Cuenta"}
