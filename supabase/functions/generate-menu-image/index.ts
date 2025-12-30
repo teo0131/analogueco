@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,11 +12,17 @@ serve(async (req) => {
   }
 
   try {
-    const { itemName, customPrompt } = await req.json();
+    const { itemName, customPrompt, menuItemId } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("Supabase credentials not configured");
     }
 
     // Base prompt that ensures only the product is shown, without additional items
@@ -68,16 +75,49 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log("AI response structure:", JSON.stringify(data, null, 2));
+    console.log("AI response received");
     
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const base64ImageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-    if (!imageUrl) {
-      console.error("No image URL found in response. Full response:", JSON.stringify(data));
+    if (!base64ImageUrl) {
+      console.error("No image URL found in response");
       throw new Error("No image generated");
     }
 
-    console.log("Image generated successfully, URL length:", imageUrl.length);
+    // Extract base64 data and convert to blob
+    const base64Data = base64ImageUrl.replace(/^data:image\/\w+;base64,/, "");
+    const imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    // Create Supabase client with service role for storage upload
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Generate unique filename
+    const timestamp = Date.now();
+    const sanitizedName = itemName.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30);
+    const fileName = `${menuItemId || 'item'}-${sanitizedName}-${timestamp}.png`;
+    
+    console.log("Uploading image to storage:", fileName);
+    
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('menu-images')
+      .upload(fileName, imageBytes, {
+        contentType: 'image/png',
+        upsert: true
+      });
+    
+    if (uploadError) {
+      console.error("Storage upload error:", uploadError);
+      throw new Error(`Failed to upload image: ${uploadError.message}`);
+    }
+    
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('menu-images')
+      .getPublicUrl(fileName);
+    
+    const imageUrl = publicUrlData.publicUrl;
+    console.log("Image uploaded successfully:", imageUrl);
 
     return new Response(JSON.stringify({ imageUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
