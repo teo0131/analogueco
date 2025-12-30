@@ -196,7 +196,8 @@ const MenuManagement = () => {
           },
           body: JSON.stringify({ 
             itemName: item.nombre,
-            customPrompt: customPrompt || undefined
+            customPrompt: customPrompt || undefined,
+            menuItemId: item.id
           }),
         }
       );

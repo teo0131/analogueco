@@ -37,6 +37,8 @@ export const MenuItemButton = ({ item, onAdd }: MenuItemButtonProps) => {
           <img 
             src={item.image_url} 
             alt={item.name}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
           />
         ) : (
