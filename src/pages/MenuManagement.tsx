@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useWindowScrollPosition } from "@/hooks/useScrollPosition";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +24,6 @@ interface MenuItemDB {
 }
 
 const MenuManagement = () => {
-  useWindowScrollPosition("menu-management");
   const [menuItems, setMenuItems] = useState<MenuItemDB[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");

@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useWindowScrollPosition } from "@/hooks/useScrollPosition";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MenuItemButton } from "@/components/MenuItemButton";
@@ -45,7 +44,7 @@ interface MenuItem {
 }
 
 const POS = () => {
-  useWindowScrollPosition("pos");
+  const scrollPositionRef = useRef(0);
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -56,6 +55,16 @@ const POS = () => {
   const [deletedOrders, setDeletedOrders] = useState<CompletedOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<CompletedOrder | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const setDetailOpen = (open: boolean) => {
+    if (open) {
+      scrollPositionRef.current = window.scrollY;
+    }
+    setIsDetailOpen(open);
+    if (!open) {
+      requestAnimationFrame(() => window.scrollTo(0, scrollPositionRef.current));
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [storeName, setStoreName] = useState("");
   const [storeNameInput, setStoreNameInput] = useState("");
@@ -357,6 +366,7 @@ const POS = () => {
   };
 
   const handleSelectOrder = (order: CompletedOrder) => {
+    scrollPositionRef.current = window.scrollY;
     setSelectedOrder(order);
     setIsDetailOpen(true);
   };
@@ -723,7 +733,7 @@ const POS = () => {
       <OrderDetail
         order={selectedOrder}
         open={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
+        onClose={() => setDetailOpen(false)}
       />
 
       {/* Invoice Generation Modal */}

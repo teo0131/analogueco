@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDialogScrollPreserve } from "@/hooks/useDialogScrollPreserve";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -34,9 +35,9 @@ type ProveedorFormData = {
 };
 
 const ProveedoresManagement = () => {
+  const { isOpen: isDialogOpen, setDialogOpen, restoreScroll } = useDialogScrollPreserve();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -179,11 +180,11 @@ const ProveedoresManagement = () => {
         observaciones: "",
       });
     }
-    setIsDialogOpen(true);
+    setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+    setDialogOpen(false);
     setSelectedProveedor(null);
     setFormData({
       nombre: "",
@@ -191,6 +192,7 @@ const ProveedoresManagement = () => {
       contacto: "",
       observaciones: "",
     });
+    restoreScroll();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -324,7 +326,7 @@ const ProveedoresManagement = () => {
       </div>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>

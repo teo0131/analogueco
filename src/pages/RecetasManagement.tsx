@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useWindowScrollPosition } from "@/hooks/useScrollPosition";
+import { useDialogScrollPreserve } from "@/hooks/useDialogScrollPreserve";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -56,10 +56,9 @@ type InsumoReceta = {
 };
 
 const RecetasManagement = () => {
-  useWindowScrollPosition("recetas-management");
+  const { isOpen: isDialogOpen, setDialogOpen, restoreScroll } = useDialogScrollPreserve();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const [selectedReceta, setSelectedReceta] = useState<Receta | null>(null);
   const [insumos, setInsumos] = useState<InsumoReceta[]>([]);
@@ -252,16 +251,17 @@ const RecetasManagement = () => {
       setInsumos([]);
     }
     
-    setIsDialogOpen(true);
+    setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+    setDialogOpen(false);
     setSelectedMenuItem(null);
     setSelectedReceta(null);
     setInsumos([]);
     setCurrentInsumoId("");
     setCurrentCantidad("");
+    restoreScroll();
   };
 
   const handleAddInsumo = () => {
@@ -508,7 +508,7 @@ const RecetasManagement = () => {
       </div>
 
       {/* Dialog for creating/editing receta */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
