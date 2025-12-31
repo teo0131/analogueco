@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useWindowScrollPosition } from "@/hooks/useScrollPosition";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,7 +55,7 @@ interface EntradaInventario {
 }
 
 export default function HistorialIngresos() {
-  useWindowScrollPosition("historial-ingresos");
+  const scrollPositionRef = useRef(0);
   const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: startOfMonth(new Date()),
@@ -65,6 +64,16 @@ export default function HistorialIngresos() {
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [entryToDelete, setEntryToDelete] = useState<{ id: string; type: 'menu' | 'inventario'; total: number } | null>(null);
   const [showPinDialog, setShowPinDialog] = useState(false);
+
+  const openPinDialog = () => {
+    scrollPositionRef.current = window.scrollY;
+    setShowPinDialog(true);
+  };
+
+  const closePinDialog = () => {
+    setShowPinDialog(false);
+    requestAnimationFrame(() => window.scrollTo(0, scrollPositionRef.current));
+  };
 
   // Fetch entradas de menú
   const { data: entradasMenu = [], isLoading: loadingMenu } = useQuery({
@@ -187,7 +196,7 @@ export default function HistorialIngresos() {
 
   const handleDeleteClick = (id: string, type: 'menu' | 'inventario', total: number) => {
     setEntryToDelete({ id, type, total });
-    setShowPinDialog(true);
+    openPinDialog();
   };
 
   const handlePinSuccess = () => {
@@ -428,7 +437,10 @@ export default function HistorialIngresos() {
       {/* PIN Verification Dialog */}
       <PinVerificationDialog
         open={showPinDialog}
-        onOpenChange={setShowPinDialog}
+        onOpenChange={(open) => {
+          if (!open) closePinDialog();
+          else openPinDialog();
+        }}
         onSuccess={handlePinSuccess}
         title="Eliminar Ingreso"
         description={`Ingresa tu PIN para eliminar este ingreso de ${entryToDelete ? formatCurrency(entryToDelete.total) : ''}`}
