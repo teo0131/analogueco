@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useWindowScrollPosition } from "@/hooks/useScrollPosition";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +56,7 @@ interface EntradaInventario {
 }
 
 export default function HistorialIngresos() {
+  useWindowScrollPosition("historial-ingresos");
   const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: startOfMonth(new Date()),

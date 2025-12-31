@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useWindowScrollPosition } from "@/hooks/useScrollPosition";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ type InsumoReceta = {
 };
 
 const RecetasManagement = () => {
+  useWindowScrollPosition("recetas-management");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
