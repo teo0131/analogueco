@@ -64,7 +64,7 @@ const RecetasManagement = () => {
   const [currentInsumoId, setCurrentInsumoId] = useState("");
   const [currentCantidad, setCurrentCantidad] = useState("");
 
-  // Fetch menu items
+  // Fetch menu items (only recipe type, exclude retail/direct stock)
   const { data: menuItems } = useQuery({
     queryKey: ["menu-items-for-recipes"],
     queryFn: async () => {
@@ -76,6 +76,7 @@ const RecetasManagement = () => {
         .select("id, nombre, categoria, precio")
         .eq("user_id", user.id)
         .eq("es_activo", true)
+        .eq("tipo_item", "receta")
         .order("categoria")
         .order("nombre");
 
