@@ -44,10 +44,27 @@ const MenuManagement = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastListScrollYRef = useRef(0);
+
+  const setDialogOpen = (open: boolean) => {
+    if (open) {
+      lastListScrollYRef.current = window.scrollY;
+    }
+
+    setIsDialogOpen(open);
+
+    if (!open) {
+      requestAnimationFrame(() => {
+        window.scrollTo(0, lastListScrollYRef.current);
+      });
+    }
+  };
 
   const fetchMenuItems = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data, error } = await supabase
@@ -72,6 +89,9 @@ const MenuManagement = () => {
   }, []);
 
   const handleOpenDialog = (item?: MenuItemDB) => {
+    // Guardar scroll actual antes de abrir el modal
+    lastListScrollYRef.current = window.scrollY;
+
     if (item) {
       setEditingItem(item);
       setFormData({
@@ -98,7 +118,7 @@ const MenuManagement = () => {
       setImagePreview(null);
     }
     setSelectedImage(null);
-    setIsDialogOpen(true);
+    setDialogOpen(true);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,10 +238,11 @@ const MenuManagement = () => {
         toast.success("Item creado");
       }
 
-      setIsDialogOpen(false);
+      setDialogOpen(false);
       setSelectedImage(null);
       setImagePreview(null);
-      fetchMenuItems();
+      await fetchMenuItems();
+      requestAnimationFrame(() => window.scrollTo(0, lastListScrollYRef.current));
     } catch (error) {
       console.error("Error saving item:", error);
       toast.error("Error al guardar");
@@ -299,7 +320,7 @@ const MenuManagement = () => {
     <div className="container mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Gestión de Menú</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenDialog()}>
               <Plus className="mr-2 h-4 w-4" />
