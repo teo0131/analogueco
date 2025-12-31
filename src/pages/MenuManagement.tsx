@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Search, Wand2, ImageIcon, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ImageIcon, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface MenuItemDB {
@@ -38,6 +38,10 @@ const MenuManagement = () => {
     orden_display: "0",
     tipo_item: "retail",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchMenuItems = async () => {
     try {
@@ -77,6 +81,7 @@ const MenuManagement = () => {
         orden_display: item.orden_display?.toString() || "0",
         tipo_item: item.tipo_item || "retail",
       });
+      setImagePreview(item.image_url);
     } else {
       setEditingItem(null);
       setFormData({
@@ -88,12 +93,73 @@ const MenuManagement = () => {
         orden_display: "0",
         tipo_item: "retail",
       });
+      setImagePreview(null);
     }
+    setSelectedImage(null);
     setIsDialogOpen(true);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Solo se permiten imágenes");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("La imagen no debe superar 5MB");
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (editingItem?.image_url) {
+      // Extract filename from URL to delete from storage
+      const url = editingItem.image_url;
+      const fileName = url.split("/").pop();
+      if (fileName) {
+        await supabase.storage.from("menu-images").remove([fileName]);
+      }
+      // Update DB to remove image_url
+      await supabase
+        .from("menu_items")
+        .update({ image_url: null })
+        .eq("id", editingItem.id);
+    }
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadImage = async (file: File, itemId: string): Promise<string | null> => {
+    const timestamp = Date.now();
+    const ext = file.name.split(".").pop();
+    const fileName = `${itemId}-${timestamp}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("menu-images")
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      throw uploadError;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("menu-images")
+      .getPublicUrl(fileName);
+
+    return publicUrlData.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploadingImage(true);
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -101,6 +167,8 @@ const MenuManagement = () => {
         toast.error("Usuario no autenticado");
         return;
       }
+
+      let imageUrl = editingItem?.image_url || null;
 
       const itemData = {
         nombre: formData.nombre,
@@ -114,27 +182,49 @@ const MenuManagement = () => {
       };
 
       if (editingItem) {
+        // If there's a new image selected, upload it
+        if (selectedImage) {
+          imageUrl = await uploadImage(selectedImage, editingItem.id);
+        }
+
         const { error } = await supabase
           .from("menu_items")
-          .update(itemData)
+          .update({ ...itemData, image_url: imageUrl })
           .eq("id", editingItem.id);
 
         if (error) throw error;
         toast.success("Item actualizado");
       } else {
-        const { error } = await supabase
+        // Create item first to get ID
+        const { data: newItem, error } = await supabase
           .from("menu_items")
-          .insert(itemData);
+          .insert(itemData)
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // If there's an image, upload it and update the item
+        if (selectedImage && newItem) {
+          imageUrl = await uploadImage(selectedImage, newItem.id);
+          await supabase
+            .from("menu_items")
+            .update({ image_url: imageUrl })
+            .eq("id", newItem.id);
+        }
+
         toast.success("Item creado");
       }
 
       setIsDialogOpen(false);
+      setSelectedImage(null);
+      setImagePreview(null);
       fetchMenuItems();
     } catch (error) {
       console.error("Error saving item:", error);
       toast.error("Error al guardar");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -142,6 +232,15 @@ const MenuManagement = () => {
     if (!confirm("¿Eliminar este item del menú?")) return;
 
     try {
+      const item = menuItems.find(i => i.id === id);
+      // Delete image from storage if exists
+      if (item?.image_url) {
+        const fileName = item.image_url.split("/").pop();
+        if (fileName) {
+          await supabase.storage.from("menu-images").remove([fileName]);
+        }
+      }
+
       const { error } = await supabase
         .from("menu_items")
         .delete()
@@ -168,62 +267,6 @@ const MenuManagement = () => {
     } catch (error) {
       console.error("Error toggling active:", error);
       toast.error("Error al actualizar");
-    }
-  };
-
-  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
-  const [imagePromptDialogOpen, setImagePromptDialogOpen] = useState(false);
-  const [selectedItemForImage, setSelectedItemForImage] = useState<MenuItemDB | null>(null);
-  const [customImagePrompt, setCustomImagePrompt] = useState("");
-
-  const handleOpenImageDialog = (item: MenuItemDB) => {
-    setSelectedItemForImage(item);
-    setCustomImagePrompt("");
-    setImagePromptDialogOpen(true);
-  };
-
-  const handleGenerateImage = async (item: MenuItemDB, customPrompt?: string) => {
-    setGeneratingImageFor(item.id);
-    setImagePromptDialogOpen(false);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-menu-image`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ 
-            itemName: item.nombre,
-            customPrompt: customPrompt || undefined,
-            menuItemId: item.id
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error generating image");
-      }
-
-      const data = await response.json();
-      
-      // Update the menu item with the image URL
-      const { error } = await supabase
-        .from("menu_items")
-        .update({ image_url: data.imageUrl })
-        .eq("id", item.id);
-
-      if (error) throw error;
-      
-      toast.success(`Imagen generada para ${item.nombre}`);
-      fetchMenuItems();
-    } catch (error) {
-      console.error("Error generating image:", error);
-      toast.error("Error al generar imagen");
-    } finally {
-      setGeneratingImageFor(null);
     }
   };
 
@@ -254,38 +297,62 @@ const MenuManagement = () => {
     <div className="container mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Gestión de Menú</h1>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={async () => {
-              const itemsSinImagen = menuItems.filter(item => !item.image_url);
-              if (itemsSinImagen.length === 0) {
-                toast.info("Todos los items ya tienen imagen");
-                return;
-              }
-              toast.info(`Generando ${itemsSinImagen.length} imágenes...`);
-              for (const item of itemsSinImagen) {
-                await handleGenerateImage(item);
-              }
-              toast.success("Imágenes generadas");
-            }}
-            disabled={generatingImageFor !== null}
-          >
-            <Wand2 className="mr-2 h-4 w-4" />
-            Generar Todas las Imágenes
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo Item
-              </Button>
-            </DialogTrigger>
-          <DialogContent>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Item
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>{editingItem ? "Editar Item" : "Nuevo Item"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Image Upload Section */}
+              <div className="space-y-2">
+                <Label>Imagen (opcional)</Label>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-md overflow-hidden bg-muted flex items-center justify-center border">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Subir imagen
+                    </Button>
+                    {imagePreview && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveImage}
+                        className="text-destructive"
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Quitar
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="nombre">Nombre *</Label>
                 <Input
@@ -363,14 +430,14 @@ const MenuManagement = () => {
                   <Label htmlFor="es_activo">Activo</Label>
                 </div>
               </div>
-              <Button type="submit" className="w-full">
-                {editingItem ? "Actualizar" : "Crear"}
+              <Button type="submit" className="w-full" disabled={uploadingImage}>
+                {uploadingImage ? "Guardando..." : editingItem ? "Actualizar" : "Crear"}
               </Button>
             </form>
           </DialogContent>
         </Dialog>
-        </div>
       </div>
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -410,7 +477,13 @@ const MenuManagement = () => {
                     <TableCell>
                       <div className="w-12 h-12 rounded-md overflow-hidden bg-muted flex items-center justify-center">
                         {item.image_url ? (
-                          <img src={item.image_url} alt={item.nombre} className="w-full h-full object-cover" />
+                          <img 
+                            src={item.image_url} 
+                            alt={item.nombre} 
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
                         ) : (
                           <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
                         )}
@@ -439,19 +512,6 @@ const MenuManagement = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleOpenImageDialog(item)}
-                          disabled={generatingImageFor === item.id}
-                          title="Generar/Editar imagen con IA"
-                        >
-                          {generatingImageFor === item.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Wand2 className="h-4 w-4 text-primary" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
                           onClick={() => handleOpenDialog(item)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -472,68 +532,6 @@ const MenuManagement = () => {
           )}
         </CardContent>
       </Card>
-
-      {/* Dialog para prompt de imagen */}
-      <Dialog open={imagePromptDialogOpen} onOpenChange={setImagePromptDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generar Imagen con IA</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedItemForImage?.image_url && (
-              <div className="w-full aspect-video rounded-lg overflow-hidden bg-muted">
-                <img 
-                  src={selectedItemForImage.image_url} 
-                  alt={selectedItemForImage.nombre}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
-            <div>
-              <Label>Producto: {selectedItemForImage?.nombre}</Label>
-            </div>
-            <div>
-              <Label htmlFor="customPrompt">Instrucciones adicionales (opcional)</Label>
-              <Textarea
-                id="customPrompt"
-                placeholder="Ej: 'con chocolate derretido', 'estilo rústico', 'vista cenital'..."
-                value={customImagePrompt}
-                onChange={(e) => setCustomImagePrompt(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                La imagen mostrará solo el producto, sin acompañantes adicionales.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setImagePromptDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={() => selectedItemForImage && handleGenerateImage(selectedItemForImage, customImagePrompt)}
-                disabled={generatingImageFor !== null}
-              >
-                {generatingImageFor ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    Generar Imagen
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
