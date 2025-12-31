@@ -367,6 +367,81 @@ const POS = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get order details to reverse inventory
+      const { data: detalles } = await supabase
+        .from("detalle_ordenes_pos")
+        .select("menu_item_id, nombre_item, cantidad")
+        .eq("orden_id", String(orderId));
+
+      // Reverse inventory deductions
+      if (detalles && detalles.length > 0) {
+        for (const detalle of detalles) {
+          if (!detalle.menu_item_id) continue;
+
+          // Get menu item to check type
+          const { data: menuItem } = await supabase
+            .from("menu_items")
+            .select("tipo_item, stock_actual")
+            .eq("id", detalle.menu_item_id)
+            .maybeSingle();
+
+          if (!menuItem) continue;
+
+          if (menuItem.tipo_item === 'retail') {
+            // Reverse retail item: add back stock
+            const nuevoStock = menuItem.stock_actual + detalle.cantidad;
+            await supabase
+              .from("menu_items")
+              .update({ stock_actual: nuevoStock })
+              .eq("id", detalle.menu_item_id);
+          } else if (menuItem.tipo_item === 'receta') {
+            // Reverse recipe item: add back ingredients
+            const { data: recetaData } = await supabase
+              .from("recetas")
+              .select(`
+                id,
+                detalle_recetas (
+                  insumo_id,
+                  cantidad_insumo_por_unidad,
+                  insumo:productos!detalle_recetas_insumo_id_fkey (
+                    id,
+                    nombre,
+                    stock_actual,
+                    costo_promedio
+                  )
+                )
+              `)
+              .eq("menu_item_id", detalle.menu_item_id)
+              .maybeSingle();
+
+            if (recetaData && recetaData.detalle_recetas) {
+              for (const detalleReceta of recetaData.detalle_recetas) {
+                const insumo = detalleReceta.insumo as any;
+                const cantidadARestaurar = detalleReceta.cantidad_insumo_por_unidad * detalle.cantidad;
+                const nuevoStock = insumo.stock_actual + cantidadARestaurar;
+
+                await supabase
+                  .from("productos")
+                  .update({ stock_actual: nuevoStock })
+                  .eq("id", insumo.id);
+
+                // Register reverse movement
+                await supabase.from("movimientos_inventario").insert({
+                  producto_id: insumo.id,
+                  tipo_movimiento: "ajuste",
+                  cantidad: cantidadARestaurar,
+                  stock_resultante: nuevoStock,
+                  costo_unitario_referencia: insumo.costo_promedio,
+                  referencia: `Reversión Orden #${orderToDelete.orderNumber}`,
+                  notas: `Reversión por eliminación de orden - ${detalle.nombre_item}`,
+                  user_id: user.id,
+                });
+              }
+            }
+          }
+        }
+      }
+
       // Save to deleted orders table
       await supabase.from("ordenes_eliminadas_pos").insert({
         user_id: user.id,
@@ -382,7 +457,7 @@ const POS = () => {
 
       setCompletedOrders(completedOrders.filter(order => order.id !== orderId));
       setDeletedOrders([orderToDelete, ...deletedOrders]);
-      toast.info(`Orden #${orderToDelete.orderNumber} eliminada`);
+      toast.info(`Orden #${orderToDelete.orderNumber} eliminada (inventario restaurado)`);
     } catch (error) {
       console.error("Error deleting order:", error);
       toast.error("Error al eliminar orden");
