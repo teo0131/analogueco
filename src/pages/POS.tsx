@@ -372,18 +372,31 @@ const POS = () => {
   };
 
   const handleDeleteOrder = async (orderId: number | string) => {
-    const orderToDelete = completedOrders.find(order => order.id === orderId);
-    if (!orderToDelete) return;
+    const orderIdStr = String(orderId);
+    const orderToDelete = completedOrders.find(order => String(order.id) === orderIdStr);
+    
+    if (!orderToDelete) {
+      console.error("Order not found in local state:", orderId);
+      toast.error("Orden no encontrada");
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        toast.error("Usuario no autenticado");
+        return;
+      }
 
       // Get order details to reverse inventory
-      const { data: detalles } = await supabase
+      const { data: detalles, error: detallesError } = await supabase
         .from("detalle_ordenes_pos")
         .select("menu_item_id, nombre_item, cantidad")
-        .eq("orden_id", String(orderId));
+        .eq("orden_id", orderIdStr);
+
+      if (detallesError) {
+        console.error("Error fetching order details:", detallesError);
+      }
 
       // Reverse inventory deductions
       if (detalles && detalles.length > 0) {
@@ -455,20 +468,46 @@ const POS = () => {
       }
 
       // Save to deleted orders table
-      await supabase.from("ordenes_eliminadas_pos").insert({
+      const { error: insertError } = await supabase.from("ordenes_eliminadas_pos").insert({
         user_id: user.id,
-        orden_original_id: typeof orderId === 'string' ? orderId : null,
+        orden_original_id: orderIdStr,
         numero_orden: orderToDelete.orderNumber,
         total: orderToDelete.total,
         comentario: orderToDelete.comment,
         fecha_orden: orderToDelete.timestamp.toISOString(),
       });
 
-      // Delete from main table
-      await supabase.from("ordenes_pos").delete().eq("id", String(orderId));
+      if (insertError) {
+        console.error("Error inserting deleted order:", insertError);
+        toast.error("Error al registrar orden eliminada");
+        return;
+      }
 
-      setCompletedOrders(completedOrders.filter(order => order.id !== orderId));
-      setDeletedOrders([orderToDelete, ...deletedOrders]);
+      // Delete order details first (due to foreign key)
+      const { error: deleteDetailsError } = await supabase
+        .from("detalle_ordenes_pos")
+        .delete()
+        .eq("orden_id", orderIdStr);
+
+      if (deleteDetailsError) {
+        console.error("Error deleting order details:", deleteDetailsError);
+      }
+
+      // Delete from main table
+      const { error: deleteError } = await supabase
+        .from("ordenes_pos")
+        .delete()
+        .eq("id", orderIdStr);
+
+      if (deleteError) {
+        console.error("Error deleting order:", deleteError);
+        toast.error("Error al eliminar orden de la base de datos");
+        return;
+      }
+
+      // Update local state
+      setCompletedOrders(prev => prev.filter(order => String(order.id) !== orderIdStr));
+      setDeletedOrders(prev => [orderToDelete, ...prev]);
       toast.info(`Orden #${orderToDelete.orderNumber} eliminada (inventario restaurado)`);
     } catch (error) {
       console.error("Error deleting order:", error);
