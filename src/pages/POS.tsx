@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useWindowScrollPosition } from "@/hooks/useScrollPosition";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MenuItemButton } from "@/components/MenuItemButton";
@@ -44,6 +45,7 @@ interface MenuItem {
 }
 
 const POS = () => {
+  useWindowScrollPosition("pos");
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
