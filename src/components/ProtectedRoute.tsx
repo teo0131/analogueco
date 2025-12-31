@@ -84,7 +84,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
     return <Navigate to="/home" replace />;
   }
 
-  return <>{children}</>;
+  return <div key={session.user.id}>{children}</div>;
 };
 
 export default ProtectedRoute;
