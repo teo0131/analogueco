@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Trash2, ShoppingCart, Banknote } from "lucide-react";
-import { MenuItem } from "@/data/menuItems";
+
+interface MenuItem {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+}
 
 interface CurrentOrderProps {
   items: MenuItem[];
