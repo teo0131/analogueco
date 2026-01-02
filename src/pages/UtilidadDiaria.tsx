@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Trash2, TrendingUp, TrendingDown, DollarSign, Receipt, Package } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Trash2, TrendingUp, TrendingDown, DollarSign, Receipt, Package, ChevronDown, ChevronRight, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -26,6 +27,8 @@ const CATEGORIAS_GASTOS = [
 export default function UtilidadDiaria() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [detalleDialogOpen, setDetalleDialogOpen] = useState<string | null>(null);
+  const [expandedVentas, setExpandedVentas] = useState<Set<string>>(new Set());
   const [nuevoGasto, setNuevoGasto] = useState({
     categoria: "",
     descripcion: "",
@@ -50,7 +53,8 @@ export default function UtilidadDiaria() {
             cantidad,
             precio_unitario,
             subtotal,
-            menu_item_id
+            menu_item_id,
+            nombre_item
           )
         `)
         .eq("user_id", user.id)
@@ -71,7 +75,7 @@ export default function UtilidadDiaria() {
 
       const { data, error } = await supabase
         .from("menu_items")
-        .select("id, costo_promedio, costo_unitario")
+        .select("id, nombre, costo_promedio, costo_unitario")
         .eq("user_id", user.id);
 
       if (error) throw error;
@@ -109,7 +113,12 @@ export default function UtilidadDiaria() {
         .select(`
           *,
           proveedor:proveedores(nombre),
-          detalles:detalle_entradas(costo_total)
+          detalles:detalle_entradas(
+            costo_total,
+            costo_unitario,
+            cantidad,
+            producto:productos(nombre, unidad_inventario)
+          )
         `)
         .eq("user_id", user.id)
         .eq("fecha_compra", hoy);
@@ -130,7 +139,12 @@ export default function UtilidadDiaria() {
         .from("entradas_menu")
         .select(`
           *,
-          detalles:detalle_entradas_menu(costo_total, menu_item:menu_items(nombre))
+          detalles:detalle_entradas_menu(
+            costo_total,
+            costo_unitario,
+            cantidad,
+            menu_item:menu_items(nombre)
+          )
         `)
         .eq("user_id", user.id)
         .eq("fecha", hoy);
@@ -142,35 +156,97 @@ export default function UtilidadDiaria() {
 
   // Mapa de costos por menu_item_id
   const costosMap = useMemo(() => {
-    const map: Record<string, number> = {};
+    const map: Record<string, { costo: number; nombre: string }> = {};
     menuItems.forEach((item) => {
       const costo = Number(item.costo_promedio) || Number(item.costo_unitario) || 0;
-      map[item.id] = costo;
+      map[item.id] = { costo, nombre: item.nombre };
     });
     return map;
   }, [menuItems]);
 
-  // Calcular utilidad bruta por venta
+  // Calcular utilidad bruta por venta con desglose de items
   const ventasConUtilidad = useMemo(() => {
     return ventasHoy.map((venta) => {
       const detalles = venta.detalles || [];
       let costoTotal = 0;
       
-      detalles.forEach((det: { cantidad: number; menu_item_id: string | null }) => {
-        if (det.menu_item_id) {
-          const costoUnitario = costosMap[det.menu_item_id] || 0;
-          costoTotal += costoUnitario * det.cantidad;
-        }
+      const itemsDesglose = detalles.map((det: { cantidad: number; menu_item_id: string | null; nombre_item: string; precio_unitario: number; subtotal: number }) => {
+        const costoUnitario = det.menu_item_id ? (costosMap[det.menu_item_id]?.costo || 0) : 0;
+        const costoItem = costoUnitario * det.cantidad;
+        costoTotal += costoItem;
+        
+        return {
+          nombre: det.nombre_item,
+          cantidad: det.cantidad,
+          precioUnitario: det.precio_unitario,
+          subtotal: det.subtotal,
+          costoUnitario,
+          costoTotal: costoItem,
+          utilidad: det.subtotal - costoItem
+        };
       });
       
       const utilidadBruta = Number(venta.total) - costoTotal;
       return {
         ...venta,
         costoTotal,
-        utilidadBruta
+        utilidadBruta,
+        itemsDesglose
       };
     });
   }, [ventasHoy, costosMap]);
+
+  // Desglose de insumos comprados (productos)
+  const desgloseInsumosProductos = useMemo(() => {
+    const items: { nombre: string; cantidad: number; unidad: string; costoUnitario: number; costoTotal: number; proveedor: string }[] = [];
+    
+    entradasProductosHoy.forEach((entrada) => {
+      const detalles = entrada.detalles || [];
+      detalles.forEach((det: any) => {
+        items.push({
+          nombre: det.producto?.nombre || "Producto desconocido",
+          cantidad: Number(det.cantidad),
+          unidad: det.producto?.unidad_inventario || "unidad",
+          costoUnitario: Number(det.costo_unitario),
+          costoTotal: Number(det.costo_total),
+          proveedor: entrada.proveedor?.nombre || "Sin proveedor"
+        });
+      });
+    });
+    
+    return items;
+  }, [entradasProductosHoy]);
+
+  // Desglose de insumos de menú
+  const desgloseInsumosMenu = useMemo(() => {
+    const items: { nombre: string; cantidad: number; costoUnitario: number; costoTotal: number }[] = [];
+    
+    entradasMenuHoy.forEach((entrada) => {
+      const detalles = entrada.detalles || [];
+      detalles.forEach((det: any) => {
+        items.push({
+          nombre: det.menu_item?.nombre || "Item desconocido",
+          cantidad: Number(det.cantidad),
+          costoUnitario: Number(det.costo_unitario),
+          costoTotal: Number(det.costo_total)
+        });
+      });
+    });
+    
+    return items;
+  }, [entradasMenuHoy]);
+
+  const toggleVentaExpanded = (id: string) => {
+    setExpandedVentas(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   // Calcular totales
   const totales = useMemo(() => {
@@ -374,17 +450,20 @@ export default function UtilidadDiaria() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setDetalleDialogOpen("insumos")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Costo Insumos</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-1">
+              <Eye className="h-3 w-3 text-muted-foreground" />
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
               {formatCurrency(totales.totalCostoInsumos)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {totales.entradasCount} compras
+              {totales.entradasCount} compras • Click para ver desglose
             </p>
           </CardContent>
         </Card>
@@ -423,6 +502,7 @@ export default function UtilidadDiaria() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8"></TableHead>
                   <TableHead>Orden #</TableHead>
                   <TableHead>Hora</TableHead>
                   <TableHead className="text-right">Venta</TableHead>
@@ -432,23 +512,54 @@ export default function UtilidadDiaria() {
               </TableHeader>
               <TableBody>
                 {ventasConUtilidad.map((venta) => (
-                  <TableRow key={venta.id}>
-                    <TableCell className="font-medium">#{venta.numero_orden}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(venta.fecha), "HH:mm")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(Number(venta.total))}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatCurrency(venta.costoTotal)}
-                    </TableCell>
-                    <TableCell className={`text-right font-medium ${venta.utilidadBruta >= 0 ? "text-blue-600" : "text-red-600"}`}>
-                      {formatCurrency(venta.utilidadBruta)}
-                    </TableCell>
-                  </TableRow>
+                  <>
+                    <TableRow 
+                      key={venta.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => toggleVentaExpanded(venta.id)}
+                    >
+                      <TableCell className="w-8">
+                        {expandedVentas.has(venta.id) ? (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">#{venta.numero_orden}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(new Date(venta.fecha), "HH:mm")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(Number(venta.total))}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {formatCurrency(venta.costoTotal)}
+                      </TableCell>
+                      <TableCell className={`text-right font-medium ${venta.utilidadBruta >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                        {formatCurrency(venta.utilidadBruta)}
+                      </TableCell>
+                    </TableRow>
+                    {expandedVentas.has(venta.id) && venta.itemsDesglose.map((item, idx) => (
+                      <TableRow key={`${venta.id}-item-${idx}`} className="bg-muted/30">
+                        <TableCell></TableCell>
+                        <TableCell colSpan={2} className="text-sm text-muted-foreground pl-8">
+                          {item.cantidad}x {item.nombre}
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {formatCurrency(item.subtotal)}
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-muted-foreground">
+                          {formatCurrency(item.costoTotal)}
+                        </TableCell>
+                        <TableCell className={`text-right text-sm ${item.utilidad >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                          {formatCurrency(item.utilidad)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </>
                 ))}
                 <TableRow className="bg-muted/50 font-bold">
+                  <TableCell></TableCell>
                   <TableCell colSpan={2}>Total</TableCell>
                   <TableCell className="text-right">{formatCurrency(totales.totalVentas)}</TableCell>
                   <TableCell className="text-right text-muted-foreground">
@@ -570,6 +681,116 @@ export default function UtilidadDiaria() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog para desglose de costo de insumos */}
+      <Dialog open={detalleDialogOpen === "insumos"} onOpenChange={(open) => !open && setDetalleDialogOpen(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-orange-600" />
+              Desglose de Costo de Insumos
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Productos/Insumos */}
+            {desgloseInsumosProductos.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
+                  Compras de Productos/Insumos
+                </h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Producto</TableHead>
+                      <TableHead>Proveedor</TableHead>
+                      <TableHead className="text-right">Cantidad</TableHead>
+                      <TableHead className="text-right">Costo Unit.</TableHead>
+                      <TableHead className="text-right">Costo Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {desgloseInsumosProductos.map((item, idx) => (
+                      <TableRow key={`prod-${idx}`}>
+                        <TableCell className="font-medium">{item.nombre}</TableCell>
+                        <TableCell className="text-muted-foreground">{item.proveedor}</TableCell>
+                        <TableCell className="text-right">
+                          {item.cantidad} {item.unidad}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatCurrency(item.costoUnitario)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(item.costoTotal)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/50 font-bold">
+                      <TableCell colSpan={4}>Subtotal Productos</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(desgloseInsumosProductos.reduce((sum, i) => sum + i.costoTotal, 0))}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Items del Menú */}
+            {desgloseInsumosMenu.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
+                  Compras de Items del Menú
+                </h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item del Menú</TableHead>
+                      <TableHead className="text-right">Cantidad</TableHead>
+                      <TableHead className="text-right">Costo Unit.</TableHead>
+                      <TableHead className="text-right">Costo Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {desgloseInsumosMenu.map((item, idx) => (
+                      <TableRow key={`menu-${idx}`}>
+                        <TableCell className="font-medium">{item.nombre}</TableCell>
+                        <TableCell className="text-right">{item.cantidad}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatCurrency(item.costoUnitario)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(item.costoTotal)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/50 font-bold">
+                      <TableCell colSpan={3}>Subtotal Menú</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(desgloseInsumosMenu.reduce((sum, i) => sum + i.costoTotal, 0))}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {desgloseInsumosProductos.length === 0 && desgloseInsumosMenu.length === 0 && (
+              <p className="text-muted-foreground text-center py-8">
+                No hay compras de insumos registradas hoy
+              </p>
+            )}
+
+            {/* Total General */}
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center text-lg font-bold">
+                <span>Total Costo de Insumos</span>
+                <span className="text-orange-600">{formatCurrency(totales.totalCostoInsumos)}</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
