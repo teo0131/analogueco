@@ -244,7 +244,14 @@ const ConfiguracionFiscal = () => {
               />
               {logoUrl && (
                 <div className="mt-2">
-                  <img src={logoUrl} alt="Logo preview" className="h-16 object-contain" />
+                  <img 
+                    src={logoUrl} 
+                    alt="Logo preview" 
+                    width={64}
+                    height={64}
+                    loading="lazy"
+                    className="h-16 object-contain" 
+                  />
                 </div>
               )}
             </div>

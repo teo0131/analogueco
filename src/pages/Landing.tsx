@@ -13,9 +13,14 @@ const Landing = () => {
       {/* Hero Section with Full Banner */}
       <div className="relative h-[50vh] min-h-[350px] overflow-hidden">
         {/* Background Image with Slow Zoom Animation */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center animate-slow-zoom"
-          style={{ backgroundImage: `url(${coffeeHeroImage})` }}
+        <img 
+          src={coffeeHeroImage}
+          alt="Coffee hero background"
+          width={1920}
+          height={1080}
+          loading="eager"
+          fetchPriority="high"
+          className="absolute inset-0 w-full h-full object-cover animate-slow-zoom"
         />
         
         {/* Dark Overlay */}
