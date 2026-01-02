@@ -210,6 +210,9 @@ const POS = () => {
 
     setIsCompletingOrder(true);
 
+    // Collect stock warnings to show after completing the order
+    const stockWarnings: string[] = [];
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -232,9 +235,11 @@ const POS = () => {
             return;
           }
 
-          if (menuItemData.stock_actual < 1) {
-            toast.error(`Stock insuficiente de ${item.name}`);
-            return;
+          // Check stock and warn but don't block
+          if (menuItemData.stock_actual <= 0) {
+            stockWarnings.push(`⚠️ ${item.name}: SIN STOCK (quedará en negativo)`);
+          } else if (menuItemData.stock_actual < 3) {
+            stockWarnings.push(`⚡ ${item.name}: Stock muy bajo (${menuItemData.stock_actual} restantes)`);
           }
 
           const nuevoStock = menuItemData.stock_actual - 1;
@@ -273,11 +278,13 @@ const POS = () => {
               const insumo = detalle.insumo as any;
               const cantidadRequerida = detalle.cantidad_insumo_por_unidad;
               
-              if (insumo.stock_actual < cantidadRequerida) {
-                toast.error(
-                  `Stock insuficiente de ${insumo.nombre} para preparar ${item.name}`
-                );
-                return;
+              // Check stock and warn but don't block
+              if (insumo.stock_actual <= 0) {
+                stockWarnings.push(`⚠️ ${insumo.nombre} (para ${item.name}): SIN STOCK`);
+              } else if (insumo.stock_actual < cantidadRequerida) {
+                stockWarnings.push(`⚠️ ${insumo.nombre} (para ${item.name}): Stock insuficiente (tiene ${insumo.stock_actual}, necesita ${cantidadRequerida})`);
+              } else if (insumo.stock_actual < cantidadRequerida * 3) {
+                stockWarnings.push(`⚡ ${insumo.nombre}: Stock bajo (${insumo.stock_actual} restantes)`);
               }
 
               const nuevoStock = insumo.stock_actual - cantidadRequerida;
@@ -363,7 +370,25 @@ const POS = () => {
       setShowChangeCalculator(false);
       setPaymentAmount("");
       setChangeAmount(null);
-      toast.success(`Orden #${orderNumber} completada con éxito`);
+      
+      // Show stock warnings if any (distinct orange/warning style)
+      if (stockWarnings.length > 0) {
+        // Use a distinct warning toast for stock issues
+        toast.warning(
+          `Orden #${orderNumber} completada - ¡ALERTA DE INVENTARIO!`,
+          {
+            description: stockWarnings.slice(0, 5).join('\n') + (stockWarnings.length > 5 ? `\n... y ${stockWarnings.length - 5} más` : ''),
+            duration: 8000,
+            style: {
+              backgroundColor: '#fef3c7',
+              border: '2px solid #f59e0b',
+              color: '#92400e',
+            },
+          }
+        );
+      } else {
+        toast.success(`Orden #${orderNumber} completada con éxito`);
+      }
     } catch (error) {
       console.error("Error completing order:", error);
       toast.error("Error al completar la orden");
