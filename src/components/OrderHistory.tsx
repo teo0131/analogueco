@@ -135,7 +135,8 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder, onGenerateI
         open={showPinDialog}
         onOpenChange={(open) => {
           setShowPinDialog(open);
-          if (!open) setOrderToDelete(null);
+          // No limpiamos orderToDelete aquí porque el PIN cierra el diálogo al validarse
+          // y necesitamos mantener la referencia para el diálogo de confirmación.
         }}
         onSuccess={handlePinSuccess}
         title="Eliminar Orden"
@@ -153,19 +154,21 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder, onGenerateI
               <AlertTriangle className="h-5 w-5 text-destructive" />
               ¿Eliminar Orden #{orderToDelete?.orderNumber}?
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                Estás a punto de eliminar esta orden por un valor de{" "}
-                <strong>{orderToDelete && formatPrice(orderToDelete.total)}</strong>.
-              </p>
-              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm">
-                <p className="font-semibold text-destructive mb-1">⚠️ Advertencia importante:</p>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li>Esta orden <strong>NO se contará</strong> en las ventas del día</li>
-                  <li><strong>NO aparecerá</strong> en los reportes de Excel</li>
-                  <li><strong>NO será incluida</strong> en el cálculo de utilidades</li>
-                  <li>La orden se moverá a "Órdenes Eliminadas" donde podrás restaurarla si lo necesitas</li>
-                </ul>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Estás a punto de eliminar esta orden por un valor de{" "}
+                  <strong>{orderToDelete && formatPrice(orderToDelete.total)}</strong>.
+                </p>
+                <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm">
+                  <p className="font-semibold text-destructive mb-1">⚠️ Advertencia importante:</p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    <li>Esta orden <strong>NO se contará</strong> en las ventas del día</li>
+                    <li><strong>NO aparecerá</strong> en los reportes de Excel</li>
+                    <li><strong>NO será incluida</strong> en el cálculo de utilidades</li>
+                    <li>La orden se moverá a "Órdenes Eliminadas" donde podrás restaurarla si lo necesitas</li>
+                  </ul>
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
