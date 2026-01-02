@@ -141,7 +141,10 @@ export const FacturaFisicaTemplate = forwardRef<HTMLDivElement, FacturaFisicaTem
             <img 
               src={datosFiscales.logoUrl} 
               alt="Logo" 
-              className={`mx-auto ${esTermica ? "h-10 mb-1" : "h-16 mb-2"}`}
+              width={esTermica ? 40 : 64}
+              height={esTermica ? 40 : 64}
+              loading="lazy"
+              className={`mx-auto object-contain ${esTermica ? "h-10 mb-1" : "h-16 mb-2"}`}
             />
           )}
           <h1 className={`font-bold ${esTermica ? "text-sm" : "text-xl"}`}>
