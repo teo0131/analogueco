@@ -55,6 +55,7 @@ const POS = () => {
   const [deletedOrders, setDeletedOrders] = useState<CompletedOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<CompletedOrder | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCompletingOrder, setIsCompletingOrder] = useState(false);
 
   const setDetailOpen = (open: boolean) => {
     if (open) {
@@ -200,10 +201,14 @@ const POS = () => {
   };
 
   const handleCompleteOrder = async () => {
+    if (isCompletingOrder) return;
+
     if (currentItems.length === 0) {
       toast.error("Agrega items a la orden primero");
       return;
     }
+
+    setIsCompletingOrder(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -362,6 +367,8 @@ const POS = () => {
     } catch (error) {
       console.error("Error completing order:", error);
       toast.error("Error al completar la orden");
+    } finally {
+      setIsCompletingOrder(false);
     }
   };
 
@@ -721,6 +728,7 @@ const POS = () => {
                 onRemoveItem={handleRemoveItem}
                 onCompleteOrder={handleCompleteOrder}
                 orderNumber={orderNumber}
+                isCompleting={isCompletingOrder}
               />
 
               {/* Change Calculator Button */}

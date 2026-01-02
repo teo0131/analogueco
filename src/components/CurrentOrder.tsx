@@ -13,6 +13,7 @@ interface CurrentOrderProps {
   onRemoveItem: (index: number) => void;
   onCompleteOrder: () => void;
   orderNumber: number;
+  isCompleting?: boolean;
 }
 
 // Colombian bill denominations
@@ -33,6 +34,7 @@ export const CurrentOrder = ({
   onRemoveItem,
   onCompleteOrder,
   orderNumber,
+  isCompleting = false,
 }: CurrentOrderProps) => {
   const [selectedBill, setSelectedBill] = useState<number | null>(null);
 
@@ -174,8 +176,9 @@ export const CurrentOrder = ({
               onClick={onCompleteOrder}
               className="w-full bg-accent hover:bg-accent/90"
               size="lg"
+              disabled={isCompleting}
             >
-              Completar Orden
+              {isCompleting ? "Guardando..." : "Completar Orden"}
             </Button>
           </>
         )}

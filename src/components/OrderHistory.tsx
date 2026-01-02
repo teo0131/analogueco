@@ -40,6 +40,7 @@ export const OrderHistory = ({ orders, onSelectOrder, onDeleteOrder, onGenerateI
     return new Intl.DateTimeFormat('es-CO', {
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
     }).format(date);
   };
 
