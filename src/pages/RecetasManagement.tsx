@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Pencil, Trash2, ChefHat, AlertCircle, Coffee, Package } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, ChefHat, AlertCircle, Coffee, Package, Lock } from "lucide-react";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,10 @@ const RecetasManagement = () => {
   const [insumos, setInsumos] = useState<InsumoReceta[]>([]);
   const [currentInsumoId, setCurrentInsumoId] = useState("");
   const [currentCantidad, setCurrentCantidad] = useState("");
+  
+  // PIN verification state
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [pendingEdit, setPendingEdit] = useState<{ menuItem: MenuItem; receta: Receta } | null>(null);
 
   // Fetch menu items (only recipe type, exclude retail/direct stock)
   const { data: menuItems } = useQuery({
@@ -237,6 +242,25 @@ const RecetasManagement = () => {
   });
 
   const handleOpenDialog = (menuItem: MenuItem, receta?: Receta) => {
+    // If editing an existing recipe, require PIN verification
+    if (receta) {
+      setPendingEdit({ menuItem, receta });
+      setShowPinDialog(true);
+      return;
+    }
+    
+    // Creating new recipe - no PIN needed
+    openRecipeDialog(menuItem, undefined);
+  };
+
+  const handlePinSuccess = () => {
+    if (pendingEdit) {
+      openRecipeDialog(pendingEdit.menuItem, pendingEdit.receta);
+      setPendingEdit(null);
+    }
+  };
+
+  const openRecipeDialog = (menuItem: MenuItem, receta?: Receta) => {
     setSelectedMenuItem(menuItem);
     setSelectedReceta(receta || null);
     
@@ -506,6 +530,18 @@ const RecetasManagement = () => {
           </Tabs>
         )}
       </div>
+
+      {/* PIN Verification Dialog */}
+      <PinVerificationDialog
+        open={showPinDialog}
+        onOpenChange={(open) => {
+          setShowPinDialog(open);
+          if (!open) setPendingEdit(null);
+        }}
+        onSuccess={handlePinSuccess}
+        title="Editar Receta"
+        description="Ingresa tu PIN de 4 dígitos para editar esta receta"
+      />
 
       {/* Dialog for creating/editing receta */}
       <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
