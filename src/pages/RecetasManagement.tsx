@@ -317,6 +317,13 @@ const RecetasManagement = () => {
     toast.info("Insumo removido");
   };
 
+  const handleUpdateInsumoCantidad = (insumoId: string, nuevaCantidad: number) => {
+    if (nuevaCantidad <= 0) return;
+    setInsumos(insumos.map((i) => 
+      i.insumo_id === insumoId ? { ...i, cantidad: nuevaCantidad } : i
+    ));
+  };
+
   const handleSubmit = () => {
     if (insumos.length === 0) {
       toast.error("Debes agregar al menos un insumo a la receta");
@@ -598,12 +605,20 @@ const RecetasManagement = () => {
                 {insumos.map((insumo) => (
                   <div
                     key={insumo.insumo_id}
-                    className="flex justify-between items-center p-2 bg-secondary/30 rounded"
+                    className="flex justify-between items-center p-2 bg-secondary/30 rounded gap-2"
                   >
-                    <span>{getInsumoNombre(insumo.insumo_id)}</span>
+                    <span className="flex-1">{getInsumoNombre(insumo.insumo_id)}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm">
-                        {insumo.cantidad} {getInsumoUnidad(insumo.insumo_id)}
+                      <Input
+                        type="number"
+                        step="0.001"
+                        min="0.001"
+                        value={insumo.cantidad}
+                        onChange={(e) => handleUpdateInsumoCantidad(insumo.insumo_id, parseFloat(e.target.value) || 0)}
+                        className="w-24 text-right"
+                      />
+                      <span className="text-sm text-muted-foreground min-w-[40px]">
+                        {getInsumoUnidad(insumo.insumo_id)}
                       </span>
                       <Button
                         variant="ghost"
