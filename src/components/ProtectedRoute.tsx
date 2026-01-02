@@ -8,6 +8,13 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean;
 }
 
+interface VerifyResponse {
+  isAdmin: boolean;
+  isApproved: boolean;
+  userId?: string;
+  error?: string;
+}
+
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,24 +31,45 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
       setSession(currentSession);
 
-      // Check if user is approved
+      // Server-side verification of permissions
+      try {
+        const { data, error } = await supabase.functions.invoke<VerifyResponse>('verify-admin');
+        
+        if (error) {
+          console.error("Server-side verification error:", error);
+          // Fallback to client-side check if server is unavailable
+          await fallbackClientCheck(currentSession.user.id);
+        } else if (data) {
+          console.log("Server verification result:", data);
+          setIsApproved(data.isApproved);
+          setIsAdmin(data.isAdmin);
+        }
+      } catch (err) {
+        console.error("Edge function call failed, using fallback:", err);
+        await fallbackClientCheck(currentSession.user.id);
+      }
+      
+      setLoading(false);
+    };
+
+    const fallbackClientCheck = async (userId: string) => {
+      // Fallback: Check if user is approved via RLS-protected query
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_approved")
-        .eq("user_id", currentSession.user.id)
+        .eq("user_id", userId)
         .single();
 
       setIsApproved(profile?.is_approved ?? false);
 
-      // Check if user is admin
+      // Fallback: Check if user is admin via RLS-protected query
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", currentSession.user.id);
+        .eq("user_id", userId);
 
       const hasAdminRole = roles?.some(r => r.role === "admin") ?? false;
       setIsAdmin(hasAdminRole);
-      setLoading(false);
     };
 
     // Set up auth state listener FIRST
@@ -64,7 +92,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando...</p>
+          <p className="text-muted-foreground">Verificando permisos...</p>
         </div>
       </div>
     );
