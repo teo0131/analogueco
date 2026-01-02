@@ -7,18 +7,25 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, ArrowLeft, Plus, Trash2, Save, Package, Coffee, ShoppingBag, Edit } from "lucide-react";
+import { CalendarIcon, ArrowLeft, Plus, Trash2, Save, Package, Coffee, ShoppingBag, Edit, Settings, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProveedorSelector } from "@/components/inventory/ProveedorSelector";
 import { PinVerificationDialog } from "@/components/PinVerificationDialog";
+import { 
+  UNITS, 
+  getCompatibleUnits, 
+  convertUnits, 
+  getEntryUnitOptions,
+  formatQuantityWithUnit 
+} from "@/lib/unitConversion";
 
 interface MenuItem {
   id: string;
@@ -35,6 +42,7 @@ interface Insumo {
   nombre: string;
   unidad_inventario: string;
   stock_actual: number;
+  stock_minimo: number;
   costo_promedio: number;
 }
 
@@ -43,9 +51,12 @@ interface ProductoEntrada {
   item_id: string;
   nombre: string;
   categoria: string | null;
-  unidad?: string;
-  cantidad: number;
-  costo_unitario: number;
+  unidad_base?: string; // Unidad en que se almacena (ej: g)
+  unidad_entrada?: string; // Unidad en que se ingresa (ej: kg)
+  cantidad: number; // Cantidad en unidad_entrada
+  cantidad_base?: number; // Cantidad convertida a unidad_base
+  costo_unitario: number; // Costo por unidad_entrada
+  costo_unitario_base?: number; // Costo por unidad_base
   costo_total: number;
   tipo: 'menu' | 'insumo';
 }
@@ -85,6 +96,11 @@ const IngresoUnificado = () => {
   const [newStockValue, setNewStockValue] = useState("");
   const [adjustmentNote, setAdjustmentNote] = useState("");
 
+  // Estado para configurar alerta de stock bajo
+  const [showAlertConfigDialog, setShowAlertConfigDialog] = useState(false);
+  const [insumoToConfig, setInsumoToConfig] = useState<Insumo | null>(null);
+  const [stockMinimoValue, setStockMinimoValue] = useState("");
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -110,7 +126,7 @@ const IngresoUnificado = () => {
       // Fetch insumos
       const { data: insumosData, error: insumosError } = await supabase
         .from("productos")
-        .select("id, nombre, unidad_inventario, stock_actual, costo_promedio")
+        .select("id, nombre, unidad_inventario, stock_actual, stock_minimo, costo_promedio")
         .eq("user_id", user.id)
         .eq("tipo_producto", "insumo")
         .eq("es_activo", true)
@@ -152,15 +168,24 @@ const IngresoUnificado = () => {
       return;
     }
 
+    // Obtener unidades compatibles y usar la más grande como default para entrada
+    const unidadesCompatibles = getCompatibleUnits(insumo.unidad_inventario);
+    const unidadEntrada = unidadesCompatibles.includes('kg') ? 'kg' : 
+                          unidadesCompatibles.includes('lt') ? 'lt' : 
+                          insumo.unidad_inventario;
+
     const newProducto: ProductoEntrada = {
       id: crypto.randomUUID(),
       item_id: insumo.id,
       nombre: insumo.nombre,
       categoria: null,
-      unidad: insumo.unidad_inventario,
+      unidad_base: insumo.unidad_inventario,
+      unidad_entrada: unidadEntrada,
       cantidad: 1,
-      costo_unitario: insumo.costo_promedio || 0,
-      costo_total: insumo.costo_promedio || 0,
+      cantidad_base: convertUnits(1, unidadEntrada, insumo.unidad_inventario),
+      costo_unitario: 0,
+      costo_unitario_base: 0,
+      costo_total: 0,
       tipo: 'insumo'
     };
     setProductos([...productos, newProducto]);
@@ -171,14 +196,31 @@ const IngresoUnificado = () => {
     setProductos(productos.filter(p => p.id !== id));
   };
 
-  const handleUpdateProducto = (id: string, field: keyof ProductoEntrada, value: number) => {
+  const handleUpdateProducto = (id: string, field: keyof ProductoEntrada, value: number | string) => {
     setProductos(productos.map(p => {
       if (p.id !== id) return p;
       
       const updated = { ...p, [field]: value };
       
-      if (field === 'cantidad' || field === 'costo_unitario') {
-        updated.costo_total = updated.cantidad * updated.costo_unitario;
+      // Para insumos, recalcular conversiones
+      if (p.tipo === 'insumo' && (field === 'cantidad' || field === 'costo_unitario' || field === 'unidad_entrada')) {
+        const cantidad = field === 'cantidad' ? Number(value) : updated.cantidad;
+        const costoTotal = cantidad * (field === 'costo_unitario' ? Number(value) : updated.costo_unitario);
+        const unidadEntrada = field === 'unidad_entrada' ? String(value) : updated.unidad_entrada || updated.unidad_base || 'unidad';
+        const unidadBase = updated.unidad_base || 'unidad';
+        
+        // Convertir cantidad a unidad base
+        const cantidadBase = convertUnits(cantidad, unidadEntrada, unidadBase);
+        // Calcular costo por unidad base
+        const costoUnitarioBase = cantidadBase > 0 ? costoTotal / cantidadBase : 0;
+        
+        updated.cantidad = cantidad;
+        updated.unidad_entrada = unidadEntrada;
+        updated.cantidad_base = cantidadBase;
+        updated.costo_total = costoTotal;
+        updated.costo_unitario_base = costoUnitarioBase;
+      } else if (field === 'cantidad' || field === 'costo_unitario') {
+        updated.costo_total = Number(updated.cantidad) * Number(updated.costo_unitario);
       }
       
       return updated;
@@ -312,7 +354,7 @@ const IngresoUnificado = () => {
 
         if (detallesInsumosError) throw detallesInsumosError;
 
-        // Actualizar stock y costo promedio de cada insumo
+        // Actualizar stock y costo promedio de cada insumo (usando unidad base)
         for (const producto of productosInsumos) {
           const { data: insumoActual, error: insumoError } = await supabase
             .from('productos')
@@ -324,8 +366,10 @@ const IngresoUnificado = () => {
 
           const stockAnterior = Number(insumoActual.stock_actual) || 0;
           const costoAnterior = Number(insumoActual.costo_promedio) || 0;
-          const cantidadNueva = producto.cantidad;
-          const costoNuevo = producto.costo_unitario;
+          
+          // Usar cantidad y costo en unidad base (ya convertidos)
+          const cantidadNueva = producto.cantidad_base ?? producto.cantidad;
+          const costoNuevo = producto.costo_unitario_base ?? producto.costo_unitario;
 
           const stockTotal = stockAnterior + cantidadNueva;
           const costoPromedio = stockTotal > 0 
@@ -343,6 +387,10 @@ const IngresoUnificado = () => {
           if (updateError) throw updateError;
 
           // Registrar movimiento de inventario
+          const unidadInfo = producto.unidad_entrada !== producto.unidad_base 
+            ? ` (${producto.cantidad} ${producto.unidad_entrada} → ${cantidadNueva.toFixed(2)} ${producto.unidad_base})`
+            : '';
+          
           const { error: movError } = await supabase
             .from('movimientos_inventario')
             .insert({
@@ -352,7 +400,7 @@ const IngresoUnificado = () => {
               cantidad: cantidadNueva,
               stock_resultante: stockTotal,
               costo_unitario_referencia: costoNuevo,
-              referencia: `Entrada de inventario`,
+              referencia: `Entrada de inventario${unidadInfo}`,
               notas: notas || null
             });
 
@@ -493,6 +541,41 @@ const IngresoUnificado = () => {
       setItemToAdjust(null);
       setNewStockValue("");
       setAdjustmentNote("");
+    }
+  };
+
+  // Funciones para configurar alerta de stock bajo
+  const handleConfigAlertClick = (insumo: Insumo, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInsumoToConfig(insumo);
+    setStockMinimoValue(insumo.stock_minimo?.toString() || "0");
+    setShowAlertConfigDialog(true);
+  };
+
+  const handleSaveAlertConfig = async () => {
+    if (!insumoToConfig) return;
+
+    const nuevoStockMinimo = parseFloat(stockMinimoValue) || 0;
+    
+    try {
+      const { error } = await supabase
+        .from('productos')
+        .update({ stock_minimo: nuevoStockMinimo })
+        .eq('id', insumoToConfig.id);
+
+      if (error) throw error;
+
+      // Actualizar estado local
+      setInsumos(insumos.map(i => 
+        i.id === insumoToConfig.id ? { ...i, stock_minimo: nuevoStockMinimo } : i
+      ));
+
+      toast.success(`Alerta configurada: ${insumoToConfig.nombre} alertará cuando tenga menos de ${nuevoStockMinimo} ${insumoToConfig.unidad_inventario}`);
+      setShowAlertConfigDialog(false);
+      setInsumoToConfig(null);
+    } catch (error: any) {
+      console.error("Error saving alert config:", error);
+      toast.error(error.message || "Error al configurar alerta");
     }
   };
 
@@ -679,19 +762,38 @@ const IngresoUnificado = () => {
                       </div>
                       {filteredInsumos.map((insumo) => {
                         const yaAgregado = productos.some(p => p.item_id === insumo.id && p.tipo === 'insumo');
+                        const tieneAlertaBaja = insumo.stock_actual <= (insumo.stock_minimo || 0) && (insumo.stock_minimo || 0) > 0;
                         return (
                           <div key={insumo.id} className="flex items-center gap-1">
                             <Button
-                              variant={yaAgregado ? "secondary" : "outline"}
+                              variant={yaAgregado ? "secondary" : tieneAlertaBaja ? "destructive" : "outline"}
                               size="sm"
-                              className="flex-1 justify-between text-left"
+                              className={cn(
+                                "flex-1 justify-between text-left",
+                                tieneAlertaBaja && !yaAgregado && "border-destructive/50"
+                              )}
                               onClick={() => handleAddInsumo(insumo)}
                               disabled={yaAgregado}
                             >
                               <span className="truncate">{insumo.nombre}</span>
                               <span className="text-xs text-muted-foreground ml-2">
                                 {insumo.stock_actual} {insumo.unidad_inventario}
+                                {tieneAlertaBaja && " ⚠️"}
                               </span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-8 w-8 p-0",
+                                insumo.stock_minimo > 0 
+                                  ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50" 
+                                  : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              )}
+                              onClick={(e) => handleConfigAlertClick(insumo, e)}
+                              title="Configurar alerta de stock bajo"
+                            >
+                              <Bell className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -809,6 +911,7 @@ const IngresoUnificado = () => {
                       <tr>
                         <th className="text-left p-3 font-medium">Tipo</th>
                         <th className="text-left p-3 font-medium">Producto</th>
+                        <th className="text-left p-3 font-medium">Unidad</th>
                         <th className="text-left p-3 font-medium">Cantidad</th>
                         <th className="text-left p-3 font-medium">Costo Unit.</th>
                         <th className="text-left p-3 font-medium">Total</th>
@@ -818,7 +921,7 @@ const IngresoUnificado = () => {
                     <tbody>
                       {productos.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="text-center p-8 text-muted-foreground">
+                          <td colSpan={7} className="text-center p-8 text-muted-foreground">
                             Selecciona items del menú o insumos para agregarlos
                           </td>
                         </tr>
@@ -840,10 +943,31 @@ const IngresoUnificado = () => {
                             </td>
                             <td className="p-3">
                               <div className="font-medium">{producto.nombre}</div>
-                              {producto.unidad && (
-                                <div className="text-sm text-muted-foreground">
-                                  {producto.unidad}
+                              {producto.tipo === 'insumo' && producto.unidad_entrada !== producto.unidad_base && producto.cantidad_base && (
+                                <div className="text-xs text-muted-foreground">
+                                  = {producto.cantidad_base.toFixed(2)} {producto.unidad_base}
                                 </div>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {producto.tipo === 'insumo' && producto.unidad_base ? (
+                                <Select
+                                  value={producto.unidad_entrada || producto.unidad_base}
+                                  onValueChange={(v) => handleUpdateProducto(producto.id, 'unidad_entrada', v)}
+                                >
+                                  <SelectTrigger className="w-24">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {getEntryUnitOptions(producto.unidad_base).map(opt => (
+                                      <SelectItem key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">unidad</span>
                               )}
                             </td>
                             <td className="p-3">
@@ -857,15 +981,22 @@ const IngresoUnificado = () => {
                               />
                             </td>
                             <td className="p-3">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="100"
-                                placeholder="0"
-                                value={producto.costo_unitario || ''}
-                                onChange={(e) => handleUpdateProducto(producto.id, 'costo_unitario', parseFloat(e.target.value) || 0)}
-                                className="w-28"
-                              />
+                              <div className="flex flex-col">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="100"
+                                  placeholder="0"
+                                  value={producto.costo_unitario || ''}
+                                  onChange={(e) => handleUpdateProducto(producto.id, 'costo_unitario', parseFloat(e.target.value) || 0)}
+                                  className="w-28"
+                                />
+                                {producto.tipo === 'insumo' && producto.costo_unitario_base && producto.costo_unitario_base > 0 && (
+                                  <span className="text-xs text-muted-foreground mt-1">
+                                    {formatPrice(producto.costo_unitario_base)}/{producto.unidad_base}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="p-3">
                               <div className="font-semibold">{formatPrice(producto.costo_total)}</div>
@@ -886,7 +1017,7 @@ const IngresoUnificado = () => {
                     {productos.length > 0 && (
                       <tfoot className="bg-muted font-bold">
                         <tr>
-                          <td colSpan={4} className="p-3 text-right">TOTAL:</td>
+                          <td colSpan={5} className="p-3 text-right">TOTAL:</td>
                           <td className="p-3 text-lg">{formatPrice(calcularTotalFactura())}</td>
                           <td></td>
                         </tr>
@@ -1070,6 +1201,66 @@ const IngresoUnificado = () => {
           title="Confirmar Ajuste de Stock"
           description={`Ingresa tu PIN para ajustar el stock de "${itemToAdjust?.nombre}" de ${itemToAdjust?.stock_actual} a ${newStockValue}.`}
         />
+
+        {/* Dialog para configurar alerta de stock bajo */}
+        <Dialog open={showAlertConfigDialog} onOpenChange={setShowAlertConfigDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-amber-500" />
+                Configurar Alerta de Stock Bajo
+              </DialogTitle>
+              <DialogDescription>
+                Configura el nivel mínimo de stock para recibir alertas cuando el inventario esté bajo.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="text-sm text-muted-foreground">
+                Insumo: <span className="font-medium text-foreground">{insumoToConfig?.nombre}</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Stock actual: <span className="font-medium text-foreground">
+                  {insumoToConfig?.stock_actual} {insumoToConfig?.unidad_inventario}
+                </span>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stock-minimo">Stock Mínimo (Alerta)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="stock-minimo"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={stockMinimoValue}
+                    onChange={(e) => setStockMinimoValue(e.target.value)}
+                    placeholder="Ej: 100"
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {insumoToConfig?.unidad_inventario}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Recibirás una alerta visual cuando el stock caiga por debajo de este valor.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowAlertConfigDialog(false);
+                  setInsumoToConfig(null);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveAlertConfig}>
+                Guardar Configuración
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
