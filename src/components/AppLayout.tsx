@@ -23,12 +23,14 @@ import {
   MessageSquare,
   TrendingUp,
   Settings,
+  ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const navItems = [
   { path: "/home", label: "Inicio", icon: Home },
   { path: "/pos", label: "Facturación", icon: ShoppingCart },
+  { path: "/ordenes-activas", label: "Órdenes", icon: ClipboardList },
   { path: "/menu", label: "Mi Menú", icon: Menu },
   { path: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { path: "/proveedores", label: "Proveedores", icon: Building2 },

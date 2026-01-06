@@ -247,6 +247,54 @@ export type Database = {
           },
         ]
       }
+      detalle_ordenes_activas: {
+        Row: {
+          cantidad: number
+          id: string
+          menu_item_id: string | null
+          nombre_item: string
+          notas: string | null
+          orden_id: string
+          precio_unitario: number
+          subtotal: number
+        }
+        Insert: {
+          cantidad?: number
+          id?: string
+          menu_item_id?: string | null
+          nombre_item: string
+          notas?: string | null
+          orden_id: string
+          precio_unitario: number
+          subtotal: number
+        }
+        Update: {
+          cantidad?: number
+          id?: string
+          menu_item_id?: string | null
+          nombre_item?: string
+          notas?: string | null
+          orden_id?: string
+          precio_unitario?: number
+          subtotal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_ordenes_activas_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_ordenes_activas_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_activas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       detalle_ordenes_pos: {
         Row: {
           cantidad: number
@@ -554,6 +602,54 @@ export type Database = {
         }
         Relationships: []
       }
+      mesas: {
+        Row: {
+          alto: number | null
+          ancho: number | null
+          capacidad: number | null
+          created_at: string
+          es_activa: boolean | null
+          forma: string | null
+          id: string
+          nombre: string | null
+          numero_mesa: number
+          pos_x: number | null
+          pos_y: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alto?: number | null
+          ancho?: number | null
+          capacidad?: number | null
+          created_at?: string
+          es_activa?: boolean | null
+          forma?: string | null
+          id?: string
+          nombre?: string | null
+          numero_mesa: number
+          pos_x?: number | null
+          pos_y?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alto?: number | null
+          ancho?: number | null
+          capacidad?: number | null
+          created_at?: string
+          es_activa?: boolean | null
+          forma?: string | null
+          id?: string
+          nombre?: string | null
+          numero_mesa?: number
+          pos_x?: number | null
+          pos_y?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       movimientos_inventario: {
         Row: {
           cantidad: number
@@ -600,6 +696,50 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordenes_activas: {
+        Row: {
+          created_at: string
+          estado: string | null
+          id: string
+          mesa_id: string | null
+          nombre_cliente: string | null
+          numero_orden: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string | null
+          id?: string
+          mesa_id?: string | null
+          nombre_cliente?: string | null
+          numero_orden: number
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string | null
+          id?: string
+          mesa_id?: string | null
+          nombre_cliente?: string | null
+          numero_orden?: number
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_activas_mesa_id_fkey"
+            columns: ["mesa_id"]
+            isOneToOne: false
+            referencedRelation: "mesas"
             referencedColumns: ["id"]
           },
         ]
