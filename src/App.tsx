@@ -24,7 +24,6 @@ import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminChatInsights from "./pages/AdminChatInsights";
 import UtilidadDiaria from "./pages/UtilidadDiaria";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
-import OrdenesActivas from "./pages/OrdenesActivas";
 
 const queryClient = new QueryClient();
 
@@ -63,7 +62,6 @@ const App = () => (
             <Route path="/configuracion-fiscal" element={<ConfiguracionFiscal />} />
             <Route path="/configuracion-cuenta" element={<ConfiguracionCuenta />} />
             <Route path="/mesas" element={<ConfiguracionMesas />} />
-            <Route path="/ordenes-activas" element={<OrdenesActivas />} />
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
             <Route path="/admin/chat-insights" element={<AdminChatInsights />} />
           </Route>

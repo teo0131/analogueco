@@ -7,11 +7,13 @@ import { OrderHistory, CompletedOrder } from "@/components/OrderHistory";
 import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { GenerarFactura } from "@/components/factura/GenerarFactura";
+import { ActiveOrdersPanel } from "@/components/ActiveOrdersPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileDown, Menu, Store, Calculator, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FileDown, Menu, Store, Calculator, X, Users, Check, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
@@ -19,6 +21,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 interface MenuItemDB {
@@ -43,6 +46,26 @@ interface MenuItem {
   stock_actual: number;
 }
 
+interface OrdenActiva {
+  id: string;
+  numero_orden: number;
+  nombre_cliente: string | null;
+  total: number;
+  estado: string;
+  created_at: string;
+  mesa_id: string | null;
+  mesa?: { id: string; numero_mesa: number; nombre: string | null };
+  detalles: Array<{
+    id: string;
+    nombre_item: string;
+    cantidad: number;
+    precio_unitario: number;
+    subtotal: number;
+    notas: string | null;
+    menu_item_id: string | null;
+  }>;
+}
+
 const POS = () => {
   const scrollPositionRef = useRef(0);
   const navigate = useNavigate();
@@ -56,6 +79,11 @@ const POS = () => {
   const [selectedOrder, setSelectedOrder] = useState<CompletedOrder | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCompletingOrder, setIsCompletingOrder] = useState(false);
+
+  // Active orders state
+  const [selectedActiveOrder, setSelectedActiveOrder] = useState<OrdenActiva | null>(null);
+  const [activeOrdersKey, setActiveOrdersKey] = useState(0);
+  const [closingActiveOrder, setClosingActiveOrder] = useState(false);
 
   const setDetailOpen = (open: boolean) => {
     if (open) {
@@ -188,9 +216,52 @@ const POS = () => {
 
   const currentTotal = currentItems.reduce((sum, item) => sum + item.price, 0);
 
-  const handleAddItem = (item: MenuItem) => {
-    setCurrentItems([...currentItems, item]);
-    toast.success(`${item.name} añadido a la orden`);
+  const handleAddItem = async (item: MenuItem) => {
+    // If there's a selected active order, add item to it
+    if (selectedActiveOrder) {
+      try {
+        const subtotal = item.price;
+        const { error } = await supabase.from("detalle_ordenes_activas").insert({
+          orden_id: selectedActiveOrder.id,
+          menu_item_id: item.id,
+          nombre_item: item.name,
+          cantidad: 1,
+          precio_unitario: item.price,
+          subtotal
+        });
+
+        if (error) throw error;
+
+        // Update order total
+        const newTotal = selectedActiveOrder.total + subtotal;
+        await supabase.from("ordenes_activas").update({ total: newTotal }).eq("id", selectedActiveOrder.id);
+
+        // Update local state
+        setSelectedActiveOrder({
+          ...selectedActiveOrder,
+          total: newTotal,
+          detalles: [...selectedActiveOrder.detalles, {
+            id: crypto.randomUUID(),
+            nombre_item: item.name,
+            cantidad: 1,
+            precio_unitario: item.price,
+            subtotal,
+            notas: null,
+            menu_item_id: item.id
+          }]
+        });
+
+        toast.success(`${item.name} agregado a orden #${selectedActiveOrder.numero_orden}`);
+        setActiveOrdersKey(prev => prev + 1);
+      } catch (error) {
+        console.error("Error adding item to active order:", error);
+        toast.error("Error al agregar item");
+      }
+    } else {
+      // Normal flow - add to current items
+      setCurrentItems([...currentItems, item]);
+      toast.success(`${item.name} añadido a la orden`);
+    }
   };
 
   const handleRemoveItem = (index: number) => {
@@ -198,6 +269,141 @@ const POS = () => {
     const removedItem = newItems.splice(index, 1)[0];
     setCurrentItems(newItems);
     toast.info(`${removedItem.name} removido de la orden`);
+  };
+
+  // Close active order - complete it and move to history
+  const handleCloseActiveOrder = async () => {
+    if (!selectedActiveOrder || selectedActiveOrder.detalles.length === 0) {
+      toast.error("La orden no tiene items");
+      return;
+    }
+
+    setClosingActiveOrder(true);
+    const stockWarnings: string[] = [];
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuario no autenticado");
+        return;
+      }
+
+      // Process inventory for each item
+      for (const detalle of selectedActiveOrder.detalles) {
+        if (!detalle.menu_item_id) continue;
+
+        const { data: menuItem } = await supabase
+          .from("menu_items")
+          .select("tipo_item, stock_actual")
+          .eq("id", detalle.menu_item_id)
+          .single();
+
+        if (!menuItem) continue;
+
+        if (menuItem.tipo_item === 'retail') {
+          if (menuItem.stock_actual <= 0) {
+            stockWarnings.push(`⚠️ ${detalle.nombre_item}: SIN STOCK`);
+          } else if (menuItem.stock_actual < 3) {
+            stockWarnings.push(`⚡ ${detalle.nombre_item}: Stock muy bajo`);
+          }
+
+          const nuevoStock = menuItem.stock_actual - detalle.cantidad;
+          await supabase.from("menu_items").update({ stock_actual: nuevoStock }).eq("id", detalle.menu_item_id);
+        } else if (menuItem.tipo_item === 'receta') {
+          const { data: recetaData } = await supabase
+            .from("recetas")
+            .select(`id, detalle_recetas (insumo_id, cantidad_insumo_por_unidad, insumo:productos!detalle_recetas_insumo_id_fkey (id, nombre, stock_actual, costo_promedio))`)
+            .eq("menu_item_id", detalle.menu_item_id)
+            .maybeSingle();
+
+          if (recetaData && recetaData.detalle_recetas) {
+            for (const dr of recetaData.detalle_recetas) {
+              const insumo = dr.insumo as any;
+              const cantidadRequerida = dr.cantidad_insumo_por_unidad * detalle.cantidad;
+
+              if (insumo.stock_actual <= 0) {
+                stockWarnings.push(`⚠️ ${insumo.nombre}: SIN STOCK`);
+              } else if (insumo.stock_actual < cantidadRequerida) {
+                stockWarnings.push(`⚠️ ${insumo.nombre}: Stock insuficiente`);
+              }
+
+              const nuevoStock = insumo.stock_actual - cantidadRequerida;
+              await supabase.from("productos").update({ stock_actual: nuevoStock }).eq("id", insumo.id);
+
+              await supabase.from("movimientos_inventario").insert({
+                producto_id: insumo.id,
+                tipo_movimiento: "consumo",
+                cantidad: cantidadRequerida,
+                stock_resultante: nuevoStock,
+                costo_unitario_referencia: insumo.costo_promedio,
+                referencia: `Venta POS - Orden Activa #${selectedActiveOrder.numero_orden}`,
+                notas: `Consumo para: ${detalle.nombre_item}`,
+                user_id: user.id,
+              });
+            }
+          }
+        }
+      }
+
+      // Create completed order
+      const { data: newOrder, error: orderError } = await supabase
+        .from("ordenes_pos")
+        .insert({
+          user_id: user.id,
+          numero_orden: orderNumber,
+          total: selectedActiveOrder.total,
+          comentario: selectedActiveOrder.nombre_cliente ? `Mesa: ${selectedActiveOrder.mesa?.numero_mesa || 'N/A'} - Cliente: ${selectedActiveOrder.nombre_cliente}` : `Mesa: ${selectedActiveOrder.mesa?.numero_mesa || 'N/A'}`,
+          fecha: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Copy details to ordenes_pos
+      for (const detalle of selectedActiveOrder.detalles) {
+        await supabase.from("detalle_ordenes_pos").insert({
+          orden_id: newOrder.id,
+          menu_item_id: detalle.menu_item_id,
+          nombre_item: detalle.nombre_item,
+          cantidad: detalle.cantidad,
+          precio_unitario: detalle.precio_unitario,
+          subtotal: detalle.subtotal
+        });
+      }
+
+      // Delete active order
+      await supabase.from("ordenes_activas").delete().eq("id", selectedActiveOrder.id);
+
+      // Update local state
+      const completedOrder: CompletedOrder = {
+        id: newOrder.id,
+        orderNumber: orderNumber,
+        items: selectedActiveOrder.detalles.map(d => ({ name: d.nombre_item, price: d.precio_unitario })),
+        total: selectedActiveOrder.total,
+        comment: selectedActiveOrder.nombre_cliente || "",
+        timestamp: new Date(),
+      };
+
+      setCompletedOrders([completedOrder, ...completedOrders]);
+      setOrderNumber(orderNumber + 1);
+      setSelectedActiveOrder(null);
+      setActiveOrdersKey(prev => prev + 1);
+
+      if (stockWarnings.length > 0) {
+        toast.warning(`Orden #${selectedActiveOrder.numero_orden} cerrada - ¡ALERTA INVENTARIO!`, {
+          description: stockWarnings.slice(0, 3).join('\n'),
+          duration: 6000
+        });
+      } else {
+        toast.success(`Orden #${selectedActiveOrder.numero_orden} cerrada y facturada`);
+      }
+    } catch (error) {
+      console.error("Error closing active order:", error);
+      toast.error("Error al cerrar orden");
+    } finally {
+      setClosingActiveOrder(false);
+    }
   };
 
   const handleCompleteOrder = async () => {
@@ -746,42 +952,97 @@ const POS = () => {
 
             {/* Current Order Section */}
             <div className="space-y-4">
-              <CurrentOrder
-                items={currentItems}
-                comment={comment}
-                onCommentChange={setComment}
-                onRemoveItem={handleRemoveItem}
-                onCompleteOrder={handleCompleteOrder}
-                orderNumber={orderNumber}
-                isCompleting={isCompletingOrder}
-              />
-
-              {/* Change Calculator Button */}
-              {currentItems.length > 0 && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowChangeCalculator(true)}
-                >
-                  <Calculator className="mr-2 h-4 w-4" />
-                  Calcular Cambio
-                </Button>
+              {/* Active Order Indicator */}
+              {selectedActiveOrder && (
+                <Card className="border-2 border-primary bg-primary/5">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ClipboardList className="w-4 h-4" />
+                        Orden Activa #{selectedActiveOrder.numero_orden}
+                      </CardTitle>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedActiveOrder(null)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-sm space-y-1">
+                      {selectedActiveOrder.nombre_cliente && (
+                        <p className="flex items-center gap-1 text-muted-foreground">
+                          <Users className="w-3 h-3" /> {selectedActiveOrder.nombre_cliente}
+                        </p>
+                      )}
+                      {selectedActiveOrder.mesa && (
+                        <Badge variant="outline">Mesa #{selectedActiveOrder.mesa.numero_mesa}</Badge>
+                      )}
+                      <p className="font-medium text-lg">{formatPrice(selectedActiveOrder.total)}</p>
+                      <p className="text-muted-foreground">{selectedActiveOrder.detalles.length} items</p>
+                    </div>
+                    <Button 
+                      className="w-full mt-3" 
+                      onClick={handleCloseActiveOrder}
+                      disabled={closingActiveOrder || selectedActiveOrder.detalles.length === 0}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      {closingActiveOrder ? "Cerrando..." : "Cerrar Cuenta"}
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
+
+              {/* Normal current order (when no active order selected) */}
+              {!selectedActiveOrder && (
+                <>
+                  <CurrentOrder
+                    items={currentItems}
+                    comment={comment}
+                    onCommentChange={setComment}
+                    onRemoveItem={handleRemoveItem}
+                    onCompleteOrder={handleCompleteOrder}
+                    orderNumber={orderNumber}
+                    isCompleting={isCompletingOrder}
+                  />
+
+                  {currentItems.length > 0 && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setShowChangeCalculator(true)}
+                    >
+                      <Calculator className="mr-2 h-4 w-4" />
+                      Calcular Cambio
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {/* Active Orders Panel */}
+              <Card>
+                <CardContent className="pt-4">
+                  <ActiveOrdersPanel
+                    key={activeOrdersKey}
+                    menuItems={menuItems}
+                    onSelectActiveOrder={setSelectedActiveOrder}
+                    selectedActiveOrder={selectedActiveOrder}
+                  />
+                </CardContent>
+              </Card>
             </div>
           </div>
 
           {/* Order History Section */}
           <div className="mt-8">
-            <Tabs defaultValue="active" className="w-full">
+            <Tabs defaultValue="completed" className="w-full">
               <TabsList className="w-full bg-muted">
-                <TabsTrigger value="active" className="flex-1">
-                  Órdenes Activas ({completedOrders.length})
+                <TabsTrigger value="completed" className="flex-1">
+                  Órdenes Completadas ({completedOrders.length})
                 </TabsTrigger>
                 <TabsTrigger value="deleted" className="flex-1">
                   Eliminadas ({deletedOrders.length})
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="active" className="mt-4">
+              <TabsContent value="completed" className="mt-4">
                 <OrderHistory
                   orders={completedOrders}
                   onSelectOrder={handleSelectOrder}
