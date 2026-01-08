@@ -1297,12 +1297,12 @@ const POS = () => {
               
               <div className="space-y-2">
                 <Label className="text-sm">Mesa (opcional)</Label>
-                <Select value={sendToActiveMesa} onValueChange={setSendToActiveMesa}>
+                <Select value={sendToActiveMesa || "none"} onValueChange={(val) => setSendToActiveMesa(val === "none" ? "" : val)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sin mesa asignada" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin mesa</SelectItem>
+                    <SelectItem value="none">Sin mesa</SelectItem>
                     {availableMesas.map((mesa) => (
                       <SelectItem key={mesa.id} value={mesa.id}>
                         Mesa #{mesa.numero_mesa} {mesa.nombre && `(${mesa.nombre})`}
