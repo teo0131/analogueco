@@ -19,6 +19,7 @@ interface CurrentOrderProps {
   onCommentChange: (comment: string) => void;
   onRemoveItem: (index: number) => void;
   onCompleteOrder: () => void;
+  onSendToActive?: () => void;
   orderNumber: number;
   isCompleting?: boolean;
 }
@@ -40,6 +41,7 @@ export const CurrentOrder = ({
   onCommentChange,
   onRemoveItem,
   onCompleteOrder,
+  onSendToActive,
   orderNumber,
   isCompleting = false,
 }: CurrentOrderProps) => {
@@ -179,14 +181,27 @@ export const CurrentOrder = ({
               />
             </div>
 
-            <Button
-              onClick={onCompleteOrder}
-              className="w-full bg-accent hover:bg-accent/90"
-              size="lg"
-              disabled={isCompleting}
-            >
-              {isCompleting ? "Guardando..." : "Completar Orden"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={onCompleteOrder}
+                className="flex-1 bg-accent hover:bg-accent/90"
+                size="lg"
+                disabled={isCompleting}
+              >
+                {isCompleting ? "Guardando..." : "Completar Orden"}
+              </Button>
+              {onSendToActive && (
+                <Button
+                  onClick={onSendToActive}
+                  variant="outline"
+                  size="lg"
+                  disabled={isCompleting}
+                  className="flex-1"
+                >
+                  Todavía Activa
+                </Button>
+              )}
+            </div>
           </>
         )}
       </CardContent>
