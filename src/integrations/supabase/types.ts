@@ -376,6 +376,54 @@ export type Database = {
           },
         ]
       }
+      elementos_planta: {
+        Row: {
+          alto: number | null
+          ancho: number | null
+          color: string | null
+          created_at: string | null
+          forma: string | null
+          id: string
+          nombre: string | null
+          pos_x: number | null
+          pos_y: number | null
+          rotacion: number | null
+          tipo: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alto?: number | null
+          ancho?: number | null
+          color?: string | null
+          created_at?: string | null
+          forma?: string | null
+          id?: string
+          nombre?: string | null
+          pos_x?: number | null
+          pos_y?: number | null
+          rotacion?: number | null
+          tipo: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alto?: number | null
+          ancho?: number | null
+          color?: string | null
+          created_at?: string | null
+          forma?: string | null
+          id?: string
+          nombre?: string | null
+          pos_x?: number | null
+          pos_y?: number | null
+          rotacion?: number | null
+          tipo?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       entradas_inventario: {
         Row: {
           created_at: string

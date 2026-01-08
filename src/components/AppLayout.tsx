@@ -23,6 +23,7 @@ import {
   MessageSquare,
   TrendingUp,
   Settings,
+  LayoutGrid,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,6 +39,7 @@ const navItems = [
   { path: "/inventario/historial", label: "Kardex", icon: History },
   { path: "/historial-diario", label: "Ventas Diarias", icon: Calendar },
   { path: "/utilidad", label: "Utilidad", icon: TrendingUp },
+  { path: "/mesas", label: "Mesas", icon: LayoutGrid },
   { path: "/configuracion-fiscal", label: "Datos Fiscales", icon: Receipt },
   { path: "/configuracion-cuenta", label: "Mi Cuenta", icon: Settings },
 ];
