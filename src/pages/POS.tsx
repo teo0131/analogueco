@@ -8,12 +8,15 @@ import { DeletedOrders } from "@/components/DeletedOrders";
 import { OrderDetail } from "@/components/OrderDetail";
 import { GenerarFactura } from "@/components/factura/GenerarFactura";
 import { ActiveOrdersPanel } from "@/components/ActiveOrdersPanel";
+import { ActiveOrdersHistory } from "@/components/ActiveOrdersHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileDown, Menu, Store, Calculator, X, Users, Check, ClipboardList } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileDown, Menu, Store, Calculator, X, Users, Check, ClipboardList, ShoppingBag, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
@@ -22,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 interface MenuItemDB {
@@ -107,6 +111,14 @@ const POS = () => {
   // Invoice state
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceOrder, setInvoiceOrder] = useState<CompletedOrder | null>(null);
+
+  // Complete order options dialog
+  const [showCompleteOptions, setShowCompleteOptions] = useState(false);
+  const [pendingOrderItems, setPendingOrderItems] = useState<MenuItem[]>([]);
+  const [pendingOrderComment, setPendingOrderComment] = useState("");
+  const [sendToActiveMesa, setSendToActiveMesa] = useState("");
+  const [sendToActiveCliente, setSendToActiveCliente] = useState("");
+  const [availableMesas, setAvailableMesas] = useState<Array<{ id: string; numero_mesa: number; nombre: string | null }>>([]);
 
   // Load menu items and orders from database
   useEffect(() => {
@@ -202,6 +214,18 @@ const POS = () => {
             timestamp: new Date(order.fecha_orden),
           }));
           setDeletedOrders(deleted);
+        }
+
+        // Load available mesas for sending to active orders
+        const { data: mesasData } = await supabase
+          .from("mesas")
+          .select("id, numero_mesa, nombre")
+          .eq("user_id", user.id)
+          .eq("es_activa", true)
+          .order("numero_mesa");
+
+        if (mesasData) {
+          setAvailableMesas(mesasData);
         }
       } catch (error) {
         console.error("Error loading data:", error);
@@ -406,15 +430,102 @@ const POS = () => {
     }
   };
 
-  const handleCompleteOrder = async () => {
-    if (isCompletingOrder) return;
-
+  // Show complete options dialog instead of directly completing
+  const handleShowCompleteOptions = () => {
     if (currentItems.length === 0) {
       toast.error("Agrega items a la orden primero");
       return;
     }
+    setPendingOrderItems([...currentItems]);
+    setPendingOrderComment(comment);
+    setSendToActiveMesa("");
+    setSendToActiveCliente("");
+    setShowCompleteOptions(true);
+  };
+
+  // Send current order to active orders (without completing/billing)
+  const handleSendToActiveOrders = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuario no autenticado");
+        return;
+      }
+
+      // Get next active order number
+      const { data: lastOrder } = await supabase
+        .from("ordenes_activas")
+        .select("numero_orden")
+        .eq("user_id", user.id)
+        .order("numero_orden", { ascending: false })
+        .limit(1)
+        .single();
+
+      const nextNumber = (lastOrder?.numero_orden || 0) + 1;
+      const total = pendingOrderItems.reduce((sum, item) => sum + item.price, 0);
+
+      // Create active order
+      const { data: newActiveOrder, error: orderError } = await supabase
+        .from("ordenes_activas")
+        .insert({
+          user_id: user.id,
+          numero_orden: nextNumber,
+          mesa_id: sendToActiveMesa || null,
+          nombre_cliente: sendToActiveCliente || null,
+          total: total,
+          estado: "abierta"
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Insert order details
+      const detalles = pendingOrderItems.map(item => ({
+        orden_id: newActiveOrder.id,
+        menu_item_id: item.id,
+        nombre_item: item.name,
+        cantidad: 1,
+        precio_unitario: item.price,
+        subtotal: item.price
+      }));
+
+      const { error: detalleError } = await supabase
+        .from("detalle_ordenes_activas")
+        .insert(detalles);
+
+      if (detalleError) throw detalleError;
+
+      // Clear current order
+      setCurrentItems([]);
+      setComment("");
+      setShowCompleteOptions(false);
+      setPendingOrderItems([]);
+      setPendingOrderComment("");
+      setSendToActiveMesa("");
+      setSendToActiveCliente("");
+      setActiveOrdersKey(prev => prev + 1);
+
+      toast.success(`Orden enviada a Activas #${nextNumber}`);
+    } catch (error) {
+      console.error("Error sending to active orders:", error);
+      toast.error("Error al enviar a órdenes activas");
+    }
+  };
+
+  const handleCompleteOrder = async () => {
+    if (isCompletingOrder) return;
+
+    if (pendingOrderItems.length === 0 && currentItems.length === 0) {
+      toast.error("Agrega items a la orden primero");
+      return;
+    }
+
+    const itemsToProcess = pendingOrderItems.length > 0 ? pendingOrderItems : currentItems;
+    const commentToUse = pendingOrderItems.length > 0 ? pendingOrderComment : comment;
 
     setIsCompletingOrder(true);
+    setShowCompleteOptions(false);
 
     // Collect stock warnings to show after completing the order
     const stockWarnings: string[] = [];
@@ -427,7 +538,7 @@ const POS = () => {
       }
 
       // Process inventory deductions based on item type
-      for (const item of currentItems) {
+      for (const item of itemsToProcess) {
         if (item.tipo_item === 'retail') {
           // Para items tipo retail: reducir stock directamente del menu_item
           const { data: menuItemData, error: menuError } = await supabase
@@ -544,7 +655,7 @@ const POS = () => {
       if (orderError) throw orderError;
 
       // Save order details
-      const detalles = currentItems.map(item => ({
+      const detalles = itemsToProcess.map(item => ({
         orden_id: newOrder.id,
         menu_item_id: item.id,
         nombre_item: item.name,
@@ -563,15 +674,17 @@ const POS = () => {
       const completedOrder: CompletedOrder = {
         id: newOrder.id,
         orderNumber,
-        items: currentItems.map(item => ({ name: item.name, price: item.price })),
+        items: itemsToProcess.map(item => ({ name: item.name, price: item.price })),
         total,
-        comment,
+        comment: commentToUse,
         timestamp: new Date(),
       };
 
       setCompletedOrders([completedOrder, ...completedOrders]);
       setCurrentItems([]);
       setComment("");
+      setPendingOrderItems([]);
+      setPendingOrderComment("");
       setOrderNumber(orderNumber + 1);
       setShowChangeCalculator(false);
       setPaymentAmount("");
@@ -999,7 +1112,7 @@ const POS = () => {
                     comment={comment}
                     onCommentChange={setComment}
                     onRemoveItem={handleRemoveItem}
-                    onCompleteOrder={handleCompleteOrder}
+                    onCompleteOrder={handleShowCompleteOptions}
                     orderNumber={orderNumber}
                     isCompleting={isCompletingOrder}
                   />
@@ -1038,6 +1151,10 @@ const POS = () => {
                 <TabsTrigger value="completed" className="flex-1">
                   Órdenes Completadas ({completedOrders.length})
                 </TabsTrigger>
+                <TabsTrigger value="active" className="flex-1">
+                  <ShoppingBag className="w-4 h-4 mr-1" />
+                  Activas
+                </TabsTrigger>
                 <TabsTrigger value="deleted" className="flex-1">
                   Eliminadas ({deletedOrders.length})
                 </TabsTrigger>
@@ -1048,6 +1165,15 @@ const POS = () => {
                   onSelectOrder={handleSelectOrder}
                   onDeleteOrder={handleDeleteOrder}
                   onGenerateInvoice={handleGenerateInvoice}
+                />
+              </TabsContent>
+              <TabsContent value="active" className="mt-4">
+                <ActiveOrdersHistory
+                  refreshKey={activeOrdersKey}
+                  onSelectOrder={(orden) => {
+                    setSelectedActiveOrder(orden);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                 />
               </TabsContent>
               <TabsContent value="deleted" className="mt-4">
@@ -1130,6 +1256,85 @@ const POS = () => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Complete Order Options Dialog */}
+      <Dialog open={showCompleteOptions} onOpenChange={setShowCompleteOptions}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Qué deseas hacer con esta orden?</DialogTitle>
+            <DialogDescription>
+              Total: {formatPrice(pendingOrderItems.reduce((sum, item) => sum + item.price, 0))} ({pendingOrderItems.length} items)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Option 1: Complete order immediately */}
+            <Button 
+              className="w-full h-auto p-4 flex flex-col items-start gap-2" 
+              onClick={handleCompleteOrder}
+              disabled={isCompletingOrder}
+            >
+              <div className="flex items-center gap-2 font-semibold">
+                <Check className="w-5 h-5" />
+                Completar Orden
+              </div>
+              <span className="text-xs text-primary-foreground/80 text-left">
+                Facturar ahora y registrar como venta
+              </span>
+            </Button>
+
+            {/* Option 2: Send to active orders */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 font-medium">
+                <ShoppingBag className="w-5 h-5" />
+                Enviar a Órdenes Activas
+              </div>
+              <p className="text-xs text-muted-foreground">
+                La orden queda pendiente hasta cerrar la cuenta
+              </p>
+              
+              <div className="space-y-2">
+                <Label className="text-sm">Mesa (opcional)</Label>
+                <Select value={sendToActiveMesa} onValueChange={setSendToActiveMesa}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sin mesa asignada" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin mesa</SelectItem>
+                    {availableMesas.map((mesa) => (
+                      <SelectItem key={mesa.id} value={mesa.id}>
+                        Mesa #{mesa.numero_mesa} {mesa.nombre && `(${mesa.nombre})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm">Cliente (opcional)</Label>
+                <Input
+                  value={sendToActiveCliente}
+                  onChange={(e) => setSendToActiveCliente(e.target.value)}
+                  placeholder="Nombre del cliente"
+                />
+              </div>
+
+              <Button 
+                variant="secondary" 
+                className="w-full"
+                onClick={handleSendToActiveOrders}
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                Enviar a Activas
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCompleteOptions(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
