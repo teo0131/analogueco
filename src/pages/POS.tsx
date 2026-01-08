@@ -1113,6 +1113,7 @@ const POS = () => {
                     onCommentChange={setComment}
                     onRemoveItem={handleRemoveItem}
                     onCompleteOrder={handleShowCompleteOptions}
+                    onSendToActive={handleShowCompleteOptions}
                     orderNumber={orderNumber}
                     isCompleting={isCompletingOrder}
                   />
