@@ -678,29 +678,113 @@ const ConfiguracionMesas = () => {
                 return (
                   <div
                     key={elemento.id}
-                    className={`absolute cursor-move flex items-center justify-center shadow-md transition-all ${
-                      elemento.forma === "circular" ? "rounded-full" : "rounded-md"
-                    } ${draggingItem?.id === elemento.id ? "ring-2 ring-accent z-20" : "z-10"} ${
-                      isSelected ? "ring-2 ring-primary ring-offset-2" : ""
-                    }`}
+                    className="absolute"
                     style={{
                       left: elemento.pos_x,
                       top: elemento.pos_y,
-                      width: elemento.ancho,
-                      height: elemento.alto,
-                      backgroundColor: elemento.color,
-                      transform: `rotate(${elemento.rotacion}deg)`
+                      zIndex: isSelected ? 25 : 10
                     }}
-                    onMouseDown={(e) => handleMouseDown(e, elemento.id, "elemento", elemento.pos_x, elemento.pos_y)}
-                    onDoubleClick={() => openEditElementoDialog(elemento)}
                   >
-                    <div className="text-white/80">
-                      {paletteItem?.icon}
+                    {/* Main element */}
+                    <div
+                      className={`cursor-move flex items-center justify-center shadow-md transition-all ${
+                        elemento.forma === "circular" ? "rounded-full" : "rounded-md"
+                      } ${draggingItem?.id === elemento.id ? "ring-2 ring-accent" : ""} ${
+                        isSelected ? "ring-2 ring-primary ring-offset-2" : ""
+                      }`}
+                      style={{
+                        width: elemento.ancho,
+                        height: elemento.alto,
+                        backgroundColor: elemento.color,
+                        transform: `rotate(${elemento.rotacion}deg)`
+                      }}
+                      onMouseDown={(e) => handleMouseDown(e, elemento.id, "elemento", elemento.pos_x, elemento.pos_y)}
+                      onDoubleClick={() => openEditElementoDialog(elemento)}
+                    >
+                      <div className="text-white/80">
+                        {paletteItem?.icon}
+                      </div>
+                      {elemento.nombre && elemento.ancho > 60 && (
+                        <span className="absolute bottom-1 text-[10px] text-white/70 font-medium">
+                          {elemento.nombre}
+                        </span>
+                      )}
                     </div>
-                    {elemento.nombre && elemento.ancho > 60 && (
-                      <span className="absolute bottom-1 text-[10px] text-white/70 font-medium">
-                        {elemento.nombre}
-                      </span>
+                    
+                    {/* Resize & Rotate handles when selected */}
+                    {isSelected && (
+                      <>
+                        {/* Rotation handle */}
+                        <div
+                          className="absolute -top-8 left-1/2 -translate-x-1/2 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-md"
+                          style={{ transform: `translateX(-50%)` }}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const startY = e.clientY;
+                            const startRotation = elemento.rotacion;
+                            
+                            const onMouseMove = (moveEvent: MouseEvent) => {
+                              const deltaY = startY - moveEvent.clientY;
+                              const newRotation = (startRotation + deltaY * 2) % 360;
+                              setElementos(prev => prev.map(el => 
+                                el.id === elemento.id ? { ...el, rotacion: newRotation } : el
+                              ));
+                            };
+                            
+                            const onMouseUp = async () => {
+                              document.removeEventListener('mousemove', onMouseMove);
+                              document.removeEventListener('mouseup', onMouseUp);
+                              const el = elementos.find(e => e.id === elemento.id);
+                              if (el) {
+                                await supabase.from("elementos_planta").update({ rotacion: el.rotacion }).eq("id", elemento.id);
+                              }
+                            };
+                            
+                            document.addEventListener('mousemove', onMouseMove);
+                            document.addEventListener('mouseup', onMouseUp);
+                          }}
+                        >
+                          <RotateCw className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                        
+                        {/* Resize handle (bottom-right corner) */}
+                        <div
+                          className="absolute -bottom-2 -right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center cursor-se-resize hover:scale-110 transition-transform shadow-md"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const startX = e.clientX;
+                            const startY = e.clientY;
+                            const startWidth = elemento.ancho;
+                            const startHeight = elemento.alto;
+                            
+                            const onMouseMove = (moveEvent: MouseEvent) => {
+                              const deltaX = moveEvent.clientX - startX;
+                              const deltaY = moveEvent.clientY - startY;
+                              const newWidth = Math.max(30, startWidth + deltaX);
+                              const newHeight = Math.max(15, startHeight + deltaY);
+                              setElementos(prev => prev.map(el => 
+                                el.id === elemento.id ? { ...el, ancho: newWidth, alto: newHeight } : el
+                              ));
+                            };
+                            
+                            const onMouseUp = async () => {
+                              document.removeEventListener('mousemove', onMouseMove);
+                              document.removeEventListener('mouseup', onMouseUp);
+                              const el = elementos.find(e => e.id === elemento.id);
+                              if (el) {
+                                await supabase.from("elementos_planta").update({ ancho: el.ancho, alto: el.alto }).eq("id", elemento.id);
+                              }
+                            };
+                            
+                            document.addEventListener('mousemove', onMouseMove);
+                            document.addEventListener('mouseup', onMouseUp);
+                          }}
+                        >
+                          <Maximize2 className="w-2.5 h-2.5 text-primary-foreground" />
+                        </div>
+                      </>
                     )}
                   </div>
                 );
@@ -715,27 +799,74 @@ const ConfiguracionMesas = () => {
                 return (
                   <div
                     key={mesa.id}
-                    className={`absolute cursor-pointer flex flex-col items-center justify-center shadow-lg transition-all ${getMesaShape(mesa.forma)} ${
-                      draggingItem?.id === mesa.id ? "ring-2 ring-accent z-30" : "z-20"
-                    } ${isSelected ? "ring-2 ring-offset-2" : ""} hover:scale-105`}
+                    className="absolute"
                     style={{
                       left: mesa.pos_x,
                       top: mesa.pos_y,
-                      width: mesa.ancho,
-                      height: mesa.alto,
-                      backgroundColor: isOccupied ? "hsl(0 84% 60%)" : "hsl(142 71% 45%)",
-                      color: "white"
+                      zIndex: isSelected ? 35 : 20
                     }}
-                    onMouseDown={(e) => handleMouseDown(e, mesa.id, "mesa", mesa.pos_x, mesa.pos_y)}
-                    onClick={(e) => handleMesaClick(mesa, e)}
-                    onDoubleClick={() => openEditMesaDialog(mesa)}
                   >
-                    <span className="font-bold text-lg">#{mesa.numero_mesa}</span>
-                    <span className="text-xs opacity-80">{mesa.capacidad}p</span>
-                    {isOccupied && (
-                      <Badge variant="secondary" className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0 bg-white text-red-600">
-                        ${Math.round(orden.total / 1000)}k
-                      </Badge>
+                    {/* Main mesa */}
+                    <div
+                      className={`cursor-pointer flex flex-col items-center justify-center shadow-lg transition-all ${getMesaShape(mesa.forma)} ${
+                        draggingItem?.id === mesa.id ? "ring-2 ring-accent" : ""
+                      } ${isSelected ? "ring-2 ring-offset-2" : ""} hover:scale-105`}
+                      style={{
+                        width: mesa.ancho,
+                        height: mesa.alto,
+                        backgroundColor: isOccupied ? "hsl(0 84% 60%)" : "hsl(142 71% 45%)",
+                        color: "white"
+                      }}
+                      onMouseDown={(e) => handleMouseDown(e, mesa.id, "mesa", mesa.pos_x, mesa.pos_y)}
+                      onClick={(e) => handleMesaClick(mesa, e)}
+                      onDoubleClick={() => openEditMesaDialog(mesa)}
+                    >
+                      <span className="font-bold text-lg">#{mesa.numero_mesa}</span>
+                      <span className="text-xs opacity-80">{mesa.capacidad}p</span>
+                      {isOccupied && (
+                        <Badge variant="secondary" className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0 bg-white text-red-600">
+                          ${Math.round(orden.total / 1000)}k
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Resize handle when selected */}
+                    {isSelected && (
+                      <div
+                        className="absolute -bottom-2 -right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center cursor-se-resize hover:scale-110 transition-transform shadow-md"
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          const startX = e.clientX;
+                          const startY = e.clientY;
+                          const startWidth = mesa.ancho;
+                          const startHeight = mesa.alto;
+                          
+                          const onMouseMove = (moveEvent: MouseEvent) => {
+                            const deltaX = moveEvent.clientX - startX;
+                            const deltaY = moveEvent.clientY - startY;
+                            const delta = Math.max(deltaX, deltaY);
+                            const newSize = Math.max(40, startWidth + delta);
+                            setMesas(prev => prev.map(m => 
+                              m.id === mesa.id ? { ...m, ancho: newSize, alto: newSize } : m
+                            ));
+                          };
+                          
+                          const onMouseUp = async () => {
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
+                            const m = mesas.find(me => me.id === mesa.id);
+                            if (m) {
+                              await supabase.from("mesas").update({ ancho: m.ancho, alto: m.alto }).eq("id", mesa.id);
+                            }
+                          };
+                          
+                          document.addEventListener('mousemove', onMouseMove);
+                          document.addEventListener('mouseup', onMouseUp);
+                        }}
+                      >
+                        <Maximize2 className="w-2.5 h-2.5 text-primary-foreground" />
+                      </div>
                     )}
                   </div>
                 );
