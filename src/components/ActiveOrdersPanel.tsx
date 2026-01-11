@@ -51,18 +51,22 @@ interface MenuItem {
   stock_actual: number;
 }
 
+// Props interface is defined inside the component file below
+
 interface ActiveOrdersPanelProps {
   menuItems: MenuItem[];
-  onSelectActiveOrder: (orden: OrdenActiva) => void;
+  onSelectActiveOrder: (orden: OrdenActiva | null) => void;
   selectedActiveOrder: OrdenActiva | null;
   onRefresh?: () => void;
+  refreshKey?: number;
 }
 
 export const ActiveOrdersPanel = ({ 
   menuItems, 
   onSelectActiveOrder, 
   selectedActiveOrder,
-  onRefresh 
+  onRefresh,
+  refreshKey = 0
 }: ActiveOrdersPanelProps) => {
   const [ordenes, setOrdenes] = useState<OrdenActiva[]>([]);
   const [mesas, setMesas] = useState<Mesa[]>([]);
@@ -78,7 +82,7 @@ export const ActiveOrdersPanel = ({
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [refreshKey]);
 
   const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
