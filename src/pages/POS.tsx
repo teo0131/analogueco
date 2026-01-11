@@ -1135,10 +1135,10 @@ const POS = () => {
               <Card>
                 <CardContent className="pt-4">
                   <ActiveOrdersPanel
-                    key={activeOrdersKey}
                     menuItems={menuItems}
                     onSelectActiveOrder={setSelectedActiveOrder}
                     selectedActiveOrder={selectedActiveOrder}
+                    refreshKey={activeOrdersKey}
                   />
                 </CardContent>
               </Card>
