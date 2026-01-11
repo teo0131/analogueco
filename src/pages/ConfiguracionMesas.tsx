@@ -430,13 +430,14 @@ const ConfiguracionMesas = () => {
 
     const nextNumber = (lastOrder?.numero_orden || 0) + 1;
 
-    // Create order in ordenes_pos
+    // Create order in ordenes_pos - use original creation date for billing
+    const fechaOriginal = new Date(orden.created_at);
     const { data: newOrden, error: ordenError } = await supabase.from("ordenes_pos").insert({
       user_id: user.id,
       numero_orden: nextNumber,
       total: orden.total,
       comentario: orderComment || null,
-      fecha: new Date().toISOString().split('T')[0]
+      fecha: fechaOriginal.toISOString()
     }).select().single();
 
     if (ordenError) {
