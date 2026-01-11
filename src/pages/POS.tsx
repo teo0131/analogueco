@@ -369,7 +369,8 @@ const POS = () => {
         }
       }
 
-      // Create completed order
+      // Create completed order - use original creation date for billing
+      const fechaOriginal = new Date(selectedActiveOrder.created_at);
       const { data: newOrder, error: orderError } = await supabase
         .from("ordenes_pos")
         .insert({
@@ -377,7 +378,7 @@ const POS = () => {
           numero_orden: orderNumber,
           total: selectedActiveOrder.total,
           comentario: selectedActiveOrder.nombre_cliente ? `Mesa: ${selectedActiveOrder.mesa?.numero_mesa || 'N/A'} - Cliente: ${selectedActiveOrder.nombre_cliente}` : `Mesa: ${selectedActiveOrder.mesa?.numero_mesa || 'N/A'}`,
-          fecha: new Date().toISOString(),
+          fecha: fechaOriginal.toISOString(),
         })
         .select()
         .single();
