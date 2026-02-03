@@ -4,6 +4,12 @@ import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   LogOut,
   Package,
@@ -24,24 +30,73 @@ import {
   TrendingUp,
   Settings,
   LayoutGrid,
+  Shield,
+  Eye,
+  Bell,
+  Clock,
+  AlertTriangle,
+  Camera,
+  Radio,
+  Volume2,
+  ClipboardCheck,
+  ChevronDown,
+  ChevronRight,
+  Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 
-const navItems = [
-  { path: "/home", label: "Inicio", icon: Home },
-  { path: "/pos", label: "Facturación", icon: ShoppingCart },
-  { path: "/menu", label: "Mi Menú", icon: Menu },
-  { path: "/dashboard", label: "Dashboard", icon: BarChart3 },
-  { path: "/proveedores", label: "Proveedores", icon: Building2 },
-  { path: "/recetas", label: "Recetas", icon: ChefHat },
-  { path: "/inventario/ingreso", label: "Ingreso", icon: Package },
-  { path: "/inventario/historial-ingresos", label: "Historial Ingresos", icon: Calendar },
-  { path: "/inventario/historial", label: "Kardex", icon: History },
-  { path: "/historial-diario", label: "Ventas Diarias", icon: Calendar },
-  { path: "/utilidad", label: "Utilidad", icon: TrendingUp },
-  { path: "/mesas", label: "Mesas", icon: LayoutGrid },
-  { path: "/configuracion-fiscal", label: "Datos Fiscales", icon: Receipt },
-  { path: "/configuracion-cuenta", label: "Mi Cuenta", icon: Settings },
+// Navigation structure by categories
+const navCategories = [
+  {
+    id: "supervision",
+    label: "Supervisión",
+    icon: Eye,
+    items: [
+      { path: "/supervision", label: "Centro", icon: Activity },
+      { path: "/alertas", label: "Alertas", icon: Bell },
+      { path: "/timeline", label: "Timeline", icon: Clock },
+      { path: "/inconsistencias", label: "Motor POS vs Real", icon: AlertTriangle },
+    ],
+  },
+  {
+    id: "operacion",
+    label: "Operación",
+    icon: ShoppingCart,
+    items: [
+      { path: "/pos", label: "Facturación", icon: ShoppingCart },
+      { path: "/menu", label: "Mi Menú", icon: Menu },
+      { path: "/mesas", label: "Mesas", icon: LayoutGrid },
+      { path: "/inventario/ingreso", label: "Ingreso Stock", icon: Package },
+      { path: "/inventario/historial-ingresos", label: "Historial Ingresos", icon: Calendar },
+      { path: "/inventario/historial", label: "Kardex", icon: History },
+      { path: "/proveedores", label: "Proveedores", icon: Building2 },
+      { path: "/recetas", label: "Recetas", icon: ChefHat },
+    ],
+  },
+  {
+    id: "seguridad",
+    label: "Seguridad",
+    icon: Shield,
+    items: [
+      { path: "/camaras", label: "Cámaras", icon: Camera },
+      { path: "/sensores", label: "Sensores", icon: Radio },
+      { path: "/audio", label: "Audio", icon: Volume2 },
+    ],
+  },
+  {
+    id: "administracion",
+    label: "Administración",
+    icon: Settings,
+    items: [
+      { path: "/turnos", label: "Turnos/Checklists", icon: ClipboardCheck },
+      { path: "/reportes", label: "Reportes", icon: BarChart3 },
+      { path: "/historial-diario", label: "Ventas Diarias", icon: Calendar },
+      { path: "/utilidad", label: "Utilidad", icon: TrendingUp },
+      { path: "/dashboard", label: "Dashboard", icon: BarChart3 },
+      { path: "/configuracion-fiscal", label: "Datos Fiscales", icon: Receipt },
+      { path: "/configuracion-cuenta", label: "Mi Cuenta", icon: Settings },
+    ],
+  },
 ];
 
 const adminNavItems = [
@@ -57,6 +112,7 @@ const AppLayout = () => {
   const [mounted, setMounted] = useState(false);
   const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
+  const [openCategories, setOpenCategories] = useState<string[]>(["supervision", "operacion"]);
 
   useEffect(() => {
     setMounted(true);
@@ -83,6 +139,18 @@ const AppLayout = () => {
     loadUserData();
   }, []);
 
+  // Determine which category should be open based on current path
+  useEffect(() => {
+    for (const category of navCategories) {
+      if (category.items.some(item => location.pathname === item.path || location.pathname.startsWith(item.path + '/'))) {
+        if (!openCategories.includes(category.id)) {
+          setOpenCategories(prev => [...prev, category.id]);
+        }
+        break;
+      }
+    }
+  }, [location.pathname]);
+
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -93,105 +161,179 @@ const AppLayout = () => {
     }
   };
 
+  const toggleCategory = (categoryId: string) => {
+    setOpenCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const isPathActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Navigation Banner */}
-      <header className="bg-primary text-primary-foreground py-3 px-4 shadow-lg sticky top-0 z-50">
-        <div className="container mx-auto">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div 
-                className="h-9 w-9 bg-primary-foreground rounded-lg flex items-center justify-center cursor-pointer"
-                onClick={() => navigate("/home")}
-              >
-                <Box className="h-5 w-5 text-primary" />
-              </div>
-              <div 
-                className="hidden sm:block cursor-pointer"
-                onClick={() => navigate("/home")}
-              >
-                <h1 className="text-lg font-bold tracking-tight">{storeName || "AnalogueCo"}</h1>
-                <p className="text-xs opacity-80">Hola, {userName}</p>
-              </div>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 bg-card border-r flex flex-col sticky top-0 h-screen overflow-hidden">
+        {/* Logo Header */}
+        <div 
+          className="p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => navigate("/supervision")}
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center">
+              <Box className="h-6 w-6 text-primary-foreground" />
             </div>
-
-            {/* Navigation Items */}
-            <nav className="flex-1 flex justify-center">
-              <div className="flex flex-wrap gap-1 justify-center max-w-4xl">
-                {navItems.map((item) => {
-                  const isActive = location.pathname === item.path;
-                  const Icon = item.icon;
-                  return (
-                    <Button
-                      key={item.path}
-                      variant={isActive ? "secondary" : "ghost"}
-                      size="sm"
-                      onClick={() => navigate(item.path)}
-                      className={`text-xs px-2 py-1 h-8 ${
-                        isActive 
-                          ? "bg-primary-foreground text-primary" 
-                          : "text-primary-foreground hover:bg-primary-foreground/20"
-                      }`}
-                    >
-                      <Icon className="h-3.5 w-3.5 mr-1" />
-                      <span className="hidden md:inline">{item.label}</span>
-                    </Button>
-                  );
-                })}
-                {isAdmin && adminNavItems.map((item) => {
-                  const isActive = location.pathname === item.path;
-                  const Icon = item.icon;
-                  return (
-                    <Button
-                      key={item.path}
-                      variant={isActive ? "secondary" : "ghost"}
-                      size="sm"
-                      onClick={() => navigate(item.path)}
-                      className={`text-xs px-2 py-1 h-8 ${
-                        isActive 
-                          ? "bg-primary-foreground text-primary" 
-                          : "text-primary-foreground hover:bg-primary-foreground/20"
-                      }`}
-                    >
-                      <Icon className="h-3.5 w-3.5 mr-1" />
-                      <span className="hidden md:inline">{item.label}</span>
-                    </Button>
-                  );
-                })}
-              </div>
-            </nav>
-
-            <div className="flex items-center gap-2">
-              {mounted && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="text-primary-foreground hover:bg-primary-foreground/20"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="h-4 w-4" />
-                  ) : (
-                    <Moon className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-primary-foreground hover:bg-primary-foreground/20"
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Salir</span>
-              </Button>
+            <div>
+              <h1 className="text-lg font-bold">{storeName || "AnalogueCo"}</h1>
+              <p className="text-xs text-muted-foreground">Supervisión Operativa</p>
             </div>
           </div>
         </div>
-      </header>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto p-2">
+          {/* Home link */}
+          <Button
+            variant={location.pathname === "/home" ? "secondary" : "ghost"}
+            className="w-full justify-start mb-2"
+            onClick={() => navigate("/home")}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Inicio
+          </Button>
+
+          {/* Categories */}
+          {navCategories.map((category) => {
+            const CategoryIcon = category.icon;
+            const isOpen = openCategories.includes(category.id);
+            const hasActiveItem = category.items.some(item => isPathActive(item.path));
+
+            return (
+              <Collapsible
+                key={category.id}
+                open={isOpen}
+                onOpenChange={() => toggleCategory(category.id)}
+                className="mb-1"
+              >
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant={hasActiveItem ? "secondary" : "ghost"}
+                    className="w-full justify-between"
+                  >
+                    <span className="flex items-center">
+                      <CategoryIcon className="h-4 w-4 mr-2" />
+                      {category.label}
+                    </span>
+                    {isOpen ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-4 mt-1 space-y-1">
+                  {category.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isPathActive(item.path);
+                    return (
+                      <Button
+                        key={item.path}
+                        variant={isActive ? "secondary" : "ghost"}
+                        size="sm"
+                        className={`w-full justify-start ${isActive ? 'bg-primary/10 text-primary' : ''}`}
+                        onClick={() => navigate(item.path)}
+                      >
+                        <Icon className="h-4 w-4 mr-2" />
+                        {item.label}
+                      </Button>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })}
+
+          {/* Admin section */}
+          {isAdmin && (
+            <Collapsible className="mt-4 pt-4 border-t">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between">
+                  <span className="flex items-center">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Admin
+                  </span>
+                  <Badge variant="outline" className="text-xs">Admin</Badge>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pl-4 mt-1 space-y-1">
+                {adminNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Button
+                      key={item.path}
+                      variant={isActive ? "secondary" : "ghost"}
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => navigate(item.path)}
+                    >
+                      <Icon className="h-4 w-4 mr-2" />
+                      {item.label}
+                    </Button>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center">
+                <Users className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{userName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {isAdmin ? "Administrador" : "Usuario"}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {mounted && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </aside>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
     </div>
