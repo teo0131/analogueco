@@ -25,6 +25,17 @@ import AdminChatInsights from "./pages/AdminChatInsights";
 import UtilidadDiaria from "./pages/UtilidadDiaria";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
 
+// New modules - Supervisión y Seguridad
+import CentroSupervision from "./pages/CentroSupervision";
+import Alertas from "./pages/Alertas";
+import TimelineEventos from "./pages/TimelineEventos";
+import MotorInconsistencias from "./pages/MotorInconsistencias";
+import Camaras from "./pages/Camaras";
+import Sensores from "./pages/Sensores";
+import AudioMonitoreo from "./pages/AudioMonitoreo";
+import TurnosChecklists from "./pages/TurnosChecklists";
+import ReportesAvanzados from "./pages/ReportesAvanzados";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -37,8 +48,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/pending-approval" element={<PendingApproval />} />
           
-          {/* Redirect root to /home */}
-          <Route path="/" element={<Navigate to="/home" replace />} />
+          {/* Redirect root to Centro de Supervisión (new home) */}
+          <Route path="/" element={<Navigate to="/supervision" replace />} />
           
           {/* Protected routes with AppLayout */}
           <Route 
@@ -48,20 +59,40 @@ const App = () => (
               </ProtectedRoute>
             }
           >
+            {/* Landing/Home */}
             <Route path="/home" element={<Landing />} />
+            
+            {/* SUPERVISIÓN - Core AnalogueCo */}
+            <Route path="/supervision" element={<CentroSupervision />} />
+            <Route path="/alertas" element={<Alertas />} />
+            <Route path="/timeline" element={<TimelineEventos />} />
+            <Route path="/inconsistencias" element={<MotorInconsistencias />} />
+            
+            {/* OPERACIÓN - Existing modules */}
             <Route path="/pos" element={<POS />} />
             <Route path="/menu" element={<MenuManagement />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/mesas" element={<ConfiguracionMesas />} />
             <Route path="/proveedores" element={<ProveedoresManagement />} />
             <Route path="/recetas" element={<RecetasManagement />} />
             <Route path="/inventario/ingreso" element={<IngresoUnificado />} />
             <Route path="/inventario/historial-ingresos" element={<HistorialIngresos />} />
             <Route path="/inventario/historial" element={<HistorialMovimientos />} />
+            
+            {/* SEGURIDAD - New modules */}
+            <Route path="/camaras" element={<Camaras />} />
+            <Route path="/sensores" element={<Sensores />} />
+            <Route path="/audio" element={<AudioMonitoreo />} />
+            
+            {/* ADMINISTRACIÓN */}
+            <Route path="/turnos" element={<TurnosChecklists />} />
+            <Route path="/reportes" element={<ReportesAvanzados />} />
             <Route path="/historial-diario" element={<HistorialDiario />} />
             <Route path="/utilidad" element={<UtilidadDiaria />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/configuracion-fiscal" element={<ConfiguracionFiscal />} />
             <Route path="/configuracion-cuenta" element={<ConfiguracionCuenta />} />
-            <Route path="/mesas" element={<ConfiguracionMesas />} />
+            
+            {/* Admin routes */}
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
             <Route path="/admin/chat-insights" element={<AdminChatInsights />} />
           </Route>
