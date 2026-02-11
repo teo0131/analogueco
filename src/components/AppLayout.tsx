@@ -113,6 +113,7 @@ const AppLayout = () => {
   const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
   const [openCategories, setOpenCategories] = useState<string[]>(["supervision", "operacion"]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -175,15 +176,26 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Floating open button when sidebar is closed */}
+      {!sidebarOpen && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed top-3 left-3 z-50 h-10 w-10 rounded-lg shadow-md bg-card border"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      )}
+
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-card border-r flex flex-col sticky top-0 h-screen overflow-hidden">
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-0'} bg-card border-r flex flex-col sticky top-0 h-screen overflow-hidden transition-all duration-200`}>
         {/* Logo Header */}
         <div 
-          className="p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors"
-          onClick={() => navigate("/supervision")}
+          className="p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors flex items-center justify-between min-w-[16rem]"
         >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center">
+          <div className="flex items-center gap-3" onClick={() => navigate("/supervision")}>
+            <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
               <Box className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
@@ -191,6 +203,14 @@ const AppLayout = () => {
               <p className="text-xs text-muted-foreground">Supervisión Operativa</p>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <ChevronRight className="h-4 w-4 rotate-180" />
+          </Button>
         </div>
 
         {/* Navigation */}
