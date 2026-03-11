@@ -42,6 +42,7 @@ import {
   ChevronDown,
   ChevronRight,
   Activity,
+  DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,6 +64,7 @@ const navCategories = [
     label: "Operación",
     icon: ShoppingCart,
     items: [
+      { path: "/caja", label: "Caja", icon: DollarSign },
       { path: "/pos", label: "Facturación", icon: ShoppingCart },
       { path: "/menu", label: "Mi Menú", icon: Menu },
       { path: "/mesas", label: "Mesas", icon: LayoutGrid },

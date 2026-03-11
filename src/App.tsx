@@ -24,6 +24,7 @@ import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminChatInsights from "./pages/AdminChatInsights";
 import UtilidadDiaria from "./pages/UtilidadDiaria";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
+import AbrirCaja from "./pages/AbrirCaja";
 
 // New modules - Supervisión y Seguridad
 import CentroSupervision from "./pages/CentroSupervision";
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/inconsistencias" element={<MotorInconsistencias />} />
             
             {/* OPERACIÓN - Existing modules */}
+            <Route path="/caja" element={<AbrirCaja />} />
             <Route path="/pos" element={<POS />} />
             <Route path="/menu" element={<MenuManagement />} />
             <Route path="/mesas" element={<ConfiguracionMesas />} />
