@@ -120,6 +120,16 @@ const POS = () => {
   const [sendToActiveCliente, setSendToActiveCliente] = useState("");
   const [availableMesas, setAvailableMesas] = useState<Array<{ id: string; numero_mesa: number; nombre: string | null }>>([]);
 
+  // ── Caja ──────────────────────────────────────────────────────────
+  const [cajaAbierta, setCajaAbierta] = useState<boolean | null>(null); // null = cargando
+  const [sesionCajaId, setSesionCajaId] = useState<string | null>(null);
+  const [showAbrirCajaDialog, setShowAbrirCajaDialog] = useState(false);
+  const [montoApertura, setMontoApertura] = useState("");
+  const [notasApertura, setNotasApertura] = useState("");
+  const [abriendo, setAbriendo] = useState(false);
+  // pendingAction: qué se ejecuta DESPUÉS de que el usuario abra la caja
+  const pendingActionRef = useRef<(() => void) | null>(null);
+
   // Load menu items and orders from database
   useEffect(() => {
     const loadData = async () => {
