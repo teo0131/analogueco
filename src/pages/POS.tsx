@@ -513,11 +513,14 @@ const POS = () => {
       toast.error("Agrega items a la orden primero");
       return;
     }
-    setPendingOrderItems([...currentItems]);
-    setPendingOrderComment(comment);
-    setSendToActiveMesa("");
-    setSendToActiveCliente("");
-    setShowCompleteOptions(true);
+    const proceed = () => {
+      setPendingOrderItems([...currentItems]);
+      setPendingOrderComment(comment);
+      setSendToActiveMesa("");
+      setSendToActiveCliente("");
+      setShowCompleteOptions(true);
+    };
+    withCajaGuard(proceed);
   };
 
   // Send current order to active orders (without completing/billing)
