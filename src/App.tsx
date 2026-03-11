@@ -70,6 +70,7 @@ const App = () => (
             <Route path="/inconsistencias" element={<MotorInconsistencias />} />
             
             {/* OPERACIÓN - Existing modules */}
+            <Route path="/caja" element={<AbrirCaja />} />
             <Route path="/pos" element={<POS />} />
             <Route path="/menu" element={<MenuManagement />} />
             <Route path="/mesas" element={<ConfiguracionMesas />} />
