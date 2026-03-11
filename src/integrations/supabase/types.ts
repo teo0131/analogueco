@@ -1005,6 +1005,69 @@ export type Database = {
           },
         ]
       }
+      sesiones_caja: {
+        Row: {
+          abierta_por: string | null
+          cerrada_por: string | null
+          created_at: string
+          diferencia: number | null
+          estado: string
+          fecha_apertura: string
+          fecha_cierre: string | null
+          id: string
+          monto_apertura: number
+          monto_cierre: number | null
+          notas_apertura: string | null
+          notas_cierre: string | null
+          total_efectivo: number | null
+          total_otros: number | null
+          total_tarjeta: number | null
+          total_ventas: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          abierta_por?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          diferencia?: number | null
+          estado?: string
+          fecha_apertura?: string
+          fecha_cierre?: string | null
+          id?: string
+          monto_apertura?: number
+          monto_cierre?: number | null
+          notas_apertura?: string | null
+          notas_cierre?: string | null
+          total_efectivo?: number | null
+          total_otros?: number | null
+          total_tarjeta?: number | null
+          total_ventas?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          abierta_por?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          diferencia?: number | null
+          estado?: string
+          fecha_apertura?: string
+          fecha_cierre?: string | null
+          id?: string
+          monto_apertura?: number
+          monto_cierre?: number | null
+          notas_apertura?: string | null
+          notas_cierre?: string | null
+          total_efectivo?: number | null
+          total_otros?: number | null
+          total_tarjeta?: number | null
+          total_ventas?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
