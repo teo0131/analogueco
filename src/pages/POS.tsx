@@ -248,6 +248,72 @@ const POS = () => {
     loadData();
   }, []);
 
+  // Verificar estado de caja al cargar
+  useEffect(() => {
+    const checkCaja = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await (supabase as any)
+        .from("sesiones_caja")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("estado", "abierta")
+        .limit(1)
+        .maybeSingle();
+      setCajaAbierta(!!data);
+      setSesionCajaId(data?.id ?? null);
+    };
+    checkCaja();
+  }, []);
+
+  // Abrir caja desde el POS
+  const handleAbrirCajaPOS = async () => {
+    setAbriendo(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await (supabase as any)
+        .from("sesiones_caja")
+        .insert({
+          user_id: user.id,
+          estado: "abierta",
+          monto_apertura: parseFloat(montoApertura) || 0,
+          notas_apertura: notasApertura || null,
+          abierta_por: user.email?.split("@")[0] || "operador",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      setCajaAbierta(true);
+      setSesionCajaId(data.id);
+      toast.success("✅ Caja abierta — continuando con la orden");
+      setShowAbrirCajaDialog(false);
+      setMontoApertura("");
+      setNotasApertura("");
+      // Ejecutar la acción pendiente (completar orden)
+      if (pendingActionRef.current) {
+        pendingActionRef.current();
+        pendingActionRef.current = null;
+      }
+    } catch {
+      toast.error("Error al abrir caja");
+    } finally {
+      setAbriendo(false);
+    }
+  };
+
+  // Guard: verifica caja antes de ejecutar acción
+  const withCajaGuard = useCallback((action: () => void) => {
+    if (cajaAbierta) {
+      action();
+    } else {
+      pendingActionRef.current = action;
+      setShowAbrirCajaDialog(true);
+    }
+  }, [cajaAbierta]);
+
+
+
   const currentTotal = currentItems.reduce((sum, item) => sum + item.price, 0);
 
   const handleAddItem = async (item: MenuItem) => {
