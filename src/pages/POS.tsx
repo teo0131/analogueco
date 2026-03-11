@@ -1418,8 +1418,69 @@ const POS = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Dialog: Abrir Caja (auto-trigger) ───────────────────────── */}
+      <Dialog open={showAbrirCajaDialog} onOpenChange={(open) => {
+        setShowAbrirCajaDialog(open);
+        if (!open) pendingActionRef.current = null;
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Unlock className="h-5 w-5 text-green-600" />
+              Abrir Caja para continuar
+            </DialogTitle>
+            <DialogDescription>
+              No hay caja abierta. Registra el monto base para comenzar a facturar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Banknote className="h-4 w-4" />
+                Monto de apertura (base de caja)
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Ej: 50000"
+                value={montoApertura}
+                onChange={(e) => setMontoApertura(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">Puedes ingresar 0 si no tienes base inicial</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notas (opcional)</label>
+              <textarea
+                placeholder="Observaciones..."
+                value={notasApertura}
+                onChange={(e) => setNotasApertura(e.target.value)}
+                rows={2}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowAbrirCajaDialog(false); pendingActionRef.current = null; }}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={handleAbrirCajaPOS}
+              disabled={abriendo}
+            >
+              <DollarSign className="h-4 w-4 mr-2" />
+              {abriendo ? "Abriendo..." : "Abrir Caja y continuar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
 
 export default POS;
+
