@@ -42,6 +42,7 @@ import {
   ChevronDown,
   ChevronRight,
   Activity,
+  DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
 
