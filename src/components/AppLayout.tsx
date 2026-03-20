@@ -177,6 +177,7 @@ const AppLayout = () => {
         ${isActive(path)
           ? "bg-primary text-primary-foreground"
           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`}
+      style={!isActive(path) ? { color: "hsl(0 0% 82%)" } : undefined}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />
       {label}
