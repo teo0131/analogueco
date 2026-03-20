@@ -237,16 +237,13 @@ const AppLayout = () => {
             className="flex items-center gap-2 mr-3 shrink-0"
             onClick={() => navigate(isAdmin || isOwner ? "/supervision" : "/pos")}
           >
-            <img src={analoguecoLogo} alt="AnalogueCo" className="h-7 w-7 shrink-0 object-contain" />
+            <img src={analoguecoLogo} alt="AnalogueCo" className="h-7 w-auto shrink-0 object-contain brightness-0 invert" />
             <div className="text-left hidden md:block">
-              <p className="text-sm font-bold text-sidebar-foreground leading-tight tracking-tight">
-                {storeName || "AnalogueCo"}
-              </p>
-              <p className="text-xs leading-tight flex items-center gap-1" style={{ color: "hsl(var(--sidebar-foreground)/0.5)", fontFamily: "'Space Grotesk', monospace", fontSize: "10px", letterSpacing: "0.04em" }}>
+              <p className="text-xs leading-tight flex items-center gap-1" style={{ color: "hsl(0 0% 55%)", fontFamily: "'Space Grotesk', monospace", fontSize: "10px", letterSpacing: "0.04em" }}>
                 {isOwner
                   ? <><Crown className="h-3 w-3" style={{ color: "hsl(224 100% 65%)" }} />{userName}</>
                   : isAdmin
-                  ? <><Shield className="h-3 w-3" style={{ color: "hsl(224 100% 65%/0.7)" }} />{userName}</>
+                  ? <><Shield className="h-3 w-3" style={{ color: "hsl(224 100% 65%)" }} />{userName}</>
                   : userName}
               </p>
             </div>
