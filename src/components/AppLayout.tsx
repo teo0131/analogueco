@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import analoguecoLogo from "@/assets/analogueco-logo.png";
+import analoguecoIcon from "@/assets/analogueco-icon.png";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type AccessLevel = { user: boolean; admin: boolean; owner: boolean };
