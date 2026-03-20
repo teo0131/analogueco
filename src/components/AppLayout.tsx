@@ -14,13 +14,14 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 import {
   LogOut, Package, History, Building2, ChefHat, BarChart3,
-  Menu, Calendar, Box, ShoppingCart, Home, Sun, Moon, Receipt,
+  Menu, Calendar, ShoppingCart, Home, Sun, Moon, Receipt,
   Users, MessageSquare, TrendingUp, Settings, LayoutGrid, Shield,
   Bell, Clock, AlertTriangle, Camera, Radio, Volume2,
   ClipboardCheck, Activity, DollarSign, Crown, ChevronDown,
   Warehouse, LineChart,
 } from "lucide-react";
 import { toast } from "sonner";
+import analoguecoLogo from "@/assets/analogueco-logo.png";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type AccessLevel = { user: boolean; admin: boolean; owner: boolean };
