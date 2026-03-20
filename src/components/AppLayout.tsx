@@ -230,8 +230,8 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-sidebar-background border-b border-sidebar-border sticky top-0 z-40">
-        <div className="flex items-center gap-1 px-4 py-2">
+      <header className="bg-sidebar-background border-b-2 border-primary/40 sticky top-0 z-40 shadow-[0_2px_12px_rgba(30,94,255,0.12)]">
+        <div className="flex items-center gap-1 px-4 py-2.5">
 
           {/* Logo */}
           <button
