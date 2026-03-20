@@ -6,20 +6,23 @@ import { Session } from "@supabase/supabase-js";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireOwner?: boolean;
 }
 
 interface VerifyResponse {
   isAdmin: boolean;
+  isOwner: boolean;
   isApproved: boolean;
   userId?: string;
   error?: string;
 }
 
-const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, requireAdmin = false, requireOwner = false }: ProtectedRouteProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isOwner, setIsOwner] = useState<boolean>(false);
 
   useEffect(() => {
     const checkAuth = async (currentSession: Session | null) => {
@@ -31,18 +34,16 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
       setSession(currentSession);
 
-      // Server-side verification of permissions
       try {
         const { data, error } = await supabase.functions.invoke<VerifyResponse>('verify-admin');
         
         if (error) {
           console.error("Server-side verification error:", error);
-          // Fallback to client-side check if server is unavailable
           await fallbackClientCheck(currentSession.user.id);
         } else if (data) {
-          console.log("Server verification result:", data);
           setIsApproved(data.isApproved);
           setIsAdmin(data.isAdmin);
+          setIsOwner(data.isOwner ?? false);
         }
       } catch (err) {
         console.error("Edge function call failed, using fallback:", err);
@@ -53,7 +54,6 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
     };
 
     const fallbackClientCheck = async (userId: string) => {
-      // Fallback: Check if user is approved via RLS-protected query
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_approved")
@@ -62,24 +62,21 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
       setIsApproved(profile?.is_approved ?? false);
 
-      // Fallback: Check if user is admin via RLS-protected query
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
 
-      const hasAdminRole = roles?.some(r => r.role === "admin") ?? false;
+      const hasOwnerRole = roles?.some(r => r.role === "owner") ?? false;
+      const hasAdminRole = hasOwnerRole || (roles?.some(r => r.role === "admin") ?? false);
+      setIsOwner(hasOwnerRole);
       setIsAdmin(hasAdminRole);
     };
 
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        checkAuth(session);
-      }
+      (_event, session) => { checkAuth(session); }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       checkAuth(session);
     });
@@ -98,16 +95,16 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
     );
   }
 
-  if (!session) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (!session) return <Navigate to="/auth" replace />;
 
-  // If user is not approved and not admin, show pending page
-  if (isApproved === false && !isAdmin) {
+  if (isApproved === false && !isAdmin && !isOwner) {
     return <Navigate to="/pending-approval" replace />;
   }
 
-  // If route requires admin and user is not admin
+  if (requireOwner && !isOwner) {
+    return <Navigate to="/home" replace />;
+  }
+
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/home" replace />;
   }

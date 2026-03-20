@@ -35,52 +35,60 @@ import {
   ClipboardCheck,
   Activity,
   DollarSign,
+  Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 
-const navRow1 = [
-  { path: "/home",                        label: "Inicio",            icon: Home },
-  { path: "/pos",                          label: "Facturación",       icon: ShoppingCart },
-  { path: "/menu",                         label: "Mi Menú",           icon: Menu },
-  { path: "/dashboard",                    label: "Dashboard",         icon: BarChart3 },
-  { path: "/proveedores",                  label: "Proveedores",       icon: Building2 },
-  { path: "/recetas",                      label: "Recetas",           icon: ChefHat },
-  { path: "/inventario/ingreso",           label: "Ingreso",           icon: Package },
-  { path: "/inventario/historial-ingresos",label: "Historial Ingresos",icon: Calendar },
+// ── Module access matrix ──────────────────────────────────────────────────────
+// user=true means the USER role can see it
+// admin=true means ADMIN and OWNER can see it
+// owner=true means only OWNER can see it
+
+const navRow1Items = [
+  { path: "/home",                         label: "Inicio",             icon: Home,         user: true,  admin: true,  owner: true },
+  { path: "/pos",                          label: "Facturación",        icon: ShoppingCart, user: true,  admin: true,  owner: true },
+  { path: "/menu",                         label: "Mi Menú",            icon: Menu,         user: false, admin: true,  owner: true },
+  { path: "/dashboard",                    label: "Dashboard",          icon: BarChart3,    user: false, admin: true,  owner: true },
+  { path: "/proveedores",                  label: "Proveedores",        icon: Building2,    user: false, admin: true,  owner: true },
+  { path: "/recetas",                      label: "Recetas",            icon: ChefHat,      user: false, admin: true,  owner: true },
+  { path: "/inventario/ingreso",           label: "Ingreso",            icon: Package,      user: false, admin: true,  owner: true },
+  { path: "/inventario/historial-ingresos",label: "Historial Ingresos", icon: Calendar,     user: false, admin: true,  owner: true },
 ];
 
-const navRow2 = [
-  { path: "/caja",                         label: "Caja",              icon: DollarSign },
-  { path: "/inventario/historial",         label: "Kardex",            icon: History },
-  { path: "/historial-diario",             label: "Ventas Diarias",    icon: Calendar },
-  { path: "/utilidad",                     label: "Utilidad",          icon: TrendingUp },
-  { path: "/mesas",                        label: "Mesas",             icon: LayoutGrid },
-  { path: "/configuracion-fiscal",         label: "Datos Fiscales",    icon: Receipt },
-  { path: "/configuracion-cuenta",         label: "Mi Cuenta",         icon: Settings },
+const navRow2Items = [
+  { path: "/caja",                  label: "Caja",         icon: DollarSign,   user: true,  admin: true,  owner: true },
+  { path: "/inventario/historial",  label: "Kardex",       icon: History,      user: false, admin: true,  owner: true },
+  { path: "/historial-diario",      label: "Ventas Diarias",icon: Calendar,    user: false, admin: true,  owner: true },
+  { path: "/utilidad",              label: "Utilidad",     icon: TrendingUp,   user: false, admin: true,  owner: true },
+  { path: "/mesas",                 label: "Mesas",        icon: LayoutGrid,   user: false, admin: true,  owner: true },
+  { path: "/configuracion-fiscal",  label: "Datos Fiscales",icon: Receipt,     user: false, admin: false, owner: true },
+  { path: "/configuracion-cuenta",  label: "Mi Cuenta",    icon: Settings,     user: true,  admin: true,  owner: true },
 ];
 
-const navSupervision = [
-  { path: "/supervision",   label: "Supervisión",        icon: Activity },
-  { path: "/alertas",       label: "Alertas",            icon: Bell },
-  { path: "/timeline",      label: "Timeline",           icon: Clock },
-  { path: "/inconsistencias",label: "Motor POS vs Real", icon: AlertTriangle },
-  { path: "/camaras",       label: "Cámaras",            icon: Camera },
-  { path: "/sensores",      label: "Sensores",           icon: Radio },
-  { path: "/audio",         label: "Audio",              icon: Volume2 },
-  { path: "/turnos",        label: "Turnos",             icon: ClipboardCheck },
-  { path: "/reportes",      label: "Reportes",           icon: BarChart3 },
+const navSupervisionItems = [
+  { path: "/supervision",    label: "Supervisión",       icon: Activity,       user: false, admin: true, owner: true },
+  { path: "/alertas",        label: "Alertas",           icon: Bell,           user: false, admin: true, owner: true },
+  { path: "/timeline",       label: "Timeline",          icon: Clock,          user: false, admin: true, owner: true },
+  { path: "/inconsistencias",label: "Motor POS vs Real", icon: AlertTriangle,  user: false, admin: true, owner: true },
+  { path: "/camaras",        label: "Cámaras",           icon: Camera,         user: false, admin: true, owner: true },
+  { path: "/sensores",       label: "Sensores",          icon: Radio,          user: false, admin: true, owner: true },
+  { path: "/audio",          label: "Audio",             icon: Volume2,        user: false, admin: true, owner: true },
+  { path: "/turnos",         label: "Turnos",            icon: ClipboardCheck, user: true,  admin: true, owner: true },
+  { path: "/reportes",       label: "Reportes",          icon: BarChart3,      user: false, admin: true, owner: true },
 ];
 
 const adminNavItems = [
-  { path: "/admin/usuarios",      label: "Usuarios", icon: Users },
-  { path: "/admin/chat-insights", label: "Chat IA",  icon: MessageSquare },
+  { path: "/admin/usuarios",       label: "Usuarios", icon: Users },
+  { path: "/admin/chat-insights",  label: "Chat IA",  icon: MessageSquare },
 ];
+
+type NavItem = { path: string; label: string; icon: React.ElementType; user: boolean; admin: boolean; owner: boolean };
 
 const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isOwner } = useUserRole();
   const [mounted, setMounted] = useState(false);
   const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
@@ -115,6 +123,13 @@ const AppLayout = () => {
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
+  // Filter items based on current role
+  const canSee = (item: NavItem) => {
+    if (isOwner) return item.owner;
+    if (isAdmin) return item.admin;
+    return item.user; // regular user
+  };
+
   const NavBtn = ({ path, label, icon: Icon }: { path: string; label: string; icon: React.ElementType }) => (
     <button
       onClick={() => navigate(path)}
@@ -128,6 +143,10 @@ const AppLayout = () => {
       {label}
     </button>
   );
+
+  const row1 = navRow1Items.filter(canSee);
+  const row2 = navRow2Items.filter(canSee);
+  const rowSup = navSupervisionItems.filter(canSee);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -147,13 +166,20 @@ const AppLayout = () => {
               <p className="text-sm font-bold text-sidebar-foreground leading-tight">
                 {storeName || "AnalogueCo"}
               </p>
-              <p className="text-xs text-muted-foreground leading-tight">Hola, {userName}</p>
+              <p className="text-xs text-muted-foreground leading-tight flex items-center gap-1">
+                {isOwner
+                  ? <><Crown className="h-3 w-3 text-yellow-500" /> {userName}</>
+                  : isAdmin
+                  ? <><Shield className="h-3 w-3 text-blue-400" /> {userName}</>
+                  : userName
+                }
+              </p>
             </div>
           </button>
 
           {/* Row 1 nav items */}
           <nav className="flex items-center gap-1 flex-wrap flex-1">
-            {navRow1.map((item) => (
+            {row1.map((item) => (
               <NavBtn key={item.path} {...item} />
             ))}
           </nav>
@@ -184,21 +210,25 @@ const AppLayout = () => {
 
         {/* Row 2: Secondary nav */}
         <div className="flex items-center gap-1 px-4 py-1.5 border-t border-sidebar-border/60 flex-wrap">
-          {navRow2.map((item) => (
+          {row2.map((item) => (
             <NavBtn key={item.path} {...item} />
           ))}
 
           {/* Supervision section */}
-          <div className="w-px h-5 bg-sidebar-border mx-1 hidden sm:block" />
-          {navSupervision.map((item) => (
-            <NavBtn key={item.path} {...item} />
-          ))}
-
-          {/* Admin section */}
-          {isAdmin && (
+          {rowSup.length > 0 && (
             <>
               <div className="w-px h-5 bg-sidebar-border mx-1 hidden sm:block" />
-              <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+              {rowSup.map((item) => (
+                <NavBtn key={item.path} {...item} />
+              ))}
+            </>
+          )}
+
+          {/* Owner-only Admin section */}
+          {isOwner && (
+            <>
+              <div className="w-px h-5 bg-sidebar-border mx-1 hidden sm:block" />
+              <Crown className="h-3.5 w-3.5 text-yellow-500" />
               {adminNavItems.map((item) => (
                 <NavBtn key={item.path} {...item} />
               ))}
