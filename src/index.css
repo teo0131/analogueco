@@ -45,12 +45,12 @@
 
     /* Header bar — oscuro de marca */
     --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 0 0% 90%;
+    --sidebar-foreground: 0 0% 82%;
     --sidebar-primary: 224 100% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent: 224 30% 22%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 14%;
+    --sidebar-border: 0 0% 16%;
     --sidebar-ring: 224 100% 56%;
 
     /* Brand gradients */
