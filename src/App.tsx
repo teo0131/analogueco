@@ -91,13 +91,12 @@ const App = () => (
             <Route path="/historial-diario" element={<HistorialDiario />} />
             <Route path="/utilidad" element={<UtilidadDiaria />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/configuracion-fiscal" element={<ConfiguracionFiscal />} />
             <Route path="/configuracion-cuenta" element={<ConfiguracionCuenta />} />
             
             {/* Owner-only routes */}
-            <Route path="/configuracion-fiscal" element={<ProtectedRoute requireOwner><ConfiguracionFiscal /></ProtectedRoute>} />
-            <Route path="/admin/usuarios" element={<ProtectedRoute requireOwner><AdminUsuarios /></ProtectedRoute>} />
-            <Route path="/admin/chat-insights" element={<ProtectedRoute requireOwner><AdminChatInsights /></ProtectedRoute>} />
+            <Route path="/configuracion-fiscal" element={<ProtectedRoute requireOwner>{<ConfiguracionFiscal />}</ProtectedRoute>} />
+            <Route path="/admin/usuarios" element={<ProtectedRoute requireOwner>{<AdminUsuarios />}</ProtectedRoute>} />
+            <Route path="/admin/chat-insights" element={<ProtectedRoute requireOwner>{<AdminChatInsights />}</ProtectedRoute>} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
