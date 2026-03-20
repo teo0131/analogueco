@@ -238,7 +238,12 @@ const AppLayout = () => {
             className="flex items-center gap-2 mr-3 shrink-0"
             onClick={() => navigate(isAdmin || isOwner ? "/supervision" : "/pos")}
           >
-            <img src={analoguecoLogo} alt="AnalogueCo" className="h-7 w-auto shrink-0 object-contain brightness-0 invert" />
+            <img
+              src={analoguecoIcon}
+              alt="AnalogueCo"
+              className="h-8 w-8 shrink-0 object-contain"
+              style={{ mixBlendMode: "screen" }}
+            />
             <div className="text-left hidden md:block">
               <p className="text-xs leading-tight flex items-center gap-1" style={{ color: "hsl(0 0% 55%)", fontFamily: "'Space Grotesk', monospace", fontSize: "10px", letterSpacing: "0.04em" }}>
                 {isOwner
