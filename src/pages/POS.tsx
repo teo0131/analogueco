@@ -1101,12 +1101,26 @@ const POS = () => {
         </div>
       ) : (
         <>
-          {/* Export Button */}
-          <div className="flex justify-end mb-4">
-            <Button variant="outline" size="sm" onClick={handleExportToExcel}>
-              <FileDown className="mr-2 h-4 w-4" />
-              Exportar a Excel
-            </Button>
+          {/* Caja Status Banner */}
+          <div className={`flex items-center justify-between px-4 py-2 rounded-lg mb-4 border ${cajaAbierta ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' : 'bg-destructive/10 border-destructive/30'}`}>
+            <div className="flex items-center gap-2">
+              <DollarSign className={`h-4 w-4 ${cajaAbierta ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`} />
+              <span className={`text-sm font-medium ${cajaAbierta ? 'text-green-700 dark:text-green-400' : 'text-destructive'}`}>
+                {cajaAbierta === null ? 'Verificando caja...' : cajaAbierta ? 'Caja abierta' : 'Caja cerrada — se abrirá al completar la primera orden'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {cajaAbierta && (
+                <Badge variant="outline" className="text-green-700 border-green-300 dark:text-green-400 dark:border-green-700 text-xs">
+                  Activa
+                </Badge>
+              )}
+              {/* Export Button */}
+              <Button variant="outline" size="sm" onClick={handleExportToExcel}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar a Excel
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
