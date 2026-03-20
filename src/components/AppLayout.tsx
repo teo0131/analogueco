@@ -236,18 +236,16 @@ const AppLayout = () => {
             className="flex items-center gap-2 mr-3 shrink-0"
             onClick={() => navigate(isAdmin || isOwner ? "/supervision" : "/pos")}
           >
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-              <Box className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <img src={analoguecoLogo} alt="AnalogueCo" className="h-7 w-7 shrink-0 object-contain" />
             <div className="text-left hidden md:block">
-              <p className="text-sm font-bold text-sidebar-foreground leading-tight">
+              <p className="text-sm font-bold text-sidebar-foreground leading-tight tracking-tight">
                 {storeName || "AnalogueCo"}
               </p>
-              <p className="text-xs text-muted-foreground leading-tight flex items-center gap-1">
+              <p className="text-xs leading-tight flex items-center gap-1" style={{ color: "hsl(var(--sidebar-foreground)/0.5)", fontFamily: "'Space Grotesk', monospace", fontSize: "10px", letterSpacing: "0.04em" }}>
                 {isOwner
-                  ? <><Crown className="h-3 w-3 text-primary" />{userName}</>
+                  ? <><Crown className="h-3 w-3" style={{ color: "hsl(224 100% 65%)" }} />{userName}</>
                   : isAdmin
-                  ? <><Shield className="h-3 w-3 text-primary/70" />{userName}</>
+                  ? <><Shield className="h-3 w-3" style={{ color: "hsl(224 100% 65%/0.7)" }} />{userName}</>
                   : userName}
               </p>
             </div>
