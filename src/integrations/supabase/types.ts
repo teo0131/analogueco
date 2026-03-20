@@ -1128,10 +1128,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_owner: { Args: { _user_id: string }; Returns: boolean }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "owner"
       tipo_movimiento: "entrada" | "salida_venta" | "ajuste" | "consumo"
       tipo_producto: "retail" | "preparado" | "insumo"
     }
@@ -1261,7 +1262,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "owner"],
       tipo_movimiento: ["entrada", "salida_venta", "ajuste", "consumo"],
       tipo_producto: ["retail", "preparado", "insumo"],
     },

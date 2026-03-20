@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface UserRoleData {
   isAdmin: boolean;
+  isOwner: boolean;
   isApproved: boolean;
   loading: boolean;
   userId: string | null;
@@ -10,6 +11,7 @@ interface UserRoleData {
 
 interface VerifyResponse {
   isAdmin: boolean;
+  isOwner: boolean;
   isApproved: boolean;
   userId?: string;
   error?: string;
@@ -17,6 +19,7 @@ interface VerifyResponse {
 
 export const useUserRole = (): UserRoleData => {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -33,7 +36,6 @@ export const useUserRole = (): UserRoleData => {
 
         setUserId(session.user.id);
 
-        // Server-side verification of permissions
         try {
           const { data, error } = await supabase.functions.invoke<VerifyResponse>('verify-admin');
           
@@ -41,9 +43,9 @@ export const useUserRole = (): UserRoleData => {
             console.error("Server-side verification error:", error);
             await fallbackClientCheck(session.user.id);
           } else if (data) {
-            console.log("Server verification result:", data);
             setIsApproved(data.isApproved);
             setIsAdmin(data.isAdmin);
+            setIsOwner(data.isOwner ?? false);
           }
         } catch (err) {
           console.error("Edge function call failed, using fallback:", err);
@@ -57,7 +59,6 @@ export const useUserRole = (): UserRoleData => {
     };
 
     const fallbackClientCheck = async (uid: string) => {
-      // Fallback: Check if user is approved via RLS-protected query
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_approved")
@@ -66,13 +67,14 @@ export const useUserRole = (): UserRoleData => {
 
       setIsApproved(profile?.is_approved ?? false);
 
-      // Fallback: Check if user is admin via RLS-protected query
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", uid);
 
-      const hasAdminRole = roles?.some(r => r.role === "admin") ?? false;
+      const hasOwnerRole = roles?.some(r => r.role === "owner") ?? false;
+      const hasAdminRole = hasOwnerRole || (roles?.some(r => r.role === "admin") ?? false);
+      setIsOwner(hasOwnerRole);
       setIsAdmin(hasAdminRole);
     };
 
@@ -85,5 +87,5 @@ export const useUserRole = (): UserRoleData => {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { isAdmin, isApproved, loading, userId };
+  return { isAdmin, isOwner, isApproved, loading, userId };
 };
