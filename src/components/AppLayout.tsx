@@ -244,9 +244,9 @@ const AppLayout = () => {
               </p>
               <p className="text-xs text-muted-foreground leading-tight flex items-center gap-1">
                 {isOwner
-                  ? <><Crown className="h-3 w-3 text-yellow-500" />{userName}</>
+                  ? <><Crown className="h-3 w-3 text-primary" />{userName}</>
                   : isAdmin
-                  ? <><Shield className="h-3 w-3 text-blue-400" />{userName}</>
+                  ? <><Shield className="h-3 w-3 text-primary/70" />{userName}</>
                   : userName}
               </p>
             </div>
