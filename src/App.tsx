@@ -97,6 +97,9 @@ const App = () => (
             <Route path="/rrhh/asistencia" element={<Asistencia />} />
             <Route path="/rrhh/nomina" element={<Nomina />} />
 
+            {/* FINANZAS */}
+            <Route path="/finanzas" element={<Finanzas />} />
+            
             {/* ADMINISTRACIÓN */}
             <Route path="/turnos" element={<TurnosChecklists />} />
             <Route path="/reportes" element={<ReportesAvanzados />} />
