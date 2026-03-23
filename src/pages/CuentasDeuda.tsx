@@ -590,7 +590,12 @@ export default function CuentasDeuda() {
                 onChange={e => setVentaNotas(e.target.value)} />
             </div>
 
-            <Button className="w-full" onClick={() => saveVenta.mutate()} disabled={saveVenta.isPending}>
+            <Button className="w-full"
+              onClick={() => requirePin(
+                `Registrar venta en crédito a "${selectedCliente?.nombre}" por ${COP(ventaItems.reduce((s, i) => s + (Number(i.cantidad)||0)*(Number(i.precio)||0), 0))}`,
+                () => saveVenta.mutate()
+              )}
+              disabled={saveVenta.isPending}>
               {saveVenta.isPending ? "Registrando..." : "Registrar venta en crédito"}
             </Button>
           </div>
