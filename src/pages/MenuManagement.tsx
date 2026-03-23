@@ -548,7 +548,7 @@ const MenuManagement = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => requestDelete(item.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
