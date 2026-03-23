@@ -1150,9 +1150,7 @@ const POS = () => {
                 {categories.map((category) => (
                   <TabsContent key={category} value={category} className="mt-6">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {menuItems
-                        .filter((item) => item.category === category)
-                        .map((item) => (
+                      {(itemsByCategory[category] ?? []).map((item) => (
                           <MenuItemButton
                             key={item.id}
                             item={item}
