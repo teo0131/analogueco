@@ -131,7 +131,7 @@ export default function Kiosko() {
             <p className="text-sm text-muted-foreground mb-3">{feedback.cargo}</p>
           )}
           <p className={`text-base font-medium ${
-            feedback.type === "success" ? "text-green-300" : "text-red-300"
+            feedback.type === "success" ? "text-primary" : "text-destructive"
           }`}>
             {feedback.message}
           </p>

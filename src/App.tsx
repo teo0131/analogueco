@@ -30,6 +30,7 @@ import AbrirCaja from "./pages/AbrirCaja";
 import Empleados from "./pages/Empleados";
 import Asistencia from "./pages/Asistencia";
 import Nomina from "./pages/Nomina";
+import Kiosko from "./pages/Kiosko";
 
 // New modules - Supervisión y Seguridad
 import CentroSupervision from "./pages/CentroSupervision";
