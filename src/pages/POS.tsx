@@ -1037,6 +1037,110 @@ const POS = () => {
     setShowInvoiceModal(true);
   };
 
+  // ── Load clients for debt selector ──────────────────────────────
+  const handleOpenDeudaSelector = async () => {
+    setShowDeudaSelector(true);
+    setLoadingClientes(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("clientes_cuenta")
+        .select("id, nombre, saldo_total, telefono")
+        .eq("user_id", user.id)
+        .eq("estado", "activo")
+        .order("nombre");
+      setClientes((data ?? []) as any[]);
+    } catch {
+      toast.error("Error al cargar clientes");
+    } finally {
+      setLoadingClientes(false);
+    }
+  };
+
+  // ── Charge order to debt account ────────────────────────────────
+  const handleCargarADeuda = async () => {
+    if (!selectedClienteDeuda) { toast.error("Selecciona un cliente"); return; }
+    if (pendingOrderItems.length === 0) { toast.error("No hay ítems en la orden"); return; }
+    setCargandoDeuda(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No auth");
+
+      const total = pendingOrderItems.reduce((s, i) => s + i.price, 0);
+
+      // 1. Create ventas_credito header
+      const { data: venta, error: ve } = await supabase
+        .from("ventas_credito")
+        .insert({
+          user_id: user.id,
+          cliente_id: selectedClienteDeuda,
+          total,
+          notas: pendingOrderComment || `Orden POS #${orderNumber}`,
+        })
+        .select()
+        .single();
+      if (ve) throw ve;
+
+      // 2. Insert detail items
+      const detalles = pendingOrderItems.map(i => ({
+        venta_id: venta.id,
+        nombre_item: i.name,
+        cantidad: 1,
+        precio_unitario: i.price,
+        subtotal: i.price,
+      }));
+      const { error: de } = await supabase.from("detalle_ventas_credito").insert(detalles);
+      if (de) throw de;
+
+      // 3. Also register as completed POS order
+      const { data: newOrder, error: oe } = await supabase
+        .from("ordenes_pos")
+        .insert({
+          user_id: user.id,
+          numero_orden: orderNumber,
+          total,
+          comentario: `[CUENTA CLIENTE] ${pendingOrderComment || ""}`,
+          fecha: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (oe) throw oe;
+
+      await supabase.from("detalle_ordenes_pos").insert(
+        pendingOrderItems.map(i => ({
+          orden_id: newOrder.id,
+          menu_item_id: i.id,
+          nombre_item: i.name,
+          precio_unitario: i.price,
+          cantidad: 1,
+          subtotal: i.price,
+        }))
+      );
+
+      const clienteNombre = clientes.find(c => c.id === selectedClienteDeuda)?.nombre ?? "cliente";
+      setCompletedOrders(prev => [{
+        id: newOrder.id, orderNumber, total,
+        items: pendingOrderItems.map(i => ({ name: i.name, price: i.price })),
+        comment: pendingOrderComment, timestamp: new Date(),
+      }, ...prev]);
+      setOrderNumber(orderNumber + 1);
+      setCurrentItems([]);
+      setComment("");
+      setPendingOrderItems([]);
+      setPendingOrderComment("");
+      setShowCompleteOptions(false);
+      setShowDeudaSelector(false);
+      setSelectedClienteDeuda("");
+      toast.success(`Cargado a la cuenta de ${clienteNombre}`);
+    } catch (e: any) {
+      toast.error("Error al cargar a deuda");
+      console.error(e);
+    } finally {
+      setCargandoDeuda(false);
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
