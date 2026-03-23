@@ -84,6 +84,7 @@ const AbrirCaja = () => {
   // Dialogs
   const [showAbrirDialog, setShowAbrirDialog] = useState(false);
   const [showCerrarDialog, setShowCerrarDialog] = useState(false);
+  const [showPinCerrar, setShowPinCerrar] = useState(false);
 
   // Form apertura
   const [montoApertura, setMontoApertura] = useState("");
