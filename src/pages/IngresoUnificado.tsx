@@ -81,7 +81,10 @@ const IngresoUnificado = () => {
   const [newInsumoData, setNewInsumoData] = useState({
     nombre: "",
     unidad_inventario: "unidad",
-    stock_minimo: "0"
+    stock_minimo: "0",
+    proveedor_id: "",
+    precio_compra_habitual: "0",
+    cantidad_pedido_sugerida: "0",
   });
 
   // Estado para eliminar insumo
