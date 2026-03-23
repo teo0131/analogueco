@@ -534,6 +534,8 @@ const POS = () => {
 
   // Send current order to active orders (without completing/billing)
   const handleSendToActiveOrders = async () => {
+    if (isSendingToActive) return;
+    setIsSendingToActive(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
