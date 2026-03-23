@@ -434,9 +434,9 @@ export const ActiveOrdersPanel = ({
               </div>
 
               <DialogFooter className="gap-2">
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteOrder(viewingOrden.id)}>
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Eliminar
+                <Button variant="destructive" size="sm" onClick={() => requestDeleteOrder(viewingOrden.id)}>
+                  <Lock className="w-4 h-4 mr-1" />
+                  Eliminar (requiere PIN)
                 </Button>
                 <Button variant="outline" onClick={() => setDetailDialog(false)}>Cerrar</Button>
               </DialogFooter>
@@ -444,6 +444,14 @@ export const ActiveOrdersPanel = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <PinVerificationDialog
+        open={pinDialog}
+        onOpenChange={(open) => { setPinDialog(open); if (!open) setPendingDeleteId(null); }}
+        onSuccess={handleDeleteOrder}
+        title="Autorización requerida"
+        description="Ingresa el PIN de administrador para eliminar esta orden activa."
+      />
     </div>
   );
 };
