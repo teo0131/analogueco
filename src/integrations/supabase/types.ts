@@ -487,6 +487,7 @@ export type Database = {
           id: string
           nombre: string
           notas: string | null
+          pin: string | null
           salario_base: number | null
           telefono: string | null
           tipo_contrato: string | null
@@ -517,6 +518,7 @@ export type Database = {
           id?: string
           nombre: string
           notas?: string | null
+          pin?: string | null
           salario_base?: number | null
           telefono?: string | null
           tipo_contrato?: string | null
@@ -547,6 +549,7 @@ export type Database = {
           id?: string
           nombre?: string
           notas?: string | null
+          pin?: string | null
           salario_base?: number | null
           telefono?: string | null
           tipo_contrato?: string | null
