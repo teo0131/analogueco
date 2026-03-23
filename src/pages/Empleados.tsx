@@ -130,7 +130,7 @@ export default function Empleados() {
       eps: e.eps || "", arl: e.arl || "", cuenta_bancaria: e.cuenta_bancaria || "",
       banco: e.banco || "", tipo_cuenta: e.tipo_cuenta || "ahorros",
       emergencia_nombre: e.emergencia_nombre || "", emergencia_tel: e.emergencia_tel || "",
-      notas: e.notas || ""
+      notas: e.notas || "", pin: e.pin || ""
     });
     setShowForm(true);
   };
