@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -84,6 +85,7 @@ const AbrirCaja = () => {
   // Dialogs
   const [showAbrirDialog, setShowAbrirDialog] = useState(false);
   const [showCerrarDialog, setShowCerrarDialog] = useState(false);
+  const [showPinCerrar, setShowPinCerrar] = useState(false);
 
   // Form apertura
   const [montoApertura, setMontoApertura] = useState("");
@@ -237,6 +239,13 @@ const AbrirCaja = () => {
 
   return (
     <div className="container mx-auto py-6 px-4 space-y-6 max-w-6xl">
+      <PinVerificationDialog
+        open={showPinCerrar}
+        onOpenChange={setShowPinCerrar}
+        onSuccess={() => setShowCerrarDialog(true)}
+        title="Cerrar Caja"
+        description="Ingresa tu PIN para iniciar el proceso de cierre de caja y arqueo."
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -309,7 +318,7 @@ const AbrirCaja = () => {
               ) : (
                 <Button
                   variant="destructive"
-                  onClick={() => setShowCerrarDialog(true)}
+                  onClick={() => setShowPinCerrar(true)}
                 >
                   <Lock className="h-4 w-4 mr-2" />
                   Cerrar Caja

@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Search, ImageIcon, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 interface MenuItemDB {
   id: string;
@@ -43,6 +44,10 @@ const MenuManagement = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastListScrollYRef = useRef(0);
+
+  // PIN protection
+  const [pinDialog, setPinDialog] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const setDialogOpen = (open: boolean) => {
     if (open) {
@@ -249,9 +254,12 @@ const MenuManagement = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este item del menú?")) return;
+  const requestDelete = (id: string) => {
+    setPendingDeleteId(id);
+    setPinDialog(true);
+  };
 
+  const handleDelete = async (id: string) => {
     try {
       const item = menuItems.find(i => i.id === id);
       // Delete image from storage if exists
@@ -316,6 +324,13 @@ const MenuManagement = () => {
 
   return (
     <div className="container mx-auto py-6 px-4">
+      <PinVerificationDialog
+        open={pinDialog}
+        onOpenChange={setPinDialog}
+        onSuccess={() => { if (pendingDeleteId) { handleDelete(pendingDeleteId); setPendingDeleteId(null); } }}
+        title="Eliminar Item del Menú"
+        description="Ingresa tu PIN para confirmar la eliminación de este item del menú."
+      />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Gestión de Menú</h1>
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
@@ -540,7 +555,7 @@ const MenuManagement = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => requestDelete(item.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
