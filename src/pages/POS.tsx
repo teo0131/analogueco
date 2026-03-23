@@ -1430,9 +1430,10 @@ const POS = () => {
                 variant="secondary" 
                 className="w-full"
                 onClick={handleSendToActiveOrders}
+                disabled={isSendingToActive || isCompletingOrder}
               >
                 <MapPin className="w-4 h-4 mr-2" />
-                Enviar a Activas
+                {isSendingToActive ? "Enviando..." : "Enviar a Activas"}
               </Button>
             </div>
           </div>
