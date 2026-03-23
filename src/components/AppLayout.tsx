@@ -99,6 +99,16 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "RRHH",
+    icon: UserCheck,
+    user: false, admin: true, owner: true,
+    items: [
+      { path: "/rrhh/empleados",  label: "Empleados",  icon: Users,      user: false, admin: true, owner: true },
+      { path: "/rrhh/asistencia", label: "Asistencia", icon: Clock,      user: false, admin: true, owner: true },
+      { path: "/rrhh/nomina",     label: "Nómina",     icon: Briefcase,  user: false, admin: true, owner: true },
+    ],
+  },
+  {
     label: "Operaciones",
     icon: ClipboardCheck,
     user: true, admin: true, owner: true,
