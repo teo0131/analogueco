@@ -1535,7 +1535,22 @@ const POS = () => {
               </span>
             </Button>
 
-            {/* Option 2: Send to active orders */}
+            {/* Option 2: Charge to debt account */}
+            <button
+              className="w-full h-auto p-4 flex flex-col items-start gap-2 rounded-lg border-2 border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-left disabled:opacity-50"
+              onClick={handleOpenDeudaSelector}
+              disabled={isCompletingOrder || isSendingToActive || cargandoDeuda}
+            >
+              <div className="flex items-center gap-2 font-semibold text-amber-400">
+                <CreditCard className="w-5 h-5" />
+                Cargar a Cuenta de Cliente
+              </div>
+              <span className="text-xs text-muted-foreground">
+                Registra la venta como deuda en la cuenta del cliente
+              </span>
+            </button>
+
+            {/* Option 3: Send to active orders */}
             <div className="border rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2 font-medium">
                 <ShoppingBag className="w-5 h-5" />
@@ -1587,6 +1602,69 @@ const POS = () => {
               Cancelar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: Seleccionar cliente para deuda ───────────────── */}
+      <Dialog open={showDeudaSelector} onOpenChange={v => { setShowDeudaSelector(v); if (!v) setSelectedClienteDeuda(""); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-amber-400" />
+              Cargar a cuenta de cliente
+            </DialogTitle>
+            <DialogDescription>
+              {formatPrice(pendingOrderItems.reduce((s, i) => s + i.price, 0))} · {pendingOrderItems.length} item{pendingOrderItems.length > 1 ? "s" : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {loadingClientes ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Cargando clientes...</p>
+            ) : clientes.length === 0 ? (
+              <div className="text-center py-4 space-y-2">
+                <p className="text-sm text-muted-foreground">No hay clientes registrados aún.</p>
+                <Button size="sm" variant="outline" onClick={() => { setShowDeudaSelector(false); navigate("/finanzas/cuentas-deuda"); }}>
+                  Ir a Cuentas en Deuda
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {clientes.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedClienteDeuda(c.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-colors
+                      ${selectedClienteDeuda === c.id
+                        ? "border-amber-500/60 bg-amber-500/10"
+                        : "border-border hover:border-amber-500/30 hover:bg-muted/50"}`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{c.nombre}</p>
+                      {c.telefono && <p className="text-xs text-muted-foreground">{c.telefono}</p>}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-muted-foreground">Saldo actual</p>
+                      <p className={`text-sm font-bold ${c.saldo_total > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                        {formatPrice(c.saldo_total)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedClienteDeuda && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Saldo después de cargar</p>
+                <p className="font-bold text-amber-400">
+                  {formatPrice((clientes.find(c => c.id === selectedClienteDeuda)?.saldo_total ?? 0) + pendingOrderItems.reduce((s, i) => s + i.price, 0))}
+                </p>
+              </div>
+            )}
+            <Button className="w-full" onClick={handleCargarADeuda}
+              disabled={!selectedClienteDeuda || cargandoDeuda}>
+              {cargandoDeuda ? "Cargando..." : "Confirmar cargo a cuenta"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
