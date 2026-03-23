@@ -26,6 +26,11 @@ import UtilidadDiaria from "./pages/UtilidadDiaria";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
 import AbrirCaja from "./pages/AbrirCaja";
 
+// RRHH modules
+import Empleados from "./pages/Empleados";
+import Asistencia from "./pages/Asistencia";
+import Nomina from "./pages/Nomina";
+
 // New modules - Supervisión y Seguridad
 import CentroSupervision from "./pages/CentroSupervision";
 import Alertas from "./pages/Alertas";
