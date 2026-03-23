@@ -636,7 +636,12 @@ export default function CuentasDeuda() {
                 </p>
               </div>
             )}
-            <Button className="w-full" onClick={() => savePago.mutate()} disabled={!pagoMonto || savePago.isPending}>
+            <Button className="w-full"
+              onClick={() => requirePin(
+                `Confirmar abono de ${COP(Number(pagoMonto))} para "${selectedCliente?.nombre}". Saldo quedará en ${COP(Math.max(0, (selectedCliente?.saldo_total ?? 0) - Number(pagoMonto)))}`,
+                () => savePago.mutate()
+              )}
+              disabled={!pagoMonto || savePago.isPending}>
               {savePago.isPending ? "Registrando..." : "Registrar abono"}
             </Button>
           </div>
