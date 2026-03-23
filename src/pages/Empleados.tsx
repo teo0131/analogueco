@@ -44,6 +44,7 @@ interface Empleado {
   emergencia_nombre: string | null;
   emergencia_tel: string | null;
   notas: string | null;
+  pin: string | null;
   created_at: string;
 }
 
