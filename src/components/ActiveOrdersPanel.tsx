@@ -75,6 +75,8 @@ export const ActiveOrdersPanel = ({
   const [newOrderDialog, setNewOrderDialog] = useState(false);
   const [detailDialog, setDetailDialog] = useState(false);
   const [viewingOrden, setViewingOrden] = useState<OrdenActiva | null>(null);
+  const [pinDialog, setPinDialog] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const [newOrderData, setNewOrderData] = useState({
     mesa_id: "",
