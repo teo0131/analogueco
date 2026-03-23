@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Trash2, ShoppingCart, Banknote } from "lucide-react";
 
 interface MenuItem {
@@ -46,6 +47,7 @@ export const CurrentOrder = ({
   isCompleting = false,
 }: CurrentOrderProps) => {
   const [selectedBill, setSelectedBill] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>("");
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -62,11 +64,23 @@ export const CurrentOrder = ({
   const handleBillClick = (billValue: number) => {
     if (billValue >= total) {
       setSelectedBill(billValue);
+      setCustomAmount("");
+    }
+  };
+
+  const handleCustomAmount = (val: string) => {
+    setCustomAmount(val);
+    const parsed = parseInt(val.replace(/\D/g, ""), 10);
+    if (!isNaN(parsed)) {
+      setSelectedBill(parsed);
+    } else {
+      setSelectedBill(null);
     }
   };
 
   const clearSelection = () => {
     setSelectedBill(null);
+    setCustomAmount("");
   };
 
   return (
@@ -124,7 +138,7 @@ export const CurrentOrder = ({
               <div className="grid grid-cols-4 gap-2">
                 {BILL_DENOMINATIONS.map((bill) => {
                   const isDisabled = bill.value < total;
-                  const isSelected = selectedBill === bill.value;
+                  const isSelected = selectedBill === bill.value && customAmount === "";
                   return (
                     <Button
                       key={bill.value}
@@ -140,12 +154,22 @@ export const CurrentOrder = ({
                     </Button>
                   );
                 })}
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <Input
+                  placeholder="Otro monto..."
+                  value={customAmount}
+                  onChange={(e) => handleCustomAmount(e.target.value)}
+                  className="h-8 text-xs"
+                  type="number"
+                  min={0}
+                />
                 {selectedBill !== null && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={clearSelection}
-                    className="text-xs text-muted-foreground"
+                    className="text-xs text-muted-foreground whitespace-nowrap h-8"
                   >
                     Limpiar
                   </Button>
