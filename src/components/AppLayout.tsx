@@ -74,6 +74,7 @@ const navGroups: NavGroup[] = [
       { path: "/finanzas",                    label: "Flujo de Caja",      icon: TrendingUp,  user: false, admin: true, owner: true },
       { path: "/finanzas/cuentas-pagar",      label: "Cuentas × Pagar",   icon: DollarSign,  user: false, admin: true, owner: true },
       { path: "/finanzas/cuentas-cobrar",     label: "Cuentas × Cobrar",  icon: TrendingUp,  user: false, admin: true, owner: true },
+      { path: "/finanzas/cuentas-deuda",      label: "Cuentas en Deuda",  icon: Receipt,     user: false, admin: true, owner: true },
       { path: "/finanzas/recordatorios",      label: "Recordatorios",     icon: Bell,        user: false, admin: true, owner: true },
       { path: "/historial-diario",            label: "Ventas Diarias",    icon: Calendar,    user: false, admin: true, owner: true },
       { path: "/utilidad",                    label: "Utilidad",          icon: TrendingUp,  user: false, admin: true, owner: true },

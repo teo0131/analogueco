@@ -27,6 +27,7 @@ import Finanzas from "./pages/Finanzas";
 import CuentasPorPagar from "./pages/CuentasPorPagar";
 import CuentasPorCobrar from "./pages/CuentasPorCobrar";
 import RecordatoriosPago from "./pages/RecordatoriosPago";
+import CuentasDeuda from "./pages/CuentasDeuda";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
 import AbrirCaja from "./pages/AbrirCaja";
 
@@ -104,6 +105,7 @@ const App = () => (
             <Route path="/finanzas" element={<Finanzas />} />
             <Route path="/finanzas/cuentas-pagar" element={<CuentasPorPagar />} />
             <Route path="/finanzas/cuentas-cobrar" element={<CuentasPorCobrar />} />
+            <Route path="/finanzas/cuentas-deuda" element={<CuentasDeuda />} />
             <Route path="/finanzas/recordatorios" element={<RecordatoriosPago />} />
             
             {/* ADMINISTRACIÓN */}

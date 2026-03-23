@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      clientes_cuenta: {
+        Row: {
+          created_at: string
+          email: string | null
+          estado: string
+          id: string
+          nombre: string
+          notas: string | null
+          saldo_total: number
+          telefono: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          estado?: string
+          id?: string
+          nombre: string
+          notas?: string | null
+          saldo_total?: number
+          telefono?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          estado?: string
+          id?: string
+          nombre?: string
+          notas?: string | null
+          saldo_total?: number
+          telefono?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cuentas_por_cobrar: {
         Row: {
           cliente_nombre: string
@@ -465,6 +504,41 @@ export type Database = {
             columns: ["receta_id"]
             isOneToOne: false
             referencedRelation: "recetas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detalle_ventas_credito: {
+        Row: {
+          cantidad: number
+          id: string
+          nombre_item: string
+          precio_unitario: number
+          subtotal: number
+          venta_id: string
+        }
+        Insert: {
+          cantidad?: number
+          id?: string
+          nombre_item: string
+          precio_unitario?: number
+          subtotal?: number
+          venta_id: string
+        }
+        Update: {
+          cantidad?: number
+          id?: string
+          nombre_item?: string
+          precio_unitario?: number
+          subtotal?: number
+          venta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_ventas_credito_venta_id_fkey"
+            columns: ["venta_id"]
+            isOneToOne: false
+            referencedRelation: "ventas_credito"
             referencedColumns: ["id"]
           },
         ]
@@ -1150,6 +1224,41 @@ export type Database = {
         }
         Relationships: []
       }
+      pagos_cuenta: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          monto: number
+          notas: string | null
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_cuenta_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_cuenta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       productos: {
         Row: {
           categoria: string | null
@@ -1484,6 +1593,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ventas_credito: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          notas: string | null
+          total: number
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          notas?: string | null
+          total?: number
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          notas?: string | null
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventas_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_cuenta"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
