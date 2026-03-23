@@ -337,9 +337,16 @@ export default function Empleados() {
                       </div>
                     ))}
                     {selected.emergencia_nombre && (
-                      <div className="mt-3 p-3 rounded-md bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
-                        <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 mb-1">Contacto de emergencia</p>
+                      <div className="mt-3 p-3 rounded-md bg-muted/40 border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Contacto de emergencia</p>
                         <p className="text-sm">{selected.emergencia_nombre} · {selected.emergencia_tel}</p>
+                      </div>
+                    )}
+                    {selected.pin && (
+                      <div className="mt-3 p-3 rounded-md bg-primary/10 border border-primary/30">
+                        <p className="text-xs font-semibold text-primary mb-1">PIN Kiosko</p>
+                        <p className="text-sm font-mono tracking-widest">{"•".repeat(selected.pin.length)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">PIN configurado — {selected.pin.length} dígitos</p>
                       </div>
                     )}
                   </TabsContent>
