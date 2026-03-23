@@ -162,6 +162,7 @@ export default function Empleados() {
         emergencia_nombre: form.emergencia_nombre || null,
         emergencia_tel: form.emergencia_tel || null,
         notas: form.notas || null,
+        pin: form.pin || null,
       };
       if (editing) {
         const { error } = await supabase.from("empleados").update(payload).eq("id", editing.id);
