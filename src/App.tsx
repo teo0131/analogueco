@@ -90,6 +90,11 @@ const App = () => (
             <Route path="/sensores" element={<Sensores />} />
             <Route path="/audio" element={<AudioMonitoreo />} />
             
+            {/* RRHH */}
+            <Route path="/rrhh/empleados" element={<Empleados />} />
+            <Route path="/rrhh/asistencia" element={<Asistencia />} />
+            <Route path="/rrhh/nomina" element={<Nomina />} />
+
             {/* ADMINISTRACIÓN */}
             <Route path="/turnos" element={<TurnosChecklists />} />
             <Route path="/reportes" element={<ReportesAvanzados />} />
