@@ -129,6 +129,13 @@ const POS = () => {
   const [sendToActiveCliente, setSendToActiveCliente] = useState("");
   const [availableMesas, setAvailableMesas] = useState<Array<{ id: string; numero_mesa: number; nombre: string | null }>>([]);
 
+  // ── Cargar a cuenta de deuda ─────────────────────────────────────
+  const [showDeudaSelector, setShowDeudaSelector] = useState(false);
+  const [clientes, setClientes] = useState<Array<{ id: string; nombre: string; saldo_total: number; telefono: string | null }>>([]);
+  const [selectedClienteDeuda, setSelectedClienteDeuda] = useState<string>("");
+  const [loadingClientes, setLoadingClientes] = useState(false);
+  const [cargandoDeuda, setCargandoDeuda] = useState(false);
+
   // ── Caja ──────────────────────────────────────────────────────────
   const [cajaAbierta, setCajaAbierta] = useState<boolean | null>(null); // null = cargando
   const [sesionCajaId, setSesionCajaId] = useState<string | null>(null);
