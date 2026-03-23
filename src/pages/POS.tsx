@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MenuItemButton } from "@/components/MenuItemButton";
@@ -75,6 +75,14 @@ const POS = () => {
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  // Memoize items per category so grid positions never change after initial load
+  const itemsByCategory = useMemo(() => {
+    const map: Record<string, MenuItem[]> = {};
+    for (const cat of categories) {
+      map[cat] = menuItems.filter(item => item.category === cat);
+    }
+    return map;
+  }, [menuItems, categories]);
   const [currentItems, setCurrentItems] = useState<MenuItem[]>([]);
   const [comment, setComment] = useState("");
   const [orderNumber, setOrderNumber] = useState(1);
@@ -1142,9 +1150,7 @@ const POS = () => {
                 {categories.map((category) => (
                   <TabsContent key={category} value={category} className="mt-6">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {menuItems
-                        .filter((item) => item.category === category)
-                        .map((item) => (
+                      {(itemsByCategory[category] ?? []).map((item) => (
                           <MenuItemButton
                             key={item.id}
                             item={item}
