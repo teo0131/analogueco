@@ -289,7 +289,12 @@ export default function CuentasDeuda() {
   const toggleExpand = (id: string) => setExpandedId(prev => (prev === id ? null : id));
 
   const openVenta = (c: Cliente) => { setSelectedCliente(c); setVentaDialog(true); };
-  const openPago  = (c: Cliente) => { setSelectedCliente(c); setPagoDialog(true); };
+  const openPago  = (c: Cliente) => {
+    requirePin(
+      `Registrar abono para "${c.nombre}". Saldo actual: ${COP(c.saldo_total)}`,
+      () => { setSelectedCliente(c); setPagoDialog(true); }
+    );
+  };
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
