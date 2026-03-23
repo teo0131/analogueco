@@ -18,7 +18,7 @@ import {
   Users, MessageSquare, TrendingUp, Settings, LayoutGrid, Shield,
   Bell, Clock, AlertTriangle, Camera, Radio, Volume2,
   ClipboardCheck, Activity, DollarSign, Crown, ChevronDown,
-  Warehouse, LineChart,
+  Warehouse, LineChart, UserCheck, Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
 import analoguecoLogo from "@/assets/analogueco-logo.png";
