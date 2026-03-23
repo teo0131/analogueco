@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Users, Clock, DollarSign, Trash2, MapPin, Settings, ChevronRight, Edit2 } from "lucide-react";
+import { Plus, Users, Clock, DollarSign, Trash2, MapPin, Settings, ChevronRight, Edit2, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 interface Mesa {
   id: string;
@@ -74,6 +75,8 @@ export const ActiveOrdersPanel = ({
   const [newOrderDialog, setNewOrderDialog] = useState(false);
   const [detailDialog, setDetailDialog] = useState(false);
   const [viewingOrden, setViewingOrden] = useState<OrdenActiva | null>(null);
+  const [pinDialog, setPinDialog] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const [newOrderData, setNewOrderData] = useState({
     mesa_id: "",
@@ -198,8 +201,14 @@ export const ActiveOrdersPanel = ({
     }
   };
 
-  const handleDeleteOrder = async (ordenId: string) => {
-    const { error } = await supabase.from("ordenes_activas").delete().eq("id", ordenId);
+  const requestDeleteOrder = (ordenId: string) => {
+    setPendingDeleteId(ordenId);
+    setPinDialog(true);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!pendingDeleteId) return;
+    const { error } = await supabase.from("ordenes_activas").delete().eq("id", pendingDeleteId);
     
     if (error) {
       toast.error("Error al eliminar orden");
@@ -209,9 +218,10 @@ export const ActiveOrdersPanel = ({
     toast.success("Orden eliminada");
     setDetailDialog(false);
     setViewingOrden(null);
-    if (selectedActiveOrder?.id === ordenId) {
+    if (selectedActiveOrder?.id === pendingDeleteId) {
       onSelectActiveOrder(null as any);
     }
+    setPendingDeleteId(null);
     fetchData();
   };
 
@@ -424,9 +434,9 @@ export const ActiveOrdersPanel = ({
               </div>
 
               <DialogFooter className="gap-2">
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteOrder(viewingOrden.id)}>
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Eliminar
+                <Button variant="destructive" size="sm" onClick={() => requestDeleteOrder(viewingOrden.id)}>
+                  <Lock className="w-4 h-4 mr-1" />
+                  Eliminar (requiere PIN)
                 </Button>
                 <Button variant="outline" onClick={() => setDetailDialog(false)}>Cerrar</Button>
               </DialogFooter>
@@ -434,6 +444,14 @@ export const ActiveOrdersPanel = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <PinVerificationDialog
+        open={pinDialog}
+        onOpenChange={(open) => { setPinDialog(open); if (!open) setPendingDeleteId(null); }}
+        onSuccess={handleDeleteOrder}
+        title="Autorización requerida"
+        description="Ingresa el PIN de administrador para eliminar esta orden activa."
+      />
     </div>
   );
 };
