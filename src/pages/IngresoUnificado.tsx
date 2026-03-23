@@ -439,6 +439,9 @@ const IngresoUnificado = () => {
           nombre: newInsumoData.nombre.trim(),
           unidad_inventario: newInsumoData.unidad_inventario,
           stock_minimo: parseFloat(newInsumoData.stock_minimo) || 0,
+          proveedor_id: newInsumoData.proveedor_id || null,
+          precio_compra_habitual: parseFloat(newInsumoData.precio_compra_habitual) || 0,
+          cantidad_pedido_sugerida: parseFloat(newInsumoData.cantidad_pedido_sugerida) || 0,
           tipo_producto: 'insumo',
           es_activo: true
         })
@@ -449,7 +452,7 @@ const IngresoUnificado = () => {
 
       toast.success("Insumo creado exitosamente");
       setShowCreateInsumoDialog(false);
-      setNewInsumoData({ nombre: "", unidad_inventario: "unidad", stock_minimo: "0" });
+      setNewInsumoData({ nombre: "", unidad_inventario: "unidad", stock_minimo: "0", proveedor_id: "", precio_compra_habitual: "0", cantidad_pedido_sugerida: "0" });
       
       // Refresh insumos
       fetchData();
