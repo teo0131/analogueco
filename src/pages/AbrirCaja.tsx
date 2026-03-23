@@ -239,6 +239,13 @@ const AbrirCaja = () => {
 
   return (
     <div className="container mx-auto py-6 px-4 space-y-6 max-w-6xl">
+      <PinVerificationDialog
+        open={showPinCerrar}
+        onOpenChange={setShowPinCerrar}
+        onSuccess={() => setShowCerrarDialog(true)}
+        title="Cerrar Caja"
+        description="Ingresa tu PIN para iniciar el proceso de cierre de caja y arqueo."
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
