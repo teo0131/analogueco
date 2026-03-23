@@ -96,6 +96,7 @@ const POS = () => {
   const [selectedActiveOrder, setSelectedActiveOrder] = useState<OrdenActiva | null>(null);
   const [activeOrdersKey, setActiveOrdersKey] = useState(0);
   const [closingActiveOrder, setClosingActiveOrder] = useState(false);
+  const [isSendingToActive, setIsSendingToActive] = useState(false);
 
   const setDetailOpen = (open: boolean) => {
     if (open) {
@@ -533,6 +534,8 @@ const POS = () => {
 
   // Send current order to active orders (without completing/billing)
   const handleSendToActiveOrders = async () => {
+    if (isSendingToActive) return;
+    setIsSendingToActive(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -598,6 +601,8 @@ const POS = () => {
     } catch (error) {
       console.error("Error sending to active orders:", error);
       toast.error("Error al enviar a órdenes activas");
+    } finally {
+      setIsSendingToActive(false);
     }
   };
 
@@ -1374,7 +1379,7 @@ const POS = () => {
             <Button 
               className="w-full h-auto p-4 flex flex-col items-start gap-2" 
               onClick={handleCompleteOrder}
-              disabled={isCompletingOrder}
+              disabled={isCompletingOrder || isSendingToActive}
             >
               <div className="flex items-center gap-2 font-semibold">
                 <Check className="w-5 h-5" />
@@ -1425,9 +1430,10 @@ const POS = () => {
                 variant="secondary" 
                 className="w-full"
                 onClick={handleSendToActiveOrders}
+                disabled={isSendingToActive || isCompletingOrder}
               >
                 <MapPin className="w-4 h-4 mr-2" />
-                Enviar a Activas
+                {isSendingToActive ? "Enviando..." : "Enviar a Activas"}
               </Button>
             </div>
           </div>
