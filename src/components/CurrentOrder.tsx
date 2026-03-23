@@ -46,6 +46,7 @@ export const CurrentOrder = ({
   isCompleting = false,
 }: CurrentOrderProps) => {
   const [selectedBill, setSelectedBill] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>("");
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
