@@ -44,6 +44,99 @@ export type Database = {
         }
         Relationships: []
       }
+      cuentas_por_cobrar: {
+        Row: {
+          cliente_nombre: string
+          concepto: string
+          created_at: string
+          estado: string
+          fecha_emision: string
+          fecha_vencimiento: string | null
+          id: string
+          monto: number
+          notas: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_nombre: string
+          concepto: string
+          created_at?: string
+          estado?: string
+          fecha_emision?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_nombre?: string
+          concepto?: string
+          created_at?: string
+          estado?: string
+          fecha_emision?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cuentas_por_pagar: {
+        Row: {
+          categoria: string
+          created_at: string
+          dia_vencimiento: number | null
+          es_recurrente: boolean
+          estado: string
+          fecha_vencimiento: string | null
+          id: string
+          monto: number
+          nombre: string
+          notas: string | null
+          periodicidad: string
+          proveedor: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          dia_vencimiento?: number | null
+          es_recurrente?: boolean
+          estado?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          monto?: number
+          nombre: string
+          notas?: string | null
+          periodicidad?: string
+          proveedor?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          dia_vencimiento?: number | null
+          es_recurrente?: boolean
+          estado?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          monto?: number
+          nombre?: string
+          notas?: string | null
+          periodicidad?: string
+          proveedor?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       datos_fiscales: {
         Row: {
           ciudad: string | null
@@ -1203,6 +1296,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recordatorios_pago: {
+        Row: {
+          created_at: string
+          cuenta_id: string | null
+          descripcion: string | null
+          estado: string
+          fecha_recordatorio: string
+          id: string
+          monto: number | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cuenta_id?: string | null
+          descripcion?: string | null
+          estado?: string
+          fecha_recordatorio: string
+          id?: string
+          monto?: number | null
+          tipo?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cuenta_id?: string | null
+          descripcion?: string | null
+          estado?: string
+          fecha_recordatorio?: string
+          id?: string
+          monto?: number | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       registros_asistencia: {
         Row: {
