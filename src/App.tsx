@@ -110,16 +110,8 @@ const App = () => (
             <Route path="/admin/chat-insights" element={<ProtectedRoute requireOwner>{<AdminChatInsights />}</ProtectedRoute>} />
           </Route>
 
-      {/* Kiosk route - requires login but accessible to all roles */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <Kiosko />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/kiosko" element={<Kiosko />} />
-          </Route>
+          {/* Kiosk - standalone page (no AppLayout), accessible to all roles */}
+          <Route path="/kiosko" element={<ProtectedRoute><Kiosko /></ProtectedRoute>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

@@ -106,6 +106,7 @@ const navGroups: NavGroup[] = [
       { path: "/rrhh/empleados",  label: "Empleados",  icon: Users,      user: false, admin: true, owner: true },
       { path: "/rrhh/asistencia", label: "Asistencia", icon: Clock,      user: false, admin: true, owner: true },
       { path: "/rrhh/nomina",     label: "Nómina",     icon: Briefcase,  user: false, admin: true, owner: true },
+      { path: "/kiosko",          label: "Kiosko",     icon: UserCheck,  user: true,  admin: true, owner: true },
     ],
   },
   {
