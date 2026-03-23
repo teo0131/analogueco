@@ -601,6 +601,8 @@ const POS = () => {
     } catch (error) {
       console.error("Error sending to active orders:", error);
       toast.error("Error al enviar a órdenes activas");
+    } finally {
+      setIsSendingToActive(false);
     }
   };
 
