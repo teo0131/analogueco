@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileDown, Menu, Store, Calculator, X, Users, Check, ClipboardList, ShoppingBag, MapPin, Banknote, DollarSign, Unlock } from "lucide-react";
+import { FileDown, Menu, Store, Calculator, X, Users, Check, ClipboardList, ShoppingBag, MapPin, Banknote, DollarSign, Unlock, CreditCard, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
@@ -128,6 +128,13 @@ const POS = () => {
   const [sendToActiveMesa, setSendToActiveMesa] = useState("");
   const [sendToActiveCliente, setSendToActiveCliente] = useState("");
   const [availableMesas, setAvailableMesas] = useState<Array<{ id: string; numero_mesa: number; nombre: string | null }>>([]);
+
+  // ── Cargar a cuenta de deuda ─────────────────────────────────────
+  const [showDeudaSelector, setShowDeudaSelector] = useState(false);
+  const [clientes, setClientes] = useState<Array<{ id: string; nombre: string; saldo_total: number; telefono: string | null }>>([]);
+  const [selectedClienteDeuda, setSelectedClienteDeuda] = useState<string>("");
+  const [loadingClientes, setLoadingClientes] = useState(false);
+  const [cargandoDeuda, setCargandoDeuda] = useState(false);
 
   // ── Caja ──────────────────────────────────────────────────────────
   const [cajaAbierta, setCajaAbierta] = useState<boolean | null>(null); // null = cargando
@@ -1030,6 +1037,110 @@ const POS = () => {
     setShowInvoiceModal(true);
   };
 
+  // ── Load clients for debt selector ──────────────────────────────
+  const handleOpenDeudaSelector = async () => {
+    setShowDeudaSelector(true);
+    setLoadingClientes(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("clientes_cuenta")
+        .select("id, nombre, saldo_total, telefono")
+        .eq("user_id", user.id)
+        .eq("estado", "activo")
+        .order("nombre");
+      setClientes((data ?? []) as any[]);
+    } catch {
+      toast.error("Error al cargar clientes");
+    } finally {
+      setLoadingClientes(false);
+    }
+  };
+
+  // ── Charge order to debt account ────────────────────────────────
+  const handleCargarADeuda = async () => {
+    if (!selectedClienteDeuda) { toast.error("Selecciona un cliente"); return; }
+    if (pendingOrderItems.length === 0) { toast.error("No hay ítems en la orden"); return; }
+    setCargandoDeuda(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No auth");
+
+      const total = pendingOrderItems.reduce((s, i) => s + i.price, 0);
+
+      // 1. Create ventas_credito header
+      const { data: venta, error: ve } = await supabase
+        .from("ventas_credito")
+        .insert({
+          user_id: user.id,
+          cliente_id: selectedClienteDeuda,
+          total,
+          notas: pendingOrderComment || `Orden POS #${orderNumber}`,
+        })
+        .select()
+        .single();
+      if (ve) throw ve;
+
+      // 2. Insert detail items
+      const detalles = pendingOrderItems.map(i => ({
+        venta_id: venta.id,
+        nombre_item: i.name,
+        cantidad: 1,
+        precio_unitario: i.price,
+        subtotal: i.price,
+      }));
+      const { error: de } = await supabase.from("detalle_ventas_credito").insert(detalles);
+      if (de) throw de;
+
+      // 3. Also register as completed POS order
+      const { data: newOrder, error: oe } = await supabase
+        .from("ordenes_pos")
+        .insert({
+          user_id: user.id,
+          numero_orden: orderNumber,
+          total,
+          comentario: `[CUENTA CLIENTE] ${pendingOrderComment || ""}`,
+          fecha: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (oe) throw oe;
+
+      await supabase.from("detalle_ordenes_pos").insert(
+        pendingOrderItems.map(i => ({
+          orden_id: newOrder.id,
+          menu_item_id: i.id,
+          nombre_item: i.name,
+          precio_unitario: i.price,
+          cantidad: 1,
+          subtotal: i.price,
+        }))
+      );
+
+      const clienteNombre = clientes.find(c => c.id === selectedClienteDeuda)?.nombre ?? "cliente";
+      setCompletedOrders(prev => [{
+        id: newOrder.id, orderNumber, total,
+        items: pendingOrderItems.map(i => ({ name: i.name, price: i.price })),
+        comment: pendingOrderComment, timestamp: new Date(),
+      }, ...prev]);
+      setOrderNumber(orderNumber + 1);
+      setCurrentItems([]);
+      setComment("");
+      setPendingOrderItems([]);
+      setPendingOrderComment("");
+      setShowCompleteOptions(false);
+      setShowDeudaSelector(false);
+      setSelectedClienteDeuda("");
+      toast.success(`Cargado a la cuenta de ${clienteNombre}`);
+    } catch (e: any) {
+      toast.error("Error al cargar a deuda");
+      console.error(e);
+    } finally {
+      setCargandoDeuda(false);
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
@@ -1424,7 +1535,22 @@ const POS = () => {
               </span>
             </Button>
 
-            {/* Option 2: Send to active orders */}
+            {/* Option 2: Charge to debt account */}
+            <button
+              className="w-full h-auto p-4 flex flex-col items-start gap-2 rounded-lg border-2 border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-left disabled:opacity-50"
+              onClick={handleOpenDeudaSelector}
+              disabled={isCompletingOrder || isSendingToActive || cargandoDeuda}
+            >
+              <div className="flex items-center gap-2 font-semibold text-amber-400">
+                <CreditCard className="w-5 h-5" />
+                Cargar a Cuenta de Cliente
+              </div>
+              <span className="text-xs text-muted-foreground">
+                Registra la venta como deuda en la cuenta del cliente
+              </span>
+            </button>
+
+            {/* Option 3: Send to active orders */}
             <div className="border rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2 font-medium">
                 <ShoppingBag className="w-5 h-5" />
@@ -1476,6 +1602,69 @@ const POS = () => {
               Cancelar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: Seleccionar cliente para deuda ───────────────── */}
+      <Dialog open={showDeudaSelector} onOpenChange={v => { setShowDeudaSelector(v); if (!v) setSelectedClienteDeuda(""); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-amber-400" />
+              Cargar a cuenta de cliente
+            </DialogTitle>
+            <DialogDescription>
+              {formatPrice(pendingOrderItems.reduce((s, i) => s + i.price, 0))} · {pendingOrderItems.length} item{pendingOrderItems.length > 1 ? "s" : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {loadingClientes ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Cargando clientes...</p>
+            ) : clientes.length === 0 ? (
+              <div className="text-center py-4 space-y-2">
+                <p className="text-sm text-muted-foreground">No hay clientes registrados aún.</p>
+                <Button size="sm" variant="outline" onClick={() => { setShowDeudaSelector(false); navigate("/finanzas/cuentas-deuda"); }}>
+                  Ir a Cuentas en Deuda
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {clientes.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedClienteDeuda(c.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-colors
+                      ${selectedClienteDeuda === c.id
+                        ? "border-amber-500/60 bg-amber-500/10"
+                        : "border-border hover:border-amber-500/30 hover:bg-muted/50"}`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{c.nombre}</p>
+                      {c.telefono && <p className="text-xs text-muted-foreground">{c.telefono}</p>}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-muted-foreground">Saldo actual</p>
+                      <p className={`text-sm font-bold ${c.saldo_total > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                        {formatPrice(c.saldo_total)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedClienteDeuda && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Saldo después de cargar</p>
+                <p className="font-bold text-amber-400">
+                  {formatPrice((clientes.find(c => c.id === selectedClienteDeuda)?.saldo_total ?? 0) + pendingOrderItems.reduce((s, i) => s + i.price, 0))}
+                </p>
+              </div>
+            )}
+            <Button className="w-full" onClick={handleCargarADeuda}
+              disabled={!selectedClienteDeuda || cargandoDeuda}>
+              {cargandoDeuda ? "Cargando..." : "Confirmar cargo a cuenta"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
