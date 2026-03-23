@@ -1379,7 +1379,7 @@ const POS = () => {
             <Button 
               className="w-full h-auto p-4 flex flex-col items-start gap-2" 
               onClick={handleCompleteOrder}
-              disabled={isCompletingOrder}
+              disabled={isCompletingOrder || isSendingToActive}
             >
               <div className="flex items-center gap-2 font-semibold">
                 <Check className="w-5 h-5" />
