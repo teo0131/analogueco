@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, CheckCircle2, Trash2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO, differenceInDays, startOfDay } from "date-fns";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 type CuentaCobrar = {
   id: string; user_id: string; cliente_nombre: string; concepto: string;
@@ -37,6 +38,11 @@ export default function CuentasPorCobrar() {
   const [form, setForm] = useState({
     cliente_nombre: "", concepto: "", monto: "", fecha_vencimiento: "", notas: "",
   });
+
+  // PIN state
+  const [pinDialog, setPinDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [pinDescription, setPinDescription] = useState("");
 
   const getUserId = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +101,19 @@ export default function CuentasPorCobrar() {
     },
   });
 
+  const requirePin = (description: string, action: () => void) => {
+    setPinDescription(description);
+    setPendingAction(() => action);
+    setPinDialog(true);
+  };
+
+  const handlePinSuccess = () => {
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
+
   const filtered = filtroEstado === "todos" ? lista : lista.filter(c => c.estado === filtroEstado);
   const totalPendiente = lista.filter(c => c.estado === "pendiente").reduce((s, c) => s + c.monto, 0);
   const vencidas = lista.filter(c => c.estado === "vencido").length;
@@ -106,6 +125,14 @@ export default function CuentasPorCobrar() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
+
+      <PinVerificationDialog
+        open={pinDialog}
+        onOpenChange={setPinDialog}
+        onSuccess={handlePinSuccess}
+        title="Acción Protegida"
+        description={pinDescription}
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -207,7 +234,10 @@ export default function CuentasPorCobrar() {
                       size="icon" variant="ghost"
                       className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
                       title="Marcar como cobrado"
-                      onClick={() => updateEstado.mutate({ id: c.id, estado: "cobrado" })}
+                      onClick={() => requirePin(
+                        `Marcar como cobrado "${c.concepto}" de ${c.cliente_nombre} por ${COP(c.monto)}.`,
+                        () => updateEstado.mutate({ id: c.id, estado: "cobrado" })
+                      )}
                     >
                       <CheckCircle2 className="h-4 w-4" />
                     </Button>
@@ -217,7 +247,10 @@ export default function CuentasPorCobrar() {
                       size="icon" variant="ghost"
                       className="h-8 w-8 text-muted-foreground hover:text-amber-400"
                       title="Marcar como pendiente"
-                      onClick={() => updateEstado.mutate({ id: c.id, estado: "pendiente" })}
+                      onClick={() => requirePin(
+                        `Revertir el cobro de "${c.concepto}" a pendiente.`,
+                        () => updateEstado.mutate({ id: c.id, estado: "pendiente" })
+                      )}
                     >
                       <CheckCircle2 className="h-4 w-4" />
                     </Button>
@@ -225,7 +258,10 @@ export default function CuentasPorCobrar() {
                   <Button
                     size="icon" variant="ghost"
                     className="h-8 w-8 text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
-                    onClick={() => deleteCuenta.mutate(c.id)}
+                    onClick={() => requirePin(
+                      `Eliminar cuenta de ${c.cliente_nombre} por ${COP(c.monto)} permanentemente.`,
+                      () => deleteCuenta.mutate(c.id)
+                    )}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

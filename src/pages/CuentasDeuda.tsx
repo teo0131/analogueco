@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 type Cliente = {
@@ -98,6 +99,11 @@ export default function CuentasDeuda() {
   const [pagoDialog, setPagoDialog] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // ── PIN states
+  const [pinDialog, setPinDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [pinDescription, setPinDescription] = useState("Verifica tu PIN para continuar");
 
   // ── Forms
   const [clienteForm, setClienteForm] = useState({ nombre: "", telefono: "", email: "", notas: "" });
@@ -262,6 +268,20 @@ export default function CuentasDeuda() {
     },
   });
 
+  // ── PIN helpers
+  const requirePin = (description: string, action: () => void) => {
+    setPinDescription(description);
+    setPendingAction(() => action);
+    setPinDialog(true);
+  };
+
+  const handlePinSuccess = () => {
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
+
   // ── Aggregates
   const totalDeuda = clientes.reduce((s, c) => s + (c.saldo_total > 0 ? c.saldo_total : 0), 0);
   const clientesActivos = clientes.filter(c => c.saldo_total > 0).length;
@@ -274,6 +294,15 @@ export default function CuentasDeuda() {
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
+
+      {/* ── PIN Dialog ── */}
+      <PinVerificationDialog
+        open={pinDialog}
+        onOpenChange={setPinDialog}
+        onSuccess={handlePinSuccess}
+        title="Acción Protegida"
+        description={pinDescription}
+      />
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
@@ -413,7 +442,10 @@ export default function CuentasDeuda() {
                     </Button>
                     <Button size="icon" variant="ghost"
                       className="h-8 w-8 text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
-                      onClick={() => deleteCliente.mutate(c.id)}>
+                      onClick={() => requirePin(
+                        `Eliminar cliente "${c.nombre}" y todo su historial. Esta acción no se puede deshacer.`,
+                        () => deleteCliente.mutate(c.id)
+                      )}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -457,7 +489,10 @@ export default function CuentasDeuda() {
                             </div>
                             <Button size="icon" variant="ghost"
                               className="h-7 w-7 text-muted-foreground hover:text-rose-400 shrink-0"
-                              onClick={() => deleteVenta.mutate(v.id)}>
+                              onClick={() => requirePin(
+                                `Eliminar venta de ${COP(v.total)} del ${fmtDate(v.created_at)}. El saldo del cliente se recalculará.`,
+                                () => deleteVenta.mutate(v.id)
+                              )}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -485,7 +520,10 @@ export default function CuentasDeuda() {
                             </div>
                             <Button size="icon" variant="ghost"
                               className="h-7 w-7 text-muted-foreground hover:text-rose-400 shrink-0"
-                              onClick={() => deletePago.mutate(p.id)}>
+                              onClick={() => requirePin(
+                                `Eliminar abono de ${COP(p.monto)}. El saldo del cliente aumentará nuevamente.`,
+                                () => deletePago.mutate(p.id)
+                              )}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>

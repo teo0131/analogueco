@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Search, ImageIcon, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 interface MenuItemDB {
   id: string;
