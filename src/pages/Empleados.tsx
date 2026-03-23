@@ -63,7 +63,7 @@ const emptyForm = {
   salario_base: "", tipo_pago: "mensual", valor_hora: "", estado: "activo",
   direccion: "", fecha_nacimiento: "", eps: "", arl: "",
   cuenta_bancaria: "", banco: "", tipo_cuenta: "ahorros",
-  emergencia_nombre: "", emergencia_tel: "", notas: ""
+  emergencia_nombre: "", emergencia_tel: "", notas: "", pin: ""
 };
 
 const formatCOP = (n: number) =>
