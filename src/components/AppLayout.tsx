@@ -71,10 +71,11 @@ const navGroups: NavGroup[] = [
     icon: LineChart,
     user: false, admin: true, owner: true,
     items: [
-      { path: "/historial-diario", label: "Ventas Diarias", icon: Calendar,  user: false, admin: true, owner: true },
-      { path: "/utilidad",         label: "Utilidad",       icon: TrendingUp,user: false, admin: true, owner: true },
-      { path: "/dashboard",        label: "Dashboard",      icon: BarChart3, user: false, admin: true, owner: true },
-      { path: "/reportes",         label: "Reportes",       icon: BarChart3, user: false, admin: true, owner: true },
+      { path: "/finanzas",         label: "Flujo de Caja",  icon: TrendingUp, user: false, admin: true, owner: true },
+      { path: "/historial-diario", label: "Ventas Diarias", icon: Calendar,   user: false, admin: true, owner: true },
+      { path: "/utilidad",         label: "Utilidad",       icon: TrendingUp, user: false, admin: true, owner: true },
+      { path: "/dashboard",        label: "Dashboard",      icon: BarChart3,  user: false, admin: true, owner: true },
+      { path: "/reportes",         label: "Reportes",       icon: BarChart3,  user: false, admin: true, owner: true },
     ],
   },
   {
