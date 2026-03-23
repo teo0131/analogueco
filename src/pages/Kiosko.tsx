@@ -189,7 +189,8 @@ export default function Kiosko() {
           <div className="grid grid-cols-2 gap-3">
             <Button
               size="lg"
-              className="h-14 text-base gap-2 bg-green-600 hover:bg-green-700 text-white"
+              className="h-14 text-base gap-2"
+              style={{ backgroundColor: "hsl(142 72% 29%)", color: "white" }}
               disabled={pin.length < 3 || loading}
               onClick={() => handleClock("entrada")}
             >
