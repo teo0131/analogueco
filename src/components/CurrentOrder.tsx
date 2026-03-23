@@ -64,11 +64,23 @@ export const CurrentOrder = ({
   const handleBillClick = (billValue: number) => {
     if (billValue >= total) {
       setSelectedBill(billValue);
+      setCustomAmount("");
+    }
+  };
+
+  const handleCustomAmount = (val: string) => {
+    setCustomAmount(val);
+    const parsed = parseInt(val.replace(/\D/g, ""), 10);
+    if (!isNaN(parsed)) {
+      setSelectedBill(parsed);
+    } else {
+      setSelectedBill(null);
     }
   };
 
   const clearSelection = () => {
     setSelectedBill(null);
+    setCustomAmount("");
   };
 
   return (
