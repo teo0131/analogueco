@@ -1176,29 +1176,63 @@ const POS = () => {
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-center">
                       <CardTitle className="text-base flex items-center gap-2">
-                        <ClipboardList className="w-4 h-4" />
+                        <ClipboardList className="w-4 h-4 text-primary" />
                         Orden Activa #{selectedActiveOrder.numero_orden}
                       </CardTitle>
                       <Button variant="ghost" size="sm" onClick={() => setSelectedActiveOrder(null)}>
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="text-sm space-y-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       {selectedActiveOrder.nombre_cliente && (
-                        <p className="flex items-center gap-1 text-muted-foreground">
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Users className="w-3 h-3" /> {selectedActiveOrder.nombre_cliente}
-                        </p>
+                        </span>
                       )}
                       {selectedActiveOrder.mesa && (
-                        <Badge variant="outline">Mesa #{selectedActiveOrder.mesa.numero_mesa}</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          <MapPin className="w-3 h-3 mr-1" />Mesa #{selectedActiveOrder.mesa.numero_mesa}
+                        </Badge>
                       )}
-                      <p className="font-medium text-lg">{formatPrice(selectedActiveOrder.total)}</p>
-                      <p className="text-muted-foreground">{selectedActiveOrder.detalles.length} items</p>
                     </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    {/* Banner informativo */}
+                    <div className="flex items-center gap-2 text-xs bg-primary/10 text-primary rounded px-2 py-1.5 font-medium">
+                      <ClipboardList className="w-3 h-3 shrink-0" />
+                      Los items del menú se agregarán a esta orden
+                    </div>
+
+                    {/* Lista de items */}
+                    <div className="rounded-md border border-border overflow-hidden">
+                      <div className="bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Items ({selectedActiveOrder.detalles.length})
+                      </div>
+                      {selectedActiveOrder.detalles.length === 0 ? (
+                        <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                          Sin items — selecciona del menú
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-border max-h-48 overflow-y-auto">
+                          {selectedActiveOrder.detalles.map((detalle) => (
+                            <div key={detalle.id} className="flex justify-between items-center px-3 py-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{detalle.nombre_item}</p>
+                                <p className="text-xs text-muted-foreground">{detalle.cantidad}x {formatPrice(detalle.precio_unitario)}</p>
+                              </div>
+                              <span className="text-sm font-semibold ml-2 shrink-0">{formatPrice(detalle.subtotal)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-t border-border">
+                        <span className="text-sm font-bold">Total</span>
+                        <span className="text-base font-bold text-primary">{formatPrice(selectedActiveOrder.total)}</span>
+                      </div>
+                    </div>
+
                     <Button 
-                      className="w-full mt-3" 
+                      className="w-full" 
                       onClick={handleCloseActiveOrder}
                       disabled={closingActiveOrder || selectedActiveOrder.detalles.length === 0}
                     >
