@@ -201,8 +201,14 @@ export const ActiveOrdersPanel = ({
     }
   };
 
-  const handleDeleteOrder = async (ordenId: string) => {
-    const { error } = await supabase.from("ordenes_activas").delete().eq("id", ordenId);
+  const requestDeleteOrder = (ordenId: string) => {
+    setPendingDeleteId(ordenId);
+    setPinDialog(true);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!pendingDeleteId) return;
+    const { error } = await supabase.from("ordenes_activas").delete().eq("id", pendingDeleteId);
     
     if (error) {
       toast.error("Error al eliminar orden");
@@ -212,9 +218,10 @@ export const ActiveOrdersPanel = ({
     toast.success("Orden eliminada");
     setDetailDialog(false);
     setViewingOrden(null);
-    if (selectedActiveOrder?.id === ordenId) {
+    if (selectedActiveOrder?.id === pendingDeleteId) {
       onSelectActiveOrder(null as any);
     }
+    setPendingDeleteId(null);
     fetchData();
   };
 
