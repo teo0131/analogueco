@@ -75,6 +75,14 @@ const POS = () => {
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  // Memoize items per category so grid positions never change after initial load
+  const itemsByCategory = useMemo(() => {
+    const map: Record<string, MenuItem[]> = {};
+    for (const cat of categories) {
+      map[cat] = menuItems.filter(item => item.category === cat);
+    }
+    return map;
+  }, [menuItems, categories]);
   const [currentItems, setCurrentItems] = useState<MenuItem[]>([]);
   const [comment, setComment] = useState("");
   const [orderNumber, setOrderNumber] = useState(1);
