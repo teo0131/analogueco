@@ -30,6 +30,7 @@ import AbrirCaja from "./pages/AbrirCaja";
 import Empleados from "./pages/Empleados";
 import Asistencia from "./pages/Asistencia";
 import Nomina from "./pages/Nomina";
+import Kiosko from "./pages/Kiosko";
 
 // New modules - Supervisión y Seguridad
 import CentroSupervision from "./pages/CentroSupervision";
@@ -108,6 +109,9 @@ const App = () => (
             <Route path="/admin/usuarios" element={<ProtectedRoute requireOwner>{<AdminUsuarios />}</ProtectedRoute>} />
             <Route path="/admin/chat-insights" element={<ProtectedRoute requireOwner>{<AdminChatInsights />}</ProtectedRoute>} />
           </Route>
+
+          {/* Kiosk - standalone page (no AppLayout), accessible to all roles */}
+          <Route path="/kiosko" element={<ProtectedRoute><Kiosko /></ProtectedRoute>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

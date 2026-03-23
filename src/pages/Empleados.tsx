@@ -44,6 +44,7 @@ interface Empleado {
   emergencia_nombre: string | null;
   emergencia_tel: string | null;
   notas: string | null;
+  pin: string | null;
   created_at: string;
 }
 
@@ -62,7 +63,7 @@ const emptyForm = {
   salario_base: "", tipo_pago: "mensual", valor_hora: "", estado: "activo",
   direccion: "", fecha_nacimiento: "", eps: "", arl: "",
   cuenta_bancaria: "", banco: "", tipo_cuenta: "ahorros",
-  emergencia_nombre: "", emergencia_tel: "", notas: ""
+  emergencia_nombre: "", emergencia_tel: "", notas: "", pin: ""
 };
 
 const formatCOP = (n: number) =>
@@ -129,7 +130,7 @@ export default function Empleados() {
       eps: e.eps || "", arl: e.arl || "", cuenta_bancaria: e.cuenta_bancaria || "",
       banco: e.banco || "", tipo_cuenta: e.tipo_cuenta || "ahorros",
       emergencia_nombre: e.emergencia_nombre || "", emergencia_tel: e.emergencia_tel || "",
-      notas: e.notas || ""
+      notas: e.notas || "", pin: e.pin || ""
     });
     setShowForm(true);
   };
@@ -161,6 +162,7 @@ export default function Empleados() {
         emergencia_nombre: form.emergencia_nombre || null,
         emergencia_tel: form.emergencia_tel || null,
         notas: form.notas || null,
+        pin: form.pin || null,
       };
       if (editing) {
         const { error } = await supabase.from("empleados").update(payload).eq("id", editing.id);
@@ -335,9 +337,16 @@ export default function Empleados() {
                       </div>
                     ))}
                     {selected.emergencia_nombre && (
-                      <div className="mt-3 p-3 rounded-md bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
-                        <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 mb-1">Contacto de emergencia</p>
+                      <div className="mt-3 p-3 rounded-md bg-muted/40 border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Contacto de emergencia</p>
                         <p className="text-sm">{selected.emergencia_nombre} · {selected.emergencia_tel}</p>
+                      </div>
+                    )}
+                    {selected.pin && (
+                      <div className="mt-3 p-3 rounded-md bg-primary/10 border border-primary/30">
+                        <p className="text-xs font-semibold text-primary mb-1">PIN Kiosko</p>
+                        <p className="text-sm font-mono tracking-widest">{"•".repeat(selected.pin.length)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">PIN configurado — {selected.pin.length} dígitos</p>
                       </div>
                     )}
                   </TabsContent>
@@ -477,6 +486,21 @@ export default function Empleados() {
                       <SelectItem value="inactivo">Inactivo</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-1 col-span-2 border-t pt-3">
+                  <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    PIN Kiosko
+                    <span className="text-xs text-muted-foreground font-normal">(3–6 dígitos · para marcar asistencia)</span>
+                  </Label>
+                  <Input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="Ej: 1234"
+                    value={form.pin}
+                    onChange={e => f("pin", e.target.value.replace(/\D/g, ""))}
+                    className="max-w-[160px]"
+                  />
                 </div>
               </div>
             </TabsContent>
