@@ -45,6 +45,10 @@ const MenuManagement = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastListScrollYRef = useRef(0);
 
+  // PIN protection
+  const [pinDialog, setPinDialog] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   const setDialogOpen = (open: boolean) => {
     if (open) {
       lastListScrollYRef.current = window.scrollY;
