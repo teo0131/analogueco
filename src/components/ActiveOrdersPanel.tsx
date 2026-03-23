@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Users, Clock, DollarSign, Trash2, MapPin, Settings, ChevronRight, Edit2 } from "lucide-react";
+import { Plus, Users, Clock, DollarSign, Trash2, MapPin, Settings, ChevronRight, Edit2, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 interface Mesa {
   id: string;
