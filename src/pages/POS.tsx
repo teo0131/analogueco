@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileDown, Menu, Store, Calculator, X, Users, Check, ClipboardList, ShoppingBag, MapPin, Banknote, DollarSign, Unlock } from "lucide-react";
+import { FileDown, Menu, Store, Calculator, X, Users, Check, ClipboardList, ShoppingBag, MapPin, Banknote, DollarSign, Unlock, CreditCard, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
