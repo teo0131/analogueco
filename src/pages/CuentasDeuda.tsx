@@ -289,7 +289,12 @@ export default function CuentasDeuda() {
   const toggleExpand = (id: string) => setExpandedId(prev => (prev === id ? null : id));
 
   const openVenta = (c: Cliente) => { setSelectedCliente(c); setVentaDialog(true); };
-  const openPago  = (c: Cliente) => { setSelectedCliente(c); setPagoDialog(true); };
+  const openPago  = (c: Cliente) => {
+    requirePin(
+      `Registrar abono para "${c.nombre}". Saldo actual: ${COP(c.saldo_total)}`,
+      () => { setSelectedCliente(c); setPagoDialog(true); }
+    );
+  };
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -585,7 +590,12 @@ export default function CuentasDeuda() {
                 onChange={e => setVentaNotas(e.target.value)} />
             </div>
 
-            <Button className="w-full" onClick={() => saveVenta.mutate()} disabled={saveVenta.isPending}>
+            <Button className="w-full"
+              onClick={() => requirePin(
+                `Registrar venta en crédito a "${selectedCliente?.nombre}" por ${COP(ventaItems.reduce((s, i) => s + (Number(i.cantidad)||0)*(Number(i.precio)||0), 0))}`,
+                () => saveVenta.mutate()
+              )}
+              disabled={saveVenta.isPending}>
               {saveVenta.isPending ? "Registrando..." : "Registrar venta en crédito"}
             </Button>
           </div>
@@ -626,7 +636,12 @@ export default function CuentasDeuda() {
                 </p>
               </div>
             )}
-            <Button className="w-full" onClick={() => savePago.mutate()} disabled={!pagoMonto || savePago.isPending}>
+            <Button className="w-full"
+              onClick={() => requirePin(
+                `Confirmar abono de ${COP(Number(pagoMonto))} para "${selectedCliente?.nombre}". Saldo quedará en ${COP(Math.max(0, (selectedCliente?.saldo_total ?? 0) - Number(pagoMonto)))}`,
+                () => savePago.mutate()
+              )}
+              disabled={!pagoMonto || savePago.isPending}>
               {savePago.isPending ? "Registrando..." : "Registrar abono"}
             </Button>
           </div>
