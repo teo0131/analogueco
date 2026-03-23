@@ -18,7 +18,7 @@ import {
   Users, MessageSquare, TrendingUp, Settings, LayoutGrid, Shield,
   Bell, Clock, AlertTriangle, Camera, Radio, Volume2,
   ClipboardCheck, Activity, DollarSign, Crown, ChevronDown,
-  Warehouse, LineChart,
+  Warehouse, LineChart, UserCheck, Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
 import analoguecoLogo from "@/assets/analogueco-logo.png";
@@ -96,6 +96,16 @@ const navGroups: NavGroup[] = [
       { path: "/camaras",  label: "Cámaras",  icon: Camera,  user: false, admin: true, owner: true },
       { path: "/sensores", label: "Sensores", icon: Radio,   user: false, admin: true, owner: true },
       { path: "/audio",    label: "Audio",    icon: Volume2, user: false, admin: true, owner: true },
+    ],
+  },
+  {
+    label: "RRHH",
+    icon: UserCheck,
+    user: false, admin: true, owner: true,
+    items: [
+      { path: "/rrhh/empleados",  label: "Empleados",  icon: Users,      user: false, admin: true, owner: true },
+      { path: "/rrhh/asistencia", label: "Asistencia", icon: Clock,      user: false, admin: true, owner: true },
+      { path: "/rrhh/nomina",     label: "Nómina",     icon: Briefcase,  user: false, admin: true, owner: true },
     ],
   },
   {

@@ -376,6 +376,47 @@ export type Database = {
           },
         ]
       }
+      documentos_empleados: {
+        Row: {
+          archivo_url: string | null
+          created_at: string
+          empleado_id: string
+          id: string
+          nombre: string
+          notas: string | null
+          tipo: string | null
+          user_id: string
+        }
+        Insert: {
+          archivo_url?: string | null
+          created_at?: string
+          empleado_id: string
+          id?: string
+          nombre: string
+          notas?: string | null
+          tipo?: string | null
+          user_id: string
+        }
+        Update: {
+          archivo_url?: string | null
+          created_at?: string
+          empleado_id?: string
+          id?: string
+          nombre?: string
+          notas?: string | null
+          tipo?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_empleados_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elementos_planta: {
         Row: {
           alto: number | null
@@ -421,6 +462,99 @@ export type Database = {
           tipo?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      empleados: {
+        Row: {
+          apellido: string
+          arl: string | null
+          banco: string | null
+          cargo: string | null
+          cedula: string | null
+          created_at: string
+          cuenta_bancaria: string | null
+          departamento: string | null
+          direccion: string | null
+          email: string | null
+          emergencia_nombre: string | null
+          emergencia_tel: string | null
+          eps: string | null
+          estado: string | null
+          fecha_ingreso: string | null
+          fecha_nacimiento: string | null
+          foto_url: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          salario_base: number | null
+          telefono: string | null
+          tipo_contrato: string | null
+          tipo_cuenta: string | null
+          tipo_pago: string | null
+          updated_at: string
+          user_id: string
+          valor_hora: number | null
+        }
+        Insert: {
+          apellido: string
+          arl?: string | null
+          banco?: string | null
+          cargo?: string | null
+          cedula?: string | null
+          created_at?: string
+          cuenta_bancaria?: string | null
+          departamento?: string | null
+          direccion?: string | null
+          email?: string | null
+          emergencia_nombre?: string | null
+          emergencia_tel?: string | null
+          eps?: string | null
+          estado?: string | null
+          fecha_ingreso?: string | null
+          fecha_nacimiento?: string | null
+          foto_url?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          salario_base?: number | null
+          telefono?: string | null
+          tipo_contrato?: string | null
+          tipo_cuenta?: string | null
+          tipo_pago?: string | null
+          updated_at?: string
+          user_id: string
+          valor_hora?: number | null
+        }
+        Update: {
+          apellido?: string
+          arl?: string | null
+          banco?: string | null
+          cargo?: string | null
+          cedula?: string | null
+          created_at?: string
+          cuenta_bancaria?: string | null
+          departamento?: string | null
+          direccion?: string | null
+          email?: string | null
+          emergencia_nombre?: string | null
+          emergencia_tel?: string | null
+          eps?: string | null
+          estado?: string | null
+          fecha_ingreso?: string | null
+          fecha_nacimiento?: string | null
+          foto_url?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          salario_base?: number | null
+          telefono?: string | null
+          tipo_contrato?: string | null
+          tipo_cuenta?: string | null
+          tipo_pago?: string | null
+          updated_at?: string
+          user_id?: string
+          valor_hora?: number | null
         }
         Relationships: []
       }
@@ -748,6 +882,68 @@ export type Database = {
           },
         ]
       }
+      nominas: {
+        Row: {
+          created_at: string
+          deducciones: number | null
+          empleado_id: string
+          estado: string | null
+          horas_trabajadas: number | null
+          id: string
+          notas: string | null
+          periodo_fin: string
+          periodo_inicio: string
+          salario_base: number | null
+          total_devengado: number | null
+          total_pagar: number | null
+          updated_at: string
+          user_id: string
+          valor_hora: number | null
+        }
+        Insert: {
+          created_at?: string
+          deducciones?: number | null
+          empleado_id: string
+          estado?: string | null
+          horas_trabajadas?: number | null
+          id?: string
+          notas?: string | null
+          periodo_fin: string
+          periodo_inicio: string
+          salario_base?: number | null
+          total_devengado?: number | null
+          total_pagar?: number | null
+          updated_at?: string
+          user_id: string
+          valor_hora?: number | null
+        }
+        Update: {
+          created_at?: string
+          deducciones?: number | null
+          empleado_id?: string
+          estado?: string | null
+          horas_trabajadas?: number | null
+          id?: string
+          notas?: string | null
+          periodo_fin?: string
+          periodo_inicio?: string
+          salario_base?: number | null
+          total_devengado?: number | null
+          total_pagar?: number | null
+          updated_at?: string
+          user_id?: string
+          valor_hora?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nominas_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordenes_activas: {
         Row: {
           created_at: string
@@ -1001,6 +1197,44 @@ export type Database = {
             columns: ["producto_final_id"]
             isOneToOne: true
             referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registros_asistencia: {
+        Row: {
+          created_at: string
+          empleado_id: string
+          id: string
+          notas: string | null
+          timestamp: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          empleado_id: string
+          id?: string
+          notas?: string | null
+          timestamp?: string
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          empleado_id?: string
+          id?: string
+          notas?: string | null
+          timestamp?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_asistencia_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
             referencedColumns: ["id"]
           },
         ]

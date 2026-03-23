@@ -26,6 +26,11 @@ import UtilidadDiaria from "./pages/UtilidadDiaria";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
 import AbrirCaja from "./pages/AbrirCaja";
 
+// RRHH modules
+import Empleados from "./pages/Empleados";
+import Asistencia from "./pages/Asistencia";
+import Nomina from "./pages/Nomina";
+
 // New modules - Supervisión y Seguridad
 import CentroSupervision from "./pages/CentroSupervision";
 import Alertas from "./pages/Alertas";
@@ -85,6 +90,11 @@ const App = () => (
             <Route path="/sensores" element={<Sensores />} />
             <Route path="/audio" element={<AudioMonitoreo />} />
             
+            {/* RRHH */}
+            <Route path="/rrhh/empleados" element={<Empleados />} />
+            <Route path="/rrhh/asistencia" element={<Asistencia />} />
+            <Route path="/rrhh/nomina" element={<Nomina />} />
+
             {/* ADMINISTRACIÓN */}
             <Route path="/turnos" element={<TurnosChecklists />} />
             <Route path="/reportes" element={<ReportesAvanzados />} />
