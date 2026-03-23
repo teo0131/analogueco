@@ -23,6 +23,7 @@ import PendingApproval from "./pages/PendingApproval";
 import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminChatInsights from "./pages/AdminChatInsights";
 import UtilidadDiaria from "./pages/UtilidadDiaria";
+import Finanzas from "./pages/Finanzas";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
 import AbrirCaja from "./pages/AbrirCaja";
 
@@ -96,6 +97,9 @@ const App = () => (
             <Route path="/rrhh/asistencia" element={<Asistencia />} />
             <Route path="/rrhh/nomina" element={<Nomina />} />
 
+            {/* FINANZAS */}
+            <Route path="/finanzas" element={<Finanzas />} />
+            
             {/* ADMINISTRACIÓN */}
             <Route path="/turnos" element={<TurnosChecklists />} />
             <Route path="/reportes" element={<ReportesAvanzados />} />
