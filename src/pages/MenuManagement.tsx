@@ -254,9 +254,12 @@ const MenuManagement = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este item del menú?")) return;
+  const requestDelete = (id: string) => {
+    setPendingDeleteId(id);
+    setPinDialog(true);
+  };
 
+  const handleDelete = async (id: string) => {
     try {
       const item = menuItems.find(i => i.id === id);
       // Delete image from storage if exists
