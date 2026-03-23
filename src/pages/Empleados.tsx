@@ -480,6 +480,21 @@ export default function Empleados() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-1 col-span-2 border-t pt-3">
+                  <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    PIN Kiosko
+                    <span className="text-xs text-muted-foreground font-normal">(3–6 dígitos · para marcar asistencia)</span>
+                  </Label>
+                  <Input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="Ej: 1234"
+                    value={form.pin}
+                    onChange={e => f("pin", e.target.value.replace(/\D/g, ""))}
+                    className="max-w-[160px]"
+                  />
+                </div>
               </div>
             </TabsContent>
 
