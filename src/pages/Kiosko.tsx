@@ -116,13 +116,13 @@ export default function Kiosko() {
       {feedback ? (
         <div className={`w-full max-w-sm rounded-2xl p-8 text-center border-2 transition-all ${
           feedback.type === "success"
-            ? "bg-green-950/40 border-green-500/50"
-            : "bg-red-950/40 border-red-500/50"
+            ? "bg-card border-primary/50"
+            : "bg-card border-destructive/50"
         }`}>
           {feedback.type === "success" ? (
-            <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-green-400" />
+            <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-primary" />
           ) : (
-            <XCircle className="w-16 h-16 mx-auto mb-4 text-red-400" />
+            <XCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
           )}
           {feedback.nombre && (
             <p className="text-2xl font-bold mb-1">{feedback.nombre}</p>
