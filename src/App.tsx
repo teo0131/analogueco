@@ -24,6 +24,9 @@ import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminChatInsights from "./pages/AdminChatInsights";
 import UtilidadDiaria from "./pages/UtilidadDiaria";
 import Finanzas from "./pages/Finanzas";
+import CuentasPorPagar from "./pages/CuentasPorPagar";
+import CuentasPorCobrar from "./pages/CuentasPorCobrar";
+import RecordatoriosPago from "./pages/RecordatoriosPago";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
 import AbrirCaja from "./pages/AbrirCaja";
 
