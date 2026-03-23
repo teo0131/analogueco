@@ -310,7 +310,7 @@ const AbrirCaja = () => {
               ) : (
                 <Button
                   variant="destructive"
-                  onClick={() => setShowCerrarDialog(true)}
+                  onClick={() => setShowPinCerrar(true)}
                 >
                   <Lock className="h-4 w-4 mr-2" />
                   Cerrar Caja
