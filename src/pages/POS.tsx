@@ -96,6 +96,7 @@ const POS = () => {
   const [selectedActiveOrder, setSelectedActiveOrder] = useState<OrdenActiva | null>(null);
   const [activeOrdersKey, setActiveOrdersKey] = useState(0);
   const [closingActiveOrder, setClosingActiveOrder] = useState(false);
+  const [isSendingToActive, setIsSendingToActive] = useState(false);
 
   const setDetailOpen = (open: boolean) => {
     if (open) {
