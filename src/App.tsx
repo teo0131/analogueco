@@ -24,6 +24,9 @@ import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminChatInsights from "./pages/AdminChatInsights";
 import UtilidadDiaria from "./pages/UtilidadDiaria";
 import Finanzas from "./pages/Finanzas";
+import CuentasPorPagar from "./pages/CuentasPorPagar";
+import CuentasPorCobrar from "./pages/CuentasPorCobrar";
+import RecordatoriosPago from "./pages/RecordatoriosPago";
 import ConfiguracionMesas from "./pages/ConfiguracionMesas";
 import AbrirCaja from "./pages/AbrirCaja";
 
@@ -99,6 +102,9 @@ const App = () => (
 
             {/* FINANZAS */}
             <Route path="/finanzas" element={<Finanzas />} />
+            <Route path="/finanzas/cuentas-pagar" element={<CuentasPorPagar />} />
+            <Route path="/finanzas/cuentas-cobrar" element={<CuentasPorCobrar />} />
+            <Route path="/finanzas/recordatorios" element={<RecordatoriosPago />} />
             
             {/* ADMINISTRACIÓN */}
             <Route path="/turnos" element={<TurnosChecklists />} />
