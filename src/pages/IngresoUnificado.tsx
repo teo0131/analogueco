@@ -1076,9 +1076,10 @@ const IngresoUnificado = () => {
 
         {/* Dialog para crear insumo rápido */}
         <Dialog open={showCreateInsumoDialog} onOpenChange={setShowCreateInsumoDialog}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Crear Nuevo Insumo</DialogTitle>
+              <DialogDescription>Configura el insumo y vincúlalo a un proveedor para órdenes automáticas</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -1111,7 +1112,7 @@ const IngresoUnificado = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="insumo-stock-minimo">Stock Mínimo</Label>
+                <Label htmlFor="insumo-stock-minimo">Stock Mínimo (alerta)</Label>
                 <Input
                   id="insumo-stock-minimo"
                   type="number"
@@ -1120,6 +1121,39 @@ const IngresoUnificado = () => {
                   value={newInsumoData.stock_minimo}
                   onChange={(e) => setNewInsumoData({...newInsumoData, stock_minimo: e.target.value})}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Proveedor predeterminado (para órdenes automáticas)</Label>
+                <ProveedorSelector
+                  value={newInsumoData.proveedor_id}
+                  onChange={(v) => setNewInsumoData({...newInsumoData, proveedor_id: v})}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="precio-compra">Precio de compra habitual</Label>
+                  <Input
+                    id="precio-compra"
+                    type="number"
+                    min="0"
+                    step="100"
+                    placeholder="0"
+                    value={newInsumoData.precio_compra_habitual}
+                    onChange={(e) => setNewInsumoData({...newInsumoData, precio_compra_habitual: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cantidad-pedido">Cantidad pedido sugerida</Label>
+                  <Input
+                    id="cantidad-pedido"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0"
+                    value={newInsumoData.cantidad_pedido_sugerida}
+                    onChange={(e) => setNewInsumoData({...newInsumoData, cantidad_pedido_sugerida: e.target.value})}
+                  />
+                </div>
               </div>
             </div>
             <DialogFooter>
