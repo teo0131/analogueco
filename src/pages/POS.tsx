@@ -186,8 +186,13 @@ const POS = () => {
             tipo_item: item.tipo_item || "retail",
             stock_actual: item.stock_actual || 0,
           }));
-          setMenuItems(items);
-          setCategories(Array.from(new Set(items.map(item => item.category))));
+          const sortedItems = [...items].sort((a, b) =>
+            a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+          );
+          setMenuItems(sortedItems);
+          setCategories(Array.from(new Set(sortedItems.map(item => item.category))).sort((a, b) =>
+            a.localeCompare(b, 'es', { sensitivity: 'base' })
+          ));
         }
 
         // Load completed orders
