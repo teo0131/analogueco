@@ -85,6 +85,8 @@ const App = () => (
             {/* OPERACIÓN - Existing modules */}
             <Route path="/caja" element={<AbrirCaja />} />
             <Route path="/pos" element={<POS />} />
+            <Route path="/domicilios" element={<Domicilios />} />
+            <Route path="/crm" element={<CRM />} />
             <Route path="/menu" element={<MenuManagement />} />
             <Route path="/mesas" element={<ConfiguracionMesas />} />
             <Route path="/proveedores" element={<ProveedoresManagement />} />
