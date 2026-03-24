@@ -18,7 +18,7 @@ import {
   Users, MessageSquare, TrendingUp, Settings, LayoutGrid, Shield,
   Bell, Clock, AlertTriangle, Camera, Radio, Volume2,
   ClipboardCheck, Activity, DollarSign, Crown, ChevronDown,
-  Warehouse, LineChart, UserCheck, Briefcase,
+  Warehouse, LineChart, UserCheck, Briefcase, Bike, Contact,
 } from "lucide-react";
 import { toast } from "sonner";
 import analoguecoLogo from "@/assets/analogueco-logo.png";
@@ -46,9 +46,11 @@ interface NavGroup {
 
 /** Always-visible top-level links */
 const pinnedItems: NavLeaf[] = [
-  { path: "/pos",   label: "Facturación", icon: ShoppingCart, user: true,  admin: true,  owner: true },
-  { path: "/caja",  label: "Caja",        icon: DollarSign,   user: true,  admin: true,  owner: true },
-  { path: "/mesas", label: "Mesas",       icon: LayoutGrid,   user: false, admin: true,  owner: true },
+  { path: "/pos",         label: "Facturación", icon: ShoppingCart, user: true,  admin: true,  owner: true },
+  { path: "/caja",        label: "Caja",        icon: DollarSign,   user: true,  admin: true,  owner: true },
+  { path: "/mesas",       label: "Mesas",       icon: LayoutGrid,   user: false, admin: true,  owner: true },
+  { path: "/domicilios",  label: "Domicilios",  icon: Bike,         user: true,  admin: true,  owner: true },
+  { path: "/crm",         label: "CRM",         icon: Contact,      user: false, admin: true,  owner: true },
 ];
 
 /** Grouped dropdown menus */
