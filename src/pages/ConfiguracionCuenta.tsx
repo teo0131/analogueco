@@ -49,6 +49,8 @@ export default function ConfiguracionCuenta() {
   useEffect(() => {
     if (settings) {
       setStoreName(settings.store_name || "");
+      setWaPhoneNumberId((settings as any).whatsapp_phone_number_id || "");
+      setWaAccessToken((settings as any).whatsapp_access_token || "");
     }
   }, [settings]);
 
