@@ -427,6 +427,51 @@ export type Database = {
           },
         ]
       }
+      detalle_ordenes_compra: {
+        Row: {
+          cantidad_solicitada: number
+          id: string
+          nombre_producto: string
+          orden_id: string
+          precio_unitario: number
+          producto_id: string | null
+          unidad: string
+        }
+        Insert: {
+          cantidad_solicitada?: number
+          id?: string
+          nombre_producto: string
+          orden_id: string
+          precio_unitario?: number
+          producto_id?: string | null
+          unidad?: string
+        }
+        Update: {
+          cantidad_solicitada?: number
+          id?: string
+          nombre_producto?: string
+          orden_id?: string
+          precio_unitario?: number
+          producto_id?: string | null
+          unidad?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_ordenes_compra_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_ordenes_compra_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       detalle_ordenes_pos: {
         Row: {
           cantidad: number
@@ -1158,6 +1203,47 @@ export type Database = {
           },
         ]
       }
+      ordenes_compra: {
+        Row: {
+          created_at: string
+          estado: string
+          id: string
+          mensaje_generado: string | null
+          proveedor_id: string
+          updated_at: string
+          user_id: string
+          whatsapp_enviado: boolean
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          id?: string
+          mensaje_generado?: string | null
+          proveedor_id: string
+          updated_at?: string
+          user_id: string
+          whatsapp_enviado?: boolean
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          id?: string
+          mensaje_generado?: string | null
+          proveedor_id?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp_enviado?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_compra_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordenes_eliminadas_pos: {
         Row: {
           comentario: string | null
@@ -1261,6 +1347,7 @@ export type Database = {
       }
       productos: {
         Row: {
+          cantidad_pedido_sugerida: number | null
           categoria: string | null
           codigo_barra: string | null
           codigo_interno: string | null
@@ -1269,6 +1356,8 @@ export type Database = {
           es_activo: boolean
           id: string
           nombre: string
+          precio_compra_habitual: number | null
+          proveedor_id: string | null
           stock_actual: number
           stock_minimo: number
           tipo_producto: Database["public"]["Enums"]["tipo_producto"]
@@ -1277,6 +1366,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cantidad_pedido_sugerida?: number | null
           categoria?: string | null
           codigo_barra?: string | null
           codigo_interno?: string | null
@@ -1285,6 +1375,8 @@ export type Database = {
           es_activo?: boolean
           id?: string
           nombre: string
+          precio_compra_habitual?: number | null
+          proveedor_id?: string | null
           stock_actual?: number
           stock_minimo?: number
           tipo_producto?: Database["public"]["Enums"]["tipo_producto"]
@@ -1293,6 +1385,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cantidad_pedido_sugerida?: number | null
           categoria?: string | null
           codigo_barra?: string | null
           codigo_interno?: string | null
@@ -1301,6 +1394,8 @@ export type Database = {
           es_activo?: boolean
           id?: string
           nombre?: string
+          precio_compra_habitual?: number | null
+          proveedor_id?: string | null
           stock_actual?: number
           stock_minimo?: number
           tipo_producto?: Database["public"]["Enums"]["tipo_producto"]
@@ -1308,7 +1403,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "productos_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1346,6 +1449,7 @@ export type Database = {
           nombre: string
           observaciones: string | null
           user_id: string
+          whatsapp: string | null
         }
         Insert: {
           contacto?: string | null
@@ -1355,6 +1459,7 @@ export type Database = {
           nombre: string
           observaciones?: string | null
           user_id: string
+          whatsapp?: string | null
         }
         Update: {
           contacto?: string | null
@@ -1364,6 +1469,7 @@ export type Database = {
           nombre?: string
           observaciones?: string | null
           user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -1575,6 +1681,8 @@ export type Database = {
           store_name: string | null
           updated_at: string
           user_id: string
+          whatsapp_access_token: string | null
+          whatsapp_phone_number_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1583,6 +1691,8 @@ export type Database = {
           store_name?: string | null
           updated_at?: string
           user_id: string
+          whatsapp_access_token?: string | null
+          whatsapp_phone_number_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1591,6 +1701,8 @@ export type Database = {
           store_name?: string | null
           updated_at?: string
           user_id?: string
+          whatsapp_access_token?: string | null
+          whatsapp_phone_number_id?: string | null
         }
         Relationships: []
       }

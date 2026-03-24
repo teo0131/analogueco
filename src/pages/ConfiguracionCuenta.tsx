@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { User, Lock, Store, Save, Eye, EyeOff, CheckCircle, AlertCircle, Mail } from "lucide-react";
+import { User, Lock, Store, Save, Eye, EyeOff, CheckCircle, AlertCircle, Mail, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
@@ -22,6 +22,9 @@ export default function ConfiguracionCuenta() {
   const [newEmail, setNewEmail] = useState("");
   const [showEmailPinDialog, setShowEmailPinDialog] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
+  const [waPhoneNumberId, setWaPhoneNumberId] = useState("");
+  const [waAccessToken, setWaAccessToken] = useState("");
+  const [showWaToken, setShowWaToken] = useState(false);
 
   // Fetch user settings
   const { data: settings, isLoading } = useQuery({
@@ -46,6 +49,8 @@ export default function ConfiguracionCuenta() {
   useEffect(() => {
     if (settings) {
       setStoreName(settings.store_name || "");
+      setWaPhoneNumberId((settings as any).whatsapp_phone_number_id || "");
+      setWaAccessToken((settings as any).whatsapp_access_token || "");
     }
   }, [settings]);
 
@@ -121,6 +126,29 @@ export default function ConfiguracionCuenta() {
     }
     updateStoreNameMutation.mutate(storeName);
   };
+
+  // Mutation para WhatsApp config
+  const updateWhatsAppMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+      const { error } = await supabase
+        .from("user_settings")
+        .upsert({
+          user_id: user.id,
+          whatsapp_phone_number_id: waPhoneNumberId || null,
+          whatsapp_access_token: waAccessToken || null,
+        } as any, { onConflict: "user_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-settings-config"] });
+      toast.success("Configuración de WhatsApp guardada");
+    },
+    onError: () => {
+      toast.error("Error al guardar configuración de WhatsApp");
+    },
+  });
 
   const handleSavePin = () => {
     if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
@@ -414,6 +442,77 @@ export default function ConfiguracionCuenta() {
               {updatePinMutation.isPending ? "Guardando..." : hasPin ? "Cambiar PIN" : "Configurar PIN"}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* WhatsApp Business */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-green-600" />
+            Integración WhatsApp Business
+          </CardTitle>
+          <CardDescription>
+            Configura tu cuenta de WhatsApp Business para enviar órdenes de compra automáticas a proveedores
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-3 rounded-lg bg-muted/50 border text-sm space-y-1">
+            <p className="font-medium">¿Cómo obtener las credenciales?</p>
+            <ol className="list-decimal list-inside text-muted-foreground space-y-1 text-xs">
+              <li>Ve a <strong>Meta Business Manager</strong> → WhatsApp → Configuración</li>
+              <li>Copia el <strong>Phone Number ID</strong> de tu número de empresa</li>
+              <li>Genera un <strong>Token de acceso permanente</strong> en la sección de tokens</li>
+            </ol>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="wa-phone-id">Phone Number ID</Label>
+            <Input
+              id="wa-phone-id"
+              value={waPhoneNumberId}
+              onChange={(e) => setWaPhoneNumberId(e.target.value)}
+              placeholder="123456789012345"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="wa-token">Access Token Permanente</Label>
+            <div className="relative">
+              <Input
+                id="wa-token"
+                type={showWaToken ? "text" : "password"}
+                value={waAccessToken}
+                onChange={(e) => setWaAccessToken(e.target.value)}
+                placeholder="EAAxxxxxx..."
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full"
+                onClick={() => setShowWaToken(!showWaToken)}
+              >
+                {showWaToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {waPhoneNumberId && waAccessToken ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {waPhoneNumberId && waAccessToken ? "WhatsApp Business configurado" : "Pendiente de configuración"}
+            </span>
+          </div>
+          <Button
+            onClick={() => updateWhatsAppMutation.mutate()}
+            disabled={updateWhatsAppMutation.isPending}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {updateWhatsAppMutation.isPending ? "Guardando..." : "Guardar Configuración"}
+          </Button>
         </CardContent>
       </Card>
 
