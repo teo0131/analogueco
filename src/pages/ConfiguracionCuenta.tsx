@@ -445,6 +445,77 @@ export default function ConfiguracionCuenta() {
         </CardContent>
       </Card>
 
+      {/* WhatsApp Business */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-green-600" />
+            Integración WhatsApp Business
+          </CardTitle>
+          <CardDescription>
+            Configura tu cuenta de WhatsApp Business para enviar órdenes de compra automáticas a proveedores
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-3 rounded-lg bg-muted/50 border text-sm space-y-1">
+            <p className="font-medium">¿Cómo obtener las credenciales?</p>
+            <ol className="list-decimal list-inside text-muted-foreground space-y-1 text-xs">
+              <li>Ve a <strong>Meta Business Manager</strong> → WhatsApp → Configuración</li>
+              <li>Copia el <strong>Phone Number ID</strong> de tu número de empresa</li>
+              <li>Genera un <strong>Token de acceso permanente</strong> en la sección de tokens</li>
+            </ol>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="wa-phone-id">Phone Number ID</Label>
+            <Input
+              id="wa-phone-id"
+              value={waPhoneNumberId}
+              onChange={(e) => setWaPhoneNumberId(e.target.value)}
+              placeholder="123456789012345"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="wa-token">Access Token Permanente</Label>
+            <div className="relative">
+              <Input
+                id="wa-token"
+                type={showWaToken ? "text" : "password"}
+                value={waAccessToken}
+                onChange={(e) => setWaAccessToken(e.target.value)}
+                placeholder="EAAxxxxxx..."
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full"
+                onClick={() => setShowWaToken(!showWaToken)}
+              >
+                {showWaToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {waPhoneNumberId && waAccessToken ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {waPhoneNumberId && waAccessToken ? "WhatsApp Business configurado" : "Pendiente de configuración"}
+            </span>
+          </div>
+          <Button
+            onClick={() => updateWhatsAppMutation.mutate()}
+            disabled={updateWhatsAppMutation.isPending}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {updateWhatsAppMutation.isPending ? "Guardando..." : "Guardar Configuración"}
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* PIN verification dialog for email change */}
       <PinVerificationDialog
         open={showEmailPinDialog}
