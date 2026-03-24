@@ -22,6 +22,9 @@ export default function ConfiguracionCuenta() {
   const [newEmail, setNewEmail] = useState("");
   const [showEmailPinDialog, setShowEmailPinDialog] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
+  const [waPhoneNumberId, setWaPhoneNumberId] = useState("");
+  const [waAccessToken, setWaAccessToken] = useState("");
+  const [showWaToken, setShowWaToken] = useState(false);
 
   // Fetch user settings
   const { data: settings, isLoading } = useQuery({
