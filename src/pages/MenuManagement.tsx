@@ -307,10 +307,12 @@ const MenuManagement = () => {
     }).format(price);
   };
 
-  const filteredItems = menuItems.filter(item =>
-    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = menuItems
+    .filter(item =>
+      item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
 
   const categories = Array.from(new Set(menuItems.map(item => item.categoria).filter(Boolean)));
 
