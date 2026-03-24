@@ -83,6 +83,176 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_contactos: {
+        Row: {
+          canal_principal: string | null
+          created_at: string
+          email: string | null
+          estado: string
+          etiquetas: string[] | null
+          id: string
+          nombre: string
+          notas: string | null
+          telefono: string | null
+          total_gastado: number
+          total_pedidos: number
+          ultimo_contacto: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          canal_principal?: string | null
+          created_at?: string
+          email?: string | null
+          estado?: string
+          etiquetas?: string[] | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          telefono?: string | null
+          total_gastado?: number
+          total_pedidos?: number
+          ultimo_contacto?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          canal_principal?: string | null
+          created_at?: string
+          email?: string | null
+          estado?: string
+          etiquetas?: string[] | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          telefono?: string | null
+          total_gastado?: number
+          total_pedidos?: number
+          ultimo_contacto?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_conversaciones: {
+        Row: {
+          asunto: string | null
+          canal: string
+          canal_referencia: string | null
+          contacto_id: string | null
+          created_at: string
+          domicilio_id: string | null
+          estado: string
+          id: string
+          nombre_cliente: string | null
+          telefono_cliente: string | null
+          total_mensajes: number
+          ultimo_mensaje: string | null
+          ultimo_mensaje_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asunto?: string | null
+          canal?: string
+          canal_referencia?: string | null
+          contacto_id?: string | null
+          created_at?: string
+          domicilio_id?: string | null
+          estado?: string
+          id?: string
+          nombre_cliente?: string | null
+          telefono_cliente?: string | null
+          total_mensajes?: number
+          ultimo_mensaje?: string | null
+          ultimo_mensaje_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asunto?: string | null
+          canal?: string
+          canal_referencia?: string | null
+          contacto_id?: string | null
+          created_at?: string
+          domicilio_id?: string | null
+          estado?: string
+          id?: string
+          nombre_cliente?: string | null
+          telefono_cliente?: string | null
+          total_mensajes?: number
+          ultimo_mensaje?: string | null
+          ultimo_mensaje_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_conversaciones_contacto_id_fkey"
+            columns: ["contacto_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contactos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_conversaciones_domicilio_id_fkey"
+            columns: ["domicilio_id"]
+            isOneToOne: false
+            referencedRelation: "domicilios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_mensajes: {
+        Row: {
+          canal: string
+          contenido: string
+          conversacion_id: string
+          created_at: string
+          id: string
+          leido: boolean
+          media_url: string | null
+          rol: string
+          tipo_contenido: string
+          user_id: string
+          wa_message_id: string | null
+        }
+        Insert: {
+          canal?: string
+          contenido: string
+          conversacion_id: string
+          created_at?: string
+          id?: string
+          leido?: boolean
+          media_url?: string | null
+          rol?: string
+          tipo_contenido?: string
+          user_id: string
+          wa_message_id?: string | null
+        }
+        Update: {
+          canal?: string
+          contenido?: string
+          conversacion_id?: string
+          created_at?: string
+          id?: string
+          leido?: boolean
+          media_url?: string | null
+          rol?: string
+          tipo_contenido?: string
+          user_id?: string
+          wa_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_mensajes_conversacion_id_fkey"
+            columns: ["conversacion_id"]
+            isOneToOne: false
+            referencedRelation: "crm_conversaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cuentas_por_cobrar: {
         Row: {
           cliente_nombre: string
@@ -247,6 +417,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      detalle_domicilios: {
+        Row: {
+          cantidad: number
+          domicilio_id: string
+          id: string
+          menu_item_id: string | null
+          nombre_item: string
+          notas: string | null
+          precio_unitario: number
+          subtotal: number
+        }
+        Insert: {
+          cantidad?: number
+          domicilio_id: string
+          id?: string
+          menu_item_id?: string | null
+          nombre_item: string
+          notas?: string | null
+          precio_unitario?: number
+          subtotal?: number
+        }
+        Update: {
+          cantidad?: number
+          domicilio_id?: string
+          id?: string
+          menu_item_id?: string | null
+          nombre_item?: string
+          notas?: string | null
+          precio_unitario?: number
+          subtotal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_domicilios_domicilio_id_fkey"
+            columns: ["domicilio_id"]
+            isOneToOne: false
+            referencedRelation: "domicilios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       detalle_entradas: {
         Row: {
@@ -628,6 +839,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      domicilios: {
+        Row: {
+          aprobado_at: string | null
+          canal: string
+          created_at: string
+          direccion_entrega: string
+          entregado_at: string | null
+          estado: string
+          id: string
+          metodo_pago: string | null
+          nombre_cliente: string
+          notas_cliente: string | null
+          pagado: boolean
+          repartidor: string | null
+          telefono_cliente: string | null
+          tiempo_estimado_min: number | null
+          total: number
+          updated_at: string
+          user_id: string
+          whatsapp_conversation_id: string | null
+        }
+        Insert: {
+          aprobado_at?: string | null
+          canal?: string
+          created_at?: string
+          direccion_entrega: string
+          entregado_at?: string | null
+          estado?: string
+          id?: string
+          metodo_pago?: string | null
+          nombre_cliente: string
+          notas_cliente?: string | null
+          pagado?: boolean
+          repartidor?: string | null
+          telefono_cliente?: string | null
+          tiempo_estimado_min?: number | null
+          total?: number
+          updated_at?: string
+          user_id: string
+          whatsapp_conversation_id?: string | null
+        }
+        Update: {
+          aprobado_at?: string | null
+          canal?: string
+          created_at?: string
+          direccion_entrega?: string
+          entregado_at?: string | null
+          estado?: string
+          id?: string
+          metodo_pago?: string | null
+          nombre_cliente?: string
+          notas_cliente?: string | null
+          pagado?: boolean
+          repartidor?: string | null
+          telefono_cliente?: string | null
+          tiempo_estimado_min?: number | null
+          total?: number
+          updated_at?: string
+          user_id?: string
+          whatsapp_conversation_id?: string | null
+        }
+        Relationships: []
       }
       elementos_planta: {
         Row: {
