@@ -127,6 +127,29 @@ export default function ConfiguracionCuenta() {
     updateStoreNameMutation.mutate(storeName);
   };
 
+  // Mutation para WhatsApp config
+  const updateWhatsAppMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+      const { error } = await supabase
+        .from("user_settings")
+        .upsert({
+          user_id: user.id,
+          whatsapp_phone_number_id: waPhoneNumberId || null,
+          whatsapp_access_token: waAccessToken || null,
+        } as any, { onConflict: "user_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-settings-config"] });
+      toast.success("Configuración de WhatsApp guardada");
+    },
+    onError: () => {
+      toast.error("Error al guardar configuración de WhatsApp");
+    },
+  });
+
   const handleSavePin = () => {
     if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
       toast.error("El nuevo PIN debe ser de 4 dígitos numéricos");
