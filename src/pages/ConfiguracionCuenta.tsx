@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { User, Lock, Store, Save, Eye, EyeOff, CheckCircle, AlertCircle, Mail } from "lucide-react";
+import { User, Lock, Store, Save, Eye, EyeOff, CheckCircle, AlertCircle, Mail, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
