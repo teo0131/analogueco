@@ -122,15 +122,17 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
     }
   }, [open, orden.orderNumber]);
 
-  const detalles: DetalleFactura[] = orden.items.map((item) => ({
-    descripcion: item.name,
-    cantidad: 1,
-    unidad: "unidad",
-    precioUnitario: item.price,
-    descuento: 0,
-    iva: 0,
-    total: item.price,
-  }));
+  const detalles: DetalleFactura[] = [...orden.items]
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+    .map((item) => ({
+      descripcion: item.name,
+      cantidad: 1,
+      unidad: "unidad",
+      precioUnitario: item.price,
+      descuento: 0,
+      iva: 0,
+      total: item.price,
+    }));
 
   const datosFactura: DatosFactura = {
     numeroFactura,
