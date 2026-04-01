@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       chat_conversations: {
         Row: {
+          comercio_id: string | null
           created_at: string
           id: string
           messages: Json
@@ -25,6 +26,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           id?: string
           messages?: Json
@@ -34,6 +36,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           id?: string
           messages?: Json
@@ -42,10 +45,19 @@ export type Database = {
           user_email?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clientes_cuenta: {
         Row: {
+          comercio_id: string | null
           created_at: string
           email: string | null
           estado: string
@@ -58,6 +70,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           email?: string | null
           estado?: string
@@ -70,6 +83,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           email?: string | null
           estado?: string
@@ -81,7 +95,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clientes_cuenta_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comercio_miembros: {
         Row: {
@@ -119,6 +141,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          invite_code: string | null
           nombre: string
           owner_user_id: string
           updated_at: string
@@ -126,6 +149,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          invite_code?: string | null
           nombre?: string
           owner_user_id: string
           updated_at?: string
@@ -133,6 +157,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          invite_code?: string | null
           nombre?: string
           owner_user_id?: string
           updated_at?: string
@@ -142,6 +167,7 @@ export type Database = {
       crm_contactos: {
         Row: {
           canal_principal: string | null
+          comercio_id: string | null
           created_at: string
           email: string | null
           estado: string
@@ -158,6 +184,7 @@ export type Database = {
         }
         Insert: {
           canal_principal?: string | null
+          comercio_id?: string | null
           created_at?: string
           email?: string | null
           estado?: string
@@ -174,6 +201,7 @@ export type Database = {
         }
         Update: {
           canal_principal?: string | null
+          comercio_id?: string | null
           created_at?: string
           email?: string | null
           estado?: string
@@ -188,13 +216,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_contactos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_conversaciones: {
         Row: {
           asunto: string | null
           canal: string
           canal_referencia: string | null
+          comercio_id: string | null
           contacto_id: string | null
           created_at: string
           domicilio_id: string | null
@@ -212,6 +249,7 @@ export type Database = {
           asunto?: string | null
           canal?: string
           canal_referencia?: string | null
+          comercio_id?: string | null
           contacto_id?: string | null
           created_at?: string
           domicilio_id?: string | null
@@ -229,6 +267,7 @@ export type Database = {
           asunto?: string | null
           canal?: string
           canal_referencia?: string | null
+          comercio_id?: string | null
           contacto_id?: string | null
           created_at?: string
           domicilio_id?: string | null
@@ -243,6 +282,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "crm_conversaciones_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "crm_conversaciones_contacto_id_fkey"
             columns: ["contacto_id"]
@@ -262,6 +308,7 @@ export type Database = {
       crm_mensajes: {
         Row: {
           canal: string
+          comercio_id: string | null
           contenido: string
           conversacion_id: string
           created_at: string
@@ -275,6 +322,7 @@ export type Database = {
         }
         Insert: {
           canal?: string
+          comercio_id?: string | null
           contenido: string
           conversacion_id: string
           created_at?: string
@@ -288,6 +336,7 @@ export type Database = {
         }
         Update: {
           canal?: string
+          comercio_id?: string | null
           contenido?: string
           conversacion_id?: string
           created_at?: string
@@ -301,6 +350,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "crm_mensajes_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "crm_mensajes_conversacion_id_fkey"
             columns: ["conversacion_id"]
             isOneToOne: false
@@ -312,6 +368,7 @@ export type Database = {
       cuentas_por_cobrar: {
         Row: {
           cliente_nombre: string
+          comercio_id: string | null
           concepto: string
           created_at: string
           estado: string
@@ -325,6 +382,7 @@ export type Database = {
         }
         Insert: {
           cliente_nombre: string
+          comercio_id?: string | null
           concepto: string
           created_at?: string
           estado?: string
@@ -338,6 +396,7 @@ export type Database = {
         }
         Update: {
           cliente_nombre?: string
+          comercio_id?: string | null
           concepto?: string
           created_at?: string
           estado?: string
@@ -349,11 +408,20 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cuentas_por_cobrar_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cuentas_por_pagar: {
         Row: {
           categoria: string
+          comercio_id: string | null
           created_at: string
           dia_vencimiento: number | null
           es_recurrente: boolean
@@ -370,6 +438,7 @@ export type Database = {
         }
         Insert: {
           categoria?: string
+          comercio_id?: string | null
           created_at?: string
           dia_vencimiento?: number | null
           es_recurrente?: boolean
@@ -386,6 +455,7 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          comercio_id?: string | null
           created_at?: string
           dia_vencimiento?: number | null
           es_recurrente?: boolean
@@ -400,11 +470,20 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cuentas_por_pagar_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       datos_fiscales: {
         Row: {
           ciudad: string | null
+          comercio_id: string | null
           consecutivo_actual: number | null
           created_at: string
           direccion: string | null
@@ -428,6 +507,7 @@ export type Database = {
         }
         Insert: {
           ciudad?: string | null
+          comercio_id?: string | null
           consecutivo_actual?: number | null
           created_at?: string
           direccion?: string | null
@@ -451,6 +531,7 @@ export type Database = {
         }
         Update: {
           ciudad?: string | null
+          comercio_id?: string | null
           consecutivo_actual?: number | null
           created_at?: string
           direccion?: string | null
@@ -472,7 +553,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "datos_fiscales_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       detalle_domicilios: {
         Row: {
@@ -858,6 +947,7 @@ export type Database = {
       documentos_empleados: {
         Row: {
           archivo_url: string | null
+          comercio_id: string | null
           created_at: string
           empleado_id: string
           id: string
@@ -868,6 +958,7 @@ export type Database = {
         }
         Insert: {
           archivo_url?: string | null
+          comercio_id?: string | null
           created_at?: string
           empleado_id: string
           id?: string
@@ -878,6 +969,7 @@ export type Database = {
         }
         Update: {
           archivo_url?: string | null
+          comercio_id?: string | null
           created_at?: string
           empleado_id?: string
           id?: string
@@ -887,6 +979,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documentos_empleados_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documentos_empleados_empleado_id_fkey"
             columns: ["empleado_id"]
@@ -900,6 +999,7 @@ export type Database = {
         Row: {
           aprobado_at: string | null
           canal: string
+          comercio_id: string | null
           created_at: string
           direccion_entrega: string
           entregado_at: string | null
@@ -920,6 +1020,7 @@ export type Database = {
         Insert: {
           aprobado_at?: string | null
           canal?: string
+          comercio_id?: string | null
           created_at?: string
           direccion_entrega: string
           entregado_at?: string | null
@@ -940,6 +1041,7 @@ export type Database = {
         Update: {
           aprobado_at?: string | null
           canal?: string
+          comercio_id?: string | null
           created_at?: string
           direccion_entrega?: string
           entregado_at?: string | null
@@ -957,13 +1059,22 @@ export type Database = {
           user_id?: string
           whatsapp_conversation_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "domicilios_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       elementos_planta: {
         Row: {
           alto: number | null
           ancho: number | null
           color: string | null
+          comercio_id: string | null
           created_at: string | null
           forma: string | null
           id: string
@@ -979,6 +1090,7 @@ export type Database = {
           alto?: number | null
           ancho?: number | null
           color?: string | null
+          comercio_id?: string | null
           created_at?: string | null
           forma?: string | null
           id?: string
@@ -994,6 +1106,7 @@ export type Database = {
           alto?: number | null
           ancho?: number | null
           color?: string | null
+          comercio_id?: string | null
           created_at?: string | null
           forma?: string | null
           id?: string
@@ -1005,7 +1118,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "elementos_planta_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       empleados: {
         Row: {
@@ -1014,6 +1135,7 @@ export type Database = {
           banco: string | null
           cargo: string | null
           cedula: string | null
+          comercio_id: string | null
           created_at: string
           cuenta_bancaria: string | null
           departamento: string | null
@@ -1045,6 +1167,7 @@ export type Database = {
           banco?: string | null
           cargo?: string | null
           cedula?: string | null
+          comercio_id?: string | null
           created_at?: string
           cuenta_bancaria?: string | null
           departamento?: string | null
@@ -1076,6 +1199,7 @@ export type Database = {
           banco?: string | null
           cargo?: string | null
           cedula?: string | null
+          comercio_id?: string | null
           created_at?: string
           cuenta_bancaria?: string | null
           departamento?: string | null
@@ -1101,10 +1225,19 @@ export type Database = {
           user_id?: string
           valor_hora?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "empleados_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entradas_inventario: {
         Row: {
+          comercio_id: string | null
           created_at: string
           fecha_compra: string
           id: string
@@ -1115,6 +1248,7 @@ export type Database = {
           valor_total_factura: number | null
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           fecha_compra?: string
           id?: string
@@ -1125,6 +1259,7 @@ export type Database = {
           valor_total_factura?: number | null
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           fecha_compra?: string
           id?: string
@@ -1136,6 +1271,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "entradas_inventario_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "entradas_inventario_proveedor_id_fkey"
             columns: ["proveedor_id"]
             isOneToOne: false
@@ -1146,6 +1288,7 @@ export type Database = {
       }
       entradas_menu: {
         Row: {
+          comercio_id: string | null
           created_at: string
           fecha: string
           id: string
@@ -1154,6 +1297,7 @@ export type Database = {
           valor_total: number
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           fecha?: string
           id?: string
@@ -1162,6 +1306,7 @@ export type Database = {
           valor_total?: number
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           fecha?: string
           id?: string
@@ -1169,7 +1314,15 @@ export type Database = {
           user_id?: string
           valor_total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "entradas_menu_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       facturas_fisicas: {
         Row: {
@@ -1177,6 +1330,7 @@ export type Database = {
           cliente_direccion: string | null
           cliente_documento: string | null
           cliente_nombre: string | null
+          comercio_id: string | null
           created_at: string
           descuento: number
           fecha_expedicion: string
@@ -1198,6 +1352,7 @@ export type Database = {
           cliente_direccion?: string | null
           cliente_documento?: string | null
           cliente_nombre?: string | null
+          comercio_id?: string | null
           created_at?: string
           descuento?: number
           fecha_expedicion?: string
@@ -1219,6 +1374,7 @@ export type Database = {
           cliente_direccion?: string | null
           cliente_documento?: string | null
           cliente_nombre?: string | null
+          comercio_id?: string | null
           created_at?: string
           descuento?: number
           fecha_expedicion?: string
@@ -1237,6 +1393,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "facturas_fisicas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "facturas_fisicas_orden_id_fkey"
             columns: ["orden_id"]
             isOneToOne: false
@@ -1248,6 +1411,7 @@ export type Database = {
       gastos_operativos: {
         Row: {
           categoria: string
+          comercio_id: string | null
           created_at: string
           descripcion: string | null
           fecha: string
@@ -1257,6 +1421,7 @@ export type Database = {
         }
         Insert: {
           categoria: string
+          comercio_id?: string | null
           created_at?: string
           descripcion?: string | null
           fecha?: string
@@ -1266,6 +1431,7 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          comercio_id?: string | null
           created_at?: string
           descripcion?: string | null
           fecha?: string
@@ -1273,11 +1439,20 @@ export type Database = {
           monto?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gastos_operativos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       menu_items: {
         Row: {
           categoria: string | null
+          comercio_id: string | null
           costo_promedio: number
           costo_unitario: number
           created_at: string
@@ -1295,6 +1470,7 @@ export type Database = {
         }
         Insert: {
           categoria?: string | null
+          comercio_id?: string | null
           costo_promedio?: number
           costo_unitario?: number
           created_at?: string
@@ -1312,6 +1488,7 @@ export type Database = {
         }
         Update: {
           categoria?: string | null
+          comercio_id?: string | null
           costo_promedio?: number
           costo_unitario?: number
           created_at?: string
@@ -1327,13 +1504,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mesas: {
         Row: {
           alto: number | null
           ancho: number | null
           capacidad: number | null
+          comercio_id: string | null
           created_at: string
           es_activa: boolean | null
           forma: string | null
@@ -1349,6 +1535,7 @@ export type Database = {
           alto?: number | null
           ancho?: number | null
           capacidad?: number | null
+          comercio_id?: string | null
           created_at?: string
           es_activa?: boolean | null
           forma?: string | null
@@ -1364,6 +1551,7 @@ export type Database = {
           alto?: number | null
           ancho?: number | null
           capacidad?: number | null
+          comercio_id?: string | null
           created_at?: string
           es_activa?: boolean | null
           forma?: string | null
@@ -1375,11 +1563,20 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "mesas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       movimientos_inventario: {
         Row: {
           cantidad: number
+          comercio_id: string | null
           costo_unitario_referencia: number | null
           created_at: string
           fecha: string
@@ -1393,6 +1590,7 @@ export type Database = {
         }
         Insert: {
           cantidad: number
+          comercio_id?: string | null
           costo_unitario_referencia?: number | null
           created_at?: string
           fecha?: string
@@ -1406,6 +1604,7 @@ export type Database = {
         }
         Update: {
           cantidad?: number
+          comercio_id?: string | null
           costo_unitario_referencia?: number | null
           created_at?: string
           fecha?: string
@@ -1419,6 +1618,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "movimientos_inventario_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "movimientos_inventario_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
@@ -1429,6 +1635,7 @@ export type Database = {
       }
       nominas: {
         Row: {
+          comercio_id: string | null
           created_at: string
           deducciones: number | null
           empleado_id: string
@@ -1446,6 +1653,7 @@ export type Database = {
           valor_hora: number | null
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           deducciones?: number | null
           empleado_id: string
@@ -1463,6 +1671,7 @@ export type Database = {
           valor_hora?: number | null
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           deducciones?: number | null
           empleado_id?: string
@@ -1481,6 +1690,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "nominas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "nominas_empleado_id_fkey"
             columns: ["empleado_id"]
             isOneToOne: false
@@ -1491,6 +1707,7 @@ export type Database = {
       }
       ordenes_activas: {
         Row: {
+          comercio_id: string | null
           created_at: string
           estado: string | null
           id: string
@@ -1502,6 +1719,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           estado?: string | null
           id?: string
@@ -1513,6 +1731,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           estado?: string | null
           id?: string
@@ -1525,6 +1744,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "ordenes_activas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ordenes_activas_mesa_id_fkey"
             columns: ["mesa_id"]
             isOneToOne: false
@@ -1535,6 +1761,7 @@ export type Database = {
       }
       ordenes_compra: {
         Row: {
+          comercio_id: string | null
           created_at: string
           estado: string
           id: string
@@ -1545,6 +1772,7 @@ export type Database = {
           whatsapp_enviado: boolean
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           estado?: string
           id?: string
@@ -1555,6 +1783,7 @@ export type Database = {
           whatsapp_enviado?: boolean
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           estado?: string
           id?: string
@@ -1565,6 +1794,13 @@ export type Database = {
           whatsapp_enviado?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "ordenes_compra_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ordenes_compra_proveedor_id_fkey"
             columns: ["proveedor_id"]
@@ -1577,6 +1813,7 @@ export type Database = {
       ordenes_eliminadas_pos: {
         Row: {
           comentario: string | null
+          comercio_id: string | null
           fecha_eliminacion: string
           fecha_orden: string
           id: string
@@ -1588,6 +1825,7 @@ export type Database = {
         }
         Insert: {
           comentario?: string | null
+          comercio_id?: string | null
           fecha_eliminacion?: string
           fecha_orden: string
           id?: string
@@ -1599,6 +1837,7 @@ export type Database = {
         }
         Update: {
           comentario?: string | null
+          comercio_id?: string | null
           fecha_eliminacion?: string
           fecha_orden?: string
           id?: string
@@ -1608,11 +1847,20 @@ export type Database = {
           total?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_eliminadas_pos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ordenes_pos: {
         Row: {
           comentario: string | null
+          comercio_id: string | null
           created_at: string
           fecha: string
           id: string
@@ -1622,6 +1870,7 @@ export type Database = {
         }
         Insert: {
           comentario?: string | null
+          comercio_id?: string | null
           created_at?: string
           fecha?: string
           id?: string
@@ -1631,6 +1880,7 @@ export type Database = {
         }
         Update: {
           comentario?: string | null
+          comercio_id?: string | null
           created_at?: string
           fecha?: string
           id?: string
@@ -1638,11 +1888,20 @@ export type Database = {
           total?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_pos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pagos_cuenta: {
         Row: {
           cliente_id: string
+          comercio_id: string | null
           created_at: string
           id: string
           monto: number
@@ -1651,6 +1910,7 @@ export type Database = {
         }
         Insert: {
           cliente_id: string
+          comercio_id?: string | null
           created_at?: string
           id?: string
           monto?: number
@@ -1659,6 +1919,7 @@ export type Database = {
         }
         Update: {
           cliente_id?: string
+          comercio_id?: string | null
           created_at?: string
           id?: string
           monto?: number
@@ -1673,6 +1934,13 @@ export type Database = {
             referencedRelation: "clientes_cuenta"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pagos_cuenta_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
         ]
       }
       productos: {
@@ -1681,6 +1949,7 @@ export type Database = {
           categoria: string | null
           codigo_barra: string | null
           codigo_interno: string | null
+          comercio_id: string | null
           costo_promedio: number
           created_at: string
           es_activo: boolean
@@ -1700,6 +1969,7 @@ export type Database = {
           categoria?: string | null
           codigo_barra?: string | null
           codigo_interno?: string | null
+          comercio_id?: string | null
           costo_promedio?: number
           created_at?: string
           es_activo?: boolean
@@ -1719,6 +1989,7 @@ export type Database = {
           categoria?: string | null
           codigo_barra?: string | null
           codigo_interno?: string | null
+          comercio_id?: string | null
           costo_promedio?: number
           created_at?: string
           es_activo?: boolean
@@ -1734,6 +2005,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "productos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "productos_proveedor_id_fkey"
             columns: ["proveedor_id"]
@@ -1783,6 +2061,7 @@ export type Database = {
       }
       proveedores: {
         Row: {
+          comercio_id: string | null
           contacto: string | null
           created_at: string
           documento: string | null
@@ -1793,6 +2072,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          comercio_id?: string | null
           contacto?: string | null
           created_at?: string
           documento?: string | null
@@ -1803,6 +2083,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          comercio_id?: string | null
           contacto?: string | null
           created_at?: string
           documento?: string | null
@@ -1812,10 +2093,19 @@ export type Database = {
           user_id?: string
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "proveedores_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recetas: {
         Row: {
+          comercio_id: string | null
           created_at: string
           id: string
           menu_item_id: string | null
@@ -1823,6 +2113,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           id?: string
           menu_item_id?: string | null
@@ -1830,6 +2121,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           id?: string
           menu_item_id?: string | null
@@ -1837,6 +2129,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recetas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recetas_menu_item_id_fkey"
             columns: ["menu_item_id"]
@@ -1855,6 +2154,7 @@ export type Database = {
       }
       recordatorios_pago: {
         Row: {
+          comercio_id: string | null
           created_at: string
           cuenta_id: string | null
           descripcion: string | null
@@ -1867,6 +2167,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           cuenta_id?: string | null
           descripcion?: string | null
@@ -1879,6 +2180,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           cuenta_id?: string | null
           descripcion?: string | null
@@ -1890,10 +2192,19 @@ export type Database = {
           titulo?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recordatorios_pago_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       registros_asistencia: {
         Row: {
+          comercio_id: string | null
           created_at: string
           empleado_id: string
           id: string
@@ -1903,6 +2214,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           empleado_id: string
           id?: string
@@ -1912,6 +2224,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           empleado_id?: string
           id?: string
@@ -1921,6 +2234,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "registros_asistencia_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "registros_asistencia_empleado_id_fkey"
             columns: ["empleado_id"]
@@ -1934,6 +2254,7 @@ export type Database = {
         Row: {
           abierta_por: string | null
           cerrada_por: string | null
+          comercio_id: string | null
           created_at: string
           diferencia: number | null
           estado: string
@@ -1954,6 +2275,7 @@ export type Database = {
         Insert: {
           abierta_por?: string | null
           cerrada_por?: string | null
+          comercio_id?: string | null
           created_at?: string
           diferencia?: number | null
           estado?: string
@@ -1974,6 +2296,7 @@ export type Database = {
         Update: {
           abierta_por?: string | null
           cerrada_por?: string | null
+          comercio_id?: string | null
           created_at?: string
           diferencia?: number | null
           estado?: string
@@ -1991,7 +2314,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sesiones_caja_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -2016,6 +2347,7 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          comercio_id: string | null
           created_at: string
           id: string
           pin_seguridad: string | null
@@ -2026,6 +2358,7 @@ export type Database = {
           whatsapp_phone_number_id: string | null
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           id?: string
           pin_seguridad?: string | null
@@ -2036,6 +2369,7 @@ export type Database = {
           whatsapp_phone_number_id?: string | null
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           id?: string
           pin_seguridad?: string | null
@@ -2045,11 +2379,20 @@ export type Database = {
           whatsapp_access_token?: string | null
           whatsapp_phone_number_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ventas_credito: {
         Row: {
           cliente_id: string
+          comercio_id: string | null
           created_at: string
           id: string
           notas: string | null
@@ -2058,6 +2401,7 @@ export type Database = {
         }
         Insert: {
           cliente_id: string
+          comercio_id?: string | null
           created_at?: string
           id?: string
           notas?: string | null
@@ -2066,6 +2410,7 @@ export type Database = {
         }
         Update: {
           cliente_id?: string
+          comercio_id?: string | null
           created_at?: string
           id?: string
           notas?: string | null
@@ -2078,6 +2423,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes_cuenta"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventas_credito_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
             referencedColumns: ["id"]
           },
         ]
@@ -2100,6 +2452,10 @@ export type Database = {
         Returns: boolean
       }
       is_comercio_owner: { Args: { _user_id: string }; Returns: boolean }
+      is_comercio_owner_of: {
+        Args: { _comercio_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_owner: { Args: { _user_id: string }; Returns: boolean }
       is_same_comercio: {
         Args: { _other_user_id: string; _user_id: string }
