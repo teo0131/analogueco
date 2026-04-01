@@ -7,12 +7,16 @@ interface UserRoleData {
   isApproved: boolean;
   loading: boolean;
   userId: string | null;
+  comercioId: string | null;
+  comercioRole: string | null;
 }
 
 interface VerifyResponse {
   isAdmin: boolean;
   isOwner: boolean;
   isApproved: boolean;
+  comercioId?: string;
+  comercioRole?: string;
   userId?: string;
   error?: string;
 }
@@ -23,6 +27,8 @@ export const useUserRole = (): UserRoleData => {
   const [isApproved, setIsApproved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [comercioId, setComercioId] = useState<string | null>(null);
+  const [comercioRole, setComercioRole] = useState<string | null>(null);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -46,6 +52,8 @@ export const useUserRole = (): UserRoleData => {
             setIsApproved(data.isApproved);
             setIsAdmin(data.isAdmin);
             setIsOwner(data.isOwner ?? false);
+            setComercioId(data.comercioId ?? null);
+            setComercioRole(data.comercioRole ?? null);
           }
         } catch (err) {
           console.error("Edge function call failed, using fallback:", err);
@@ -61,21 +69,39 @@ export const useUserRole = (): UserRoleData => {
     const fallbackClientCheck = async (uid: string) => {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_approved")
+        .select("is_approved, comercio_id")
         .eq("user_id", uid)
         .single();
 
       setIsApproved(profile?.is_approved ?? false);
+      setComercioId(profile?.comercio_id ?? null);
 
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid);
+      // Check comercio_miembros for role
+      const { data: membership } = await supabase
+        .from("comercio_miembros")
+        .select("rol, comercio_id")
+        .eq("user_id", uid)
+        .limit(1)
+        .single();
 
-      const hasOwnerRole = roles?.some(r => r.role === "owner") ?? false;
-      const hasAdminRole = hasOwnerRole || (roles?.some(r => r.role === "admin") ?? false);
-      setIsOwner(hasOwnerRole);
-      setIsAdmin(hasAdminRole);
+      if (membership) {
+        const role = membership.rol;
+        setComercioRole(role);
+        setComercioId(membership.comercio_id);
+        setIsOwner(role === "owner");
+        setIsAdmin(role === "owner" || role === "admin");
+      } else {
+        // Fallback to user_roles for backward compatibility
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", uid);
+
+        const hasOwnerRole = roles?.some(r => r.role === "owner") ?? false;
+        const hasAdminRole = hasOwnerRole || (roles?.some(r => r.role === "admin") ?? false);
+        setIsOwner(hasOwnerRole);
+        setIsAdmin(hasAdminRole);
+      }
     };
 
     checkUserRole();
@@ -87,5 +113,5 @@ export const useUserRole = (): UserRoleData => {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { isAdmin, isOwner, isApproved, loading, userId };
+  return { isAdmin, isOwner, isApproved, loading, userId, comercioId, comercioRole };
 };

@@ -35,6 +35,7 @@ type ChatConversation = {
   summary: string | null;
   created_at: string;
   updated_at: string;
+  comercio_id?: string | null;
 };
 
 const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];

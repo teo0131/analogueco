@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Box, Lock } from "lucide-react";
+import { Box, Lock, Store, Users } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -15,7 +15,10 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pinSeguridad, setPinSeguridad] = useState("");
+  const [storeName, setStoreName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [signupMode, setSignupMode] = useState<"new" | "invite">("new");
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +43,6 @@ const Auth = () => {
   };
 
   useEffect(() => {
-    // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate("/");
@@ -84,18 +86,37 @@ const Auth = () => {
       return;
     }
 
-    if (pinSeguridad.length !== 4 || !/^\d{4}$/.test(pinSeguridad)) {
-      toast.error("El PIN debe ser de exactamente 4 dígitos numéricos");
+    if (signupMode === "new") {
+      if (pinSeguridad.length !== 4 || !/^\d{4}$/.test(pinSeguridad)) {
+        toast.error("El PIN debe ser de exactamente 4 dígitos numéricos");
+        return;
+      }
+      if (!storeName.trim()) {
+        toast.error("Por favor ingresa el nombre de tu negocio");
+        return;
+      }
+    }
+
+    if (signupMode === "invite" && !inviteCode.trim()) {
+      toast.error("Por favor ingresa el código de invitación");
       return;
     }
 
     setLoading(true);
     
+    const metadata: Record<string, string> = {};
+    if (signupMode === "invite") {
+      metadata.invite_code = inviteCode.trim();
+    } else {
+      metadata.store_name = storeName.trim();
+    }
+
     const { data: signupData, error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
+        data: metadata,
       },
     });
 
@@ -109,8 +130,8 @@ const Auth = () => {
       return;
     }
 
-    // Si el registro fue exitoso, guardar el PIN en user_settings
-    if (signupData.user) {
+    // Save PIN for new business owners
+    if (signupData.user && signupMode === "new" && pinSeguridad) {
       const { error: settingsError } = await supabase
         .from("user_settings")
         .upsert({
@@ -120,11 +141,14 @@ const Auth = () => {
 
       if (settingsError) {
         console.error("Error saving PIN:", settingsError);
-        // No bloqueamos el registro por esto, el usuario puede configurarlo después
       }
     }
 
-    toast.success("¡Cuenta creada exitosamente! Iniciando sesión...");
+    if (signupMode === "invite") {
+      toast.success("¡Te has unido al comercio! Iniciando sesión...");
+    } else {
+      toast.success("¡Comercio creado exitosamente! Revisa tu correo para confirmar.");
+    }
     navigate("/");
     setLoading(false);
   };
@@ -222,6 +246,34 @@ const Auth = () => {
             </TabsContent>
 
             <TabsContent value="signup">
+              {/* Mode selector */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <Button
+                  type="button"
+                  variant={signupMode === "new" ? "default" : "outline"}
+                  className="gap-2 h-auto py-3"
+                  onClick={() => setSignupMode("new")}
+                >
+                  <Store className="h-4 w-4" />
+                  <div className="text-left">
+                    <div className="text-sm font-medium">Nuevo Comercio</div>
+                    <div className="text-xs opacity-70">Soy dueño</div>
+                  </div>
+                </Button>
+                <Button
+                  type="button"
+                  variant={signupMode === "invite" ? "default" : "outline"}
+                  className="gap-2 h-auto py-3"
+                  onClick={() => setSignupMode("invite")}
+                >
+                  <Users className="h-4 w-4" />
+                  <div className="text-left">
+                    <div className="text-sm font-medium">Unirme</div>
+                    <div className="text-xs opacity-70">Tengo código</div>
+                  </div>
+                </Button>
+              </div>
+
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Correo electrónico</Label>
@@ -248,33 +300,74 @@ const Auth = () => {
                     minLength={6}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-pin" className="flex items-center gap-2">
-                    <Lock className="h-4 w-4" />
-                    PIN de Seguridad (4 dígitos)
-                  </Label>
-                  <Input
-                    id="signup-pin"
-                    type="password"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={4}
-                    placeholder="••••"
-                    value={pinSeguridad}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      setPinSeguridad(value);
-                    }}
-                    disabled={loading}
-                    required
-                    className="text-center text-xl tracking-widest"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Este PIN se usará para eliminar órdenes e ingresos
-                  </p>
-                </div>
+
+                {signupMode === "new" ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-store" className="flex items-center gap-2">
+                        <Store className="h-4 w-4" />
+                        Nombre del Negocio
+                      </Label>
+                      <Input
+                        id="signup-store"
+                        type="text"
+                        placeholder="Ej: Mi Restaurante"
+                        value={storeName}
+                        onChange={(e) => setStoreName(e.target.value)}
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-pin" className="flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        PIN de Seguridad (4 dígitos)
+                      </Label>
+                      <Input
+                        id="signup-pin"
+                        type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={4}
+                        placeholder="••••"
+                        value={pinSeguridad}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "");
+                          setPinSeguridad(value);
+                        }}
+                        disabled={loading}
+                        required
+                        className="text-center text-xl tracking-widest"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Este PIN se usará para acciones administrativas
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-invite" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Código de Invitación
+                    </Label>
+                    <Input
+                      id="signup-invite"
+                      type="text"
+                      placeholder="Ej: a1b2c3d4"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value)}
+                      disabled={loading}
+                      required
+                      className="text-center text-lg tracking-widest font-mono"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pide este código al dueño del comercio
+                    </p>
+                  </div>
+                )}
+
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Cargando..." : "Crear Cuenta"}
+                  {loading ? "Cargando..." : signupMode === "new" ? "Crear Comercio" : "Unirme al Comercio"}
                 </Button>
               </form>
             </TabsContent>
