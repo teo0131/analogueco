@@ -83,6 +83,62 @@ export type Database = {
         }
         Relationships: []
       }
+      comercio_miembros: {
+        Row: {
+          comercio_id: string
+          created_at: string
+          id: string
+          rol: Database["public"]["Enums"]["comercio_role"]
+          user_id: string
+        }
+        Insert: {
+          comercio_id: string
+          created_at?: string
+          id?: string
+          rol?: Database["public"]["Enums"]["comercio_role"]
+          user_id: string
+        }
+        Update: {
+          comercio_id?: string
+          created_at?: string
+          id?: string
+          rol?: Database["public"]["Enums"]["comercio_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercio_miembros_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercios: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          owner_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          owner_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          owner_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_contactos: {
         Row: {
           canal_principal: string | null
@@ -1689,6 +1745,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          comercio_id: string | null
           created_at: string
           email: string | null
           id: string
@@ -1697,6 +1754,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comercio_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1705,6 +1763,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comercio_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1712,7 +1771,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       proveedores: {
         Row: {
@@ -2020,6 +2087,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_comercio_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["comercio_role"]
+      }
+      get_user_comercio_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2027,11 +2099,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_comercio_owner: { Args: { _user_id: string }; Returns: boolean }
       is_owner: { Args: { _user_id: string }; Returns: boolean }
+      is_same_comercio: {
+        Args: { _other_user_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "owner"
+      comercio_role: "owner" | "admin" | "user"
       tipo_movimiento: "entrada" | "salida_venta" | "ajuste" | "consumo"
       tipo_producto: "retail" | "preparado" | "insumo"
     }
@@ -2162,6 +2240,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "owner"],
+      comercio_role: ["owner", "admin", "user"],
       tipo_movimiento: ["entrada", "salida_venta", "ajuste", "consumo"],
       tipo_producto: ["retail", "preparado", "insumo"],
     },
