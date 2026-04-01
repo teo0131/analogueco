@@ -13,6 +13,8 @@ interface VerifyResponse {
   isAdmin: boolean;
   isOwner: boolean;
   isApproved: boolean;
+  comercioId?: string;
+  comercioRole?: string;
   userId?: string;
   error?: string;
 }

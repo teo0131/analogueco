@@ -39,9 +39,10 @@ serve(async (req) => {
 
     console.log("Verifying permissions for user:", user.id);
 
+    // Check profile for approval status
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('is_approved')
+      .select('is_approved, comercio_id')
       .eq('user_id', user.id)
       .single();
 
@@ -50,27 +51,33 @@ serve(async (req) => {
     }
 
     const isApproved = profile?.is_approved ?? false;
+    const comercioId = profile?.comercio_id ?? null;
 
-    const { data: roles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id);
+    // Check comercio membership for role (primary source of truth)
+    const { data: membership, error: membershipError } = await supabase
+      .from('comercio_miembros')
+      .select('rol, comercio_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .single();
 
-    if (rolesError) {
-      console.log("Roles fetch error:", rolesError.message);
+    if (membershipError) {
+      console.log("Membership fetch error:", membershipError.message);
     }
 
-    const isOwner = roles?.some(r => r.role === 'owner') ?? false;
-    // isAdmin is true for both admin and owner roles (backward compatibility)
-    const isAdmin = isOwner || (roles?.some(r => r.role === 'admin') ?? false);
+    const comercioRole = membership?.rol ?? 'user';
+    const isOwner = comercioRole === 'owner';
+    const isAdmin = isOwner || comercioRole === 'admin';
 
-    console.log("User verification result:", { userId: user.id, isAdmin, isOwner, isApproved });
+    console.log("User verification result:", { userId: user.id, isAdmin, isOwner, isApproved, comercioId, comercioRole });
 
     return new Response(
       JSON.stringify({ 
         isAdmin, 
         isOwner,
         isApproved,
+        comercioId: membership?.comercio_id ?? comercioId,
+        comercioRole,
         userId: user.id,
         email: user.email 
       }),
