@@ -172,7 +172,7 @@ export default function CuentasDeuda() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes-cuenta"] });
       setClienteDialog(false);
-      setClienteForm({ nombre: "", telefono: "", email: "", notas: "" });
+      setClienteForm({ nombre: "", telefono: "", email: "", notas: "", tipo_cuenta: "cliente" });
       toast.success("Cliente registrado");
     },
     onError: () => toast.error("Error al guardar cliente"),
