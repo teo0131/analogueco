@@ -429,9 +429,10 @@ export default function CuentasDeuda() {
       )}
 
       <div className="space-y-3">
-        {clientes.map(c => {
+        {filteredClientes.map(c => {
           const isOpen = expandedId === c.id;
           const hasDebt = c.saldo_total > 0;
+          const isCuentaInterna = (c as any).tipo_cuenta === "consumo_interno";
           return (
             <Card key={c.id}
               className={`bg-card border transition-colors ${hasDebt ? "border-rose-500/30" : "border-border"}`}>
