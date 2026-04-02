@@ -49,6 +49,7 @@ import TurnosChecklists from "./pages/TurnosChecklists";
 import ReportesAvanzados from "./pages/ReportesAvanzados";
 import Domicilios from "./pages/Domicilios";
 import CRM from "./pages/CRM";
+import PlatformSolicitudes from "./pages/PlatformSolicitudes";
 
 const queryClient = new QueryClient();
 
