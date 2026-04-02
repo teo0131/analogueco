@@ -1054,6 +1054,7 @@ const POS = () => {
         .select("id, nombre, saldo_total, telefono")
         .eq("user_id", user.id)
         .eq("estado", "activo")
+        .neq("tipo_cuenta" as any, "consumo_interno")
         .order("nombre");
       setClientes((data ?? []) as any[]);
     } catch {
