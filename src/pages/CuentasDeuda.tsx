@@ -165,7 +165,8 @@ export default function CuentasDeuda() {
         telefono: clienteForm.telefono || null,
         email: clienteForm.email || null,
         notas: clienteForm.notas || null,
-      });
+        tipo_cuenta: clienteForm.tipo_cuenta,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
