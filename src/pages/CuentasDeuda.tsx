@@ -286,9 +286,18 @@ export default function CuentasDeuda() {
     }
   };
 
-  // ── Aggregates
-  const totalDeuda = clientes.reduce((s, c) => s + (c.saldo_total > 0 ? c.saldo_total : 0), 0);
-  const clientesActivos = clientes.filter(c => c.saldo_total > 0).length;
+  // ── Filter by tipo_cuenta
+  const filteredClientes = clientes.filter(c => (c as any).tipo_cuenta === tipoCuenta || (!((c as any).tipo_cuenta) && tipoCuenta === "cliente"));
+  const isInterno = tipoCuenta === "consumo_interno";
+
+  // ── Aggregates (only real client accounts)
+  const clientesReales = clientes.filter(c => (c as any).tipo_cuenta !== "consumo_interno");
+  const totalDeuda = clientesReales.reduce((s, c) => s + (c.saldo_total > 0 ? c.saldo_total : 0), 0);
+  const clientesActivos = clientesReales.filter(c => c.saldo_total > 0).length;
+
+  // ── Aggregates for current tab
+  const tabTotal = filteredClientes.reduce((s, c) => s + (c.saldo_total > 0 ? c.saldo_total : 0), 0);
+  const tabActivos = filteredClientes.filter(c => c.saldo_total > 0).length;
 
   const toggleExpand = (id: string) => setExpandedId(prev => (prev === id ? null : id));
 
