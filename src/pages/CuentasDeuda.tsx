@@ -637,11 +637,11 @@ export default function CuentasDeuda() {
 
             <Button className="w-full"
               onClick={() => requirePin(
-                `Registrar venta en crédito a "${selectedCliente?.nombre}" por ${COP(ventaItems.reduce((s, i) => s + (Number(i.cantidad)||0)*(Number(i.precio)||0), 0))}`,
+                `${isInterno ? "Registrar consumo interno" : "Registrar venta en crédito"} a "${selectedCliente?.nombre}" por ${COP(ventaItems.reduce((s, i) => s + (Number(i.cantidad)||0)*(Number(i.precio)||0), 0))}`,
                 () => saveVenta.mutate()
               )}
               disabled={saveVenta.isPending}>
-              {saveVenta.isPending ? "Registrando..." : "Registrar venta en crédito"}
+              {saveVenta.isPending ? "Registrando..." : isInterno ? "Registrar consumo" : "Registrar venta en crédito"}
             </Button>
           </div>
         </DialogContent>
