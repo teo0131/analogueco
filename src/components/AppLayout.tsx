@@ -143,6 +143,7 @@ const AppLayout = () => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { isAdmin, isOwner } = useUserRole();
+  const { isPlatformAdmin } = usePlatformAdmin();
   const [mounted, setMounted] = useState(false);
   const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
