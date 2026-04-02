@@ -1,36 +1,58 @@
 
-# Migración Multi-Tenant — Fase 1: Estructura Base
 
-## Objetivo
-Crear la infraestructura base para que AnalogueCo soporte múltiples usuarios por comercio, sin romper nada existente.
+# Panel de Super-Admin para AnalogueCo (Aprobación de Comercios)
 
-## Paso 1: Tabla `comercios` (tenants)
-- `id`, `nombre`, `owner_user_id`, `created_at`, `updated_at`
-- Representa cada negocio suscrito a AnalogueCo
+## Problema actual
 
-## Paso 2: Tabla `comercio_miembros` (membresías)
-- `id`, `comercio_id`, `user_id`, `rol` (owner/admin/user), `created_at`
-- Un usuario pertenece a un comercio con un rol específico
-- Reemplaza el uso actual de `user_roles` para roles dentro del comercio
+Cuando un nuevo dueño de negocio se registra, se crea con `is_approved = false` y ve la pantalla "Pendiente de Aprobación". Pero **no existe ninguna interfaz** para que tú (como dueño de la plataforma AnalogueCo) veas y apruebes estas solicitudes. Actualmente hay 4 comercios pendientes de aprobación en la base de datos.
 
-## Paso 3: Migrar datos existentes
-- Crear un comercio automático por cada usuario que tenga datos (basado en `user_settings.store_name` o email)
-- Asignar cada usuario existente como `owner` de su comercio
-- Agregar columna `comercio_id` a `profiles` para saber a qué comercio pertenece el usuario
+## Concepto: Super-Admin de Plataforma
 
-## Paso 4: Funciones helper
-- `get_user_comercio_id(user_id)` → devuelve el comercio_id del usuario (SECURITY DEFINER)
-- `has_comercio_role(user_id, role)` → verifica rol dentro del comercio
+Necesitas un rol de **super-admin** que sea independiente de cualquier comercio. Este es el dueño de AnalogueCo como plataforma SaaS, no un dueño de comercio.
 
-## Paso 5: Actualizar Auth flow
-- Al registrarse un nuevo owner → se crea automáticamente su comercio
-- Al ser invitado un empleado → se asocia al comercio existente
+## Plan de implementación
 
-## Fases futuras (NO en esta fase):
-- Fase 2: Migrar tablas de operación (menu_items, productos, ordenes_pos, etc.) a usar `comercio_id`
-- Fase 3: Actualizar RLS policies para filtrar por comercio
-- Fase 4: UI de invitación de empleados
-- Fase 5: Migrar tablas restantes (RRHH, finanzas, CRM, etc.)
+### 1. Base de datos - Tabla `platform_admins`
 
-## Principio clave
-Todo seguirá funcionando con `user_id` mientras se migra. La columna `comercio_id` se agregará gradualmente y será nullable al inicio para no romper inserts existentes.
+Crear una tabla simple y ultra-privada:
+
+```text
+platform_admins
+├── id (uuid)
+├── user_id (uuid, referencia a auth.users)
+└── created_at (timestamp)
+```
+
+- RLS: solo los propios platform_admins pueden leer esta tabla (usando una función `SECURITY DEFINER`)
+- Se insertará tu usuario como el primer y único platform admin via migración
+- Para agregar futuros platform admins, solo se podrá hacer directamente desde el backend (no hay UI para eso, ultra-privado)
+
+### 2. Edge Function - `platform-admin-actions`
+
+- Verificar que el usuario autenticado sea platform_admin
+- Endpoints: listar comercios pendientes, aprobar, rechazar (eliminar)
+- Usa `SUPABASE_SERVICE_ROLE_KEY` para operar sobre perfiles sin restricciones de RLS
+
+### 3. Nueva página - `/platform/solicitudes`
+
+- Accesible solo si eres platform_admin
+- Lista de comercios pendientes con: email del owner, nombre del comercio, fecha de registro
+- Botones: Aprobar (pone `is_approved = true`) / Rechazar (elimina comercio + usuario)
+- UI minimalista y funcional
+
+### 4. Ruta protegida con verificación de super-admin
+
+- Nuevo componente `PlatformAdminRoute` que verifica contra la tabla `platform_admins`
+- Ruta `/platform/solicitudes` solo visible en el sidebar si eres platform admin
+- No aparece en el menú de navegación para nadie más
+
+### 5. Tu cuenta
+
+Puedes usar tu cuenta existente (teovallejoe@gmail.com / user_id: ac808997...) como platform admin. No necesitas crear una cuenta separada -- simplemente te registramos en `platform_admins` y tendrás acceso dual: eres owner de "Fraterno Cafe" Y super-admin de la plataforma.
+
+## Secciones técnicas
+
+- La tabla `platform_admins` usa una función `is_platform_admin(user_id)` con `SECURITY DEFINER` para evitar recursión en RLS
+- La edge function valida el JWT y cruza contra `platform_admins` antes de ejecutar cualquier acción
+- El frontend nunca almacena el estado de super-admin en localStorage (siempre verificación server-side)
+
