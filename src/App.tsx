@@ -125,6 +125,9 @@ const App = () => (
             <Route path="/configuracion-fiscal" element={<ProtectedRoute requireOwner>{<ConfiguracionFiscal />}</ProtectedRoute>} />
             <Route path="/admin/usuarios" element={<ProtectedRoute requireOwner>{<AdminUsuarios />}</ProtectedRoute>} />
             <Route path="/admin/chat-insights" element={<ProtectedRoute requireOwner>{<AdminChatInsights />}</ProtectedRoute>} />
+            
+            {/* Platform Super-Admin */}
+            <Route path="/platform/solicitudes" element={<PlatformSolicitudes />} />
           </Route>
 
           {/* Kiosk - standalone page (no AppLayout), accessible to all roles */}
