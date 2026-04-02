@@ -442,8 +442,8 @@ export default function CuentasDeuda() {
                 <div className="flex items-center gap-3">
                   {/* Avatar letter */}
                   <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0
-                    ${hasDebt ? "bg-rose-500/15 text-rose-400" : "bg-emerald-500/15 text-emerald-400"}`}>
-                    {c.nombre.charAt(0).toUpperCase()}
+                    ${isCuentaInterna ? "bg-blue-500/15 text-blue-400" : hasDebt ? "bg-rose-500/15 text-rose-400" : "bg-emerald-500/15 text-emerald-400"}`}>
+                    {isCuentaInterna ? <Coffee className="h-4 w-4" /> : c.nombre.charAt(0).toUpperCase()}
                   </div>
 
                   {/* Info */}
@@ -451,8 +451,10 @@ export default function CuentasDeuda() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-sm">{c.nombre}</p>
                       <Badge variant="outline"
-                        className={`text-xs ${hasDebt ? "bg-rose-500/10 text-rose-400 border-rose-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"}`}>
-                        {hasDebt ? "Con saldo" : "Al día"}
+                        className={`text-xs ${isCuentaInterna
+                          ? (hasDebt ? "bg-blue-500/10 text-blue-400 border-blue-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30")
+                          : (hasDebt ? "bg-rose-500/10 text-rose-400 border-rose-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30")}`}>
+                        {isCuentaInterna ? (hasDebt ? "Con consumo" : "Sin consumo") : (hasDebt ? "Con saldo" : "Al día")}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
