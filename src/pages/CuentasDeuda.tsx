@@ -325,24 +325,31 @@ export default function CuentasDeuda() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Cuentas en Deuda</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {isInterno ? "Consumo Interno" : "Cuentas en Deuda"}
+          </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Ventas a crédito · <span className="text-rose-400 font-medium">{COP(totalDeuda)} pendiente</span>
-            {clientesActivos > 0 && <span className="ml-2">· {clientesActivos} cliente{clientesActivos > 1 ? "s" : ""} con saldo</span>}
+            {isInterno
+              ? <>Trazabilidad de consumo de empleados y dueños · <span className="text-blue-400 font-medium">{COP(tabTotal)} acumulado</span></>
+              : <>Ventas a crédito · <span className="text-rose-400 font-medium">{COP(tabTotal)} pendiente</span>
+                {tabActivos > 0 && <span className="ml-2">· {tabActivos} cliente{tabActivos > 1 ? "s" : ""} con saldo</span>}
+              </>
+            }
           </p>
         </div>
-        <Dialog open={clienteDialog} onOpenChange={setClienteDialog}>
+        <Dialog open={clienteDialog} onOpenChange={v => { setClienteDialog(v); if (v) setClienteForm(p => ({ ...p, tipo_cuenta: tipoCuenta })); }}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-1.5 shrink-0">
-              <UserPlus className="h-4 w-4" /> Nuevo cliente
+              {isInterno ? <Coffee className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+              {isInterno ? "Nueva cuenta interna" : "Nuevo cliente"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Registrar Cliente</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{isInterno ? "Cuenta de Consumo Interno" : "Registrar Cliente"}</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
               <div className="space-y-1">
-                <Label className="text-xs">Nombre *</Label>
-                <Input placeholder="Nombre completo" value={clienteForm.nombre}
+                <Label className="text-xs">{isInterno ? "Nombre del empleado / dueño *" : "Nombre *"}</Label>
+                <Input placeholder={isInterno ? "Ej: Juan (Mesero), Dueño" : "Nombre completo"} value={clienteForm.nombre}
                   onChange={e => setClienteForm(p => ({ ...p, nombre: e.target.value }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -359,24 +366,42 @@ export default function CuentasDeuda() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Notas</Label>
-                <Textarea rows={2} placeholder="Observaciones..." value={clienteForm.notas}
+                <Textarea rows={2} placeholder={isInterno ? "Cargo, área, etc." : "Observaciones..."} value={clienteForm.notas}
                   onChange={e => setClienteForm(p => ({ ...p, notas: e.target.value }))} />
               </div>
+              {isInterno && (
+                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-3 text-xs text-blue-300">
+                  <Coffee className="h-3.5 w-3.5 inline mr-1.5" />
+                  Esta cuenta es solo para trazabilidad interna. No afecta las cuentas reales ni las finanzas.
+                </div>
+              )}
               <Button className="w-full" onClick={() => saveCliente.mutate()}
                 disabled={!clienteForm.nombre || saveCliente.isPending}>
-                {saveCliente.isPending ? "Guardando..." : "Registrar cliente"}
+                {saveCliente.isPending ? "Guardando..." : isInterno ? "Crear cuenta interna" : "Registrar cliente"}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* ── Tabs ── */}
+      <Tabs value={tipoCuenta} onValueChange={v => { setTipoCuenta(v as any); setExpandedId(null); }}>
+        <TabsList className="grid w-full grid-cols-2 max-w-sm">
+          <TabsTrigger value="cliente" className="gap-1.5 text-xs">
+            <Wallet className="h-3.5 w-3.5" /> Clientes
+          </TabsTrigger>
+          <TabsTrigger value="consumo_interno" className="gap-1.5 text-xs">
+            <Coffee className="h-3.5 w-3.5" /> Consumo Interno
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* ── KPI bar ── */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Deuda total", value: COP(totalDeuda), icon: TrendingDown, color: "text-rose-400" },
-          { label: "Clientes con saldo", value: String(clientesActivos), icon: AlertCircle, color: "text-amber-400" },
-          { label: "Clientes en cero", value: String(clientes.filter(c => c.saldo_total <= 0).length), icon: CheckCircle2, color: "text-emerald-400" },
+          { label: isInterno ? "Consumo total" : "Deuda total", value: COP(tabTotal), icon: isInterno ? Coffee : TrendingDown, color: isInterno ? "text-blue-400" : "text-rose-400" },
+          { label: isInterno ? "Con consumo" : "Con saldo", value: String(tabActivos), icon: AlertCircle, color: "text-amber-400" },
+          { label: "En cero", value: String(filteredClientes.filter(c => c.saldo_total <= 0).length), icon: CheckCircle2, color: "text-emerald-400" },
         ].map(k => (
           <Card key={k.label} className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-3">
@@ -392,11 +417,13 @@ export default function CuentasDeuda() {
 
       {/* ── Client list ── */}
       {isLoading && <p className="text-sm text-muted-foreground">Cargando...</p>}
-      {clientes.length === 0 && !isLoading && (
+      {filteredClientes.length === 0 && !isLoading && (
         <Card className="bg-card border-border">
           <CardContent className="py-14 text-center text-muted-foreground text-sm">
-            No hay clientes registrados aún.<br />
-            Registra un cliente y comienza a cargar ventas en crédito.
+            {isInterno
+              ? <>No hay cuentas de consumo interno.<br />Crea una para llevar trazabilidad del consumo de empleados.</>
+              : <>No hay clientes registrados aún.<br />Registra un cliente y comienza a cargar ventas en crédito.</>
+            }
           </CardContent>
         </Card>
       )}
