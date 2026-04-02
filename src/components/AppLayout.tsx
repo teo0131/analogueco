@@ -294,6 +294,12 @@ const AppLayout = () => {
 
             <div className="w-px h-5 bg-sidebar-border mx-1 shrink-0" />
             <NavBtn path="/configuracion-cuenta" label="Mi Cuenta" icon={Settings} />
+            {isPlatformAdmin && (
+              <>
+                <div className="w-px h-5 bg-sidebar-border mx-1 shrink-0" />
+                <NavBtn path="/platform/solicitudes" label="Solicitudes" icon={Shield} />
+              </>
+            )}
           </nav>
 
           {/* Controls */}
