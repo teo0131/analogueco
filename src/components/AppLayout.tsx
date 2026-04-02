@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import {
   LogOut, Package, History, Building2, ChefHat, BarChart3,
   Menu, Calendar, ShoppingCart, Home, Sun, Moon, Receipt,
