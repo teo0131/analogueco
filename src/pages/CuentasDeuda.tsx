@@ -465,8 +465,8 @@ export default function CuentasDeuda() {
 
                   {/* Saldo */}
                   <div className="text-right shrink-0 mr-2">
-                    <p className="text-xs text-muted-foreground">Saldo pendiente</p>
-                    <p className={`font-bold text-lg ${hasDebt ? "text-rose-400" : "text-emerald-400"}`}>
+                    <p className="text-xs text-muted-foreground">{isCuentaInterna ? "Consumo acumulado" : "Saldo pendiente"}</p>
+                    <p className={`font-bold text-lg ${isCuentaInterna ? "text-blue-400" : hasDebt ? "text-rose-400" : "text-emerald-400"}`}>
                       {COP(c.saldo_total)}
                     </p>
                   </div>
