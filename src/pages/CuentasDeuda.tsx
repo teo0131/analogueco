@@ -593,8 +593,8 @@ export default function CuentasDeuda() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-emerald-400" />
-              Venta en Crédito — {selectedCliente?.nombre}
+              {isInterno ? <Coffee className="h-4 w-4 text-blue-400" /> : <ShoppingCart className="h-4 w-4 text-emerald-400" />}
+              {isInterno ? "Registrar Consumo" : "Venta en Crédito"} — {selectedCliente?.nombre}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-1">
