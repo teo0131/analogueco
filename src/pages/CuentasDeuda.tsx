@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Trash2, ChevronDown, ChevronUp, UserPlus,
   ShoppingCart, Wallet, Receipt, AlertCircle, CheckCircle2,
-  Phone, Mail, TrendingDown, TrendingUp, X,
+  Phone, Mail, TrendingDown, TrendingUp, X, Coffee,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -24,6 +25,7 @@ type Cliente = {
   id: string; user_id: string; nombre: string; telefono: string | null;
   email: string | null; notas: string | null; saldo_total: number;
   estado: string; created_at: string; updated_at: string;
+  tipo_cuenta: string;
 };
 type VentaCredito = {
   id: string; user_id: string; cliente_id: string; total: number;
@@ -106,7 +108,8 @@ export default function CuentasDeuda() {
   const [pinDescription, setPinDescription] = useState("Verifica tu PIN para continuar");
 
   // ── Forms
-  const [clienteForm, setClienteForm] = useState({ nombre: "", telefono: "", email: "", notas: "" });
+  const [tipoCuenta, setTipoCuenta] = useState<"cliente" | "consumo_interno">("cliente");
+  const [clienteForm, setClienteForm] = useState({ nombre: "", telefono: "", email: "", notas: "", tipo_cuenta: "cliente" as string });
   const [ventaItems, setVentaItems] = useState([{ nombre: "", cantidad: "1", precio: "" }]);
   const [ventaNotas, setVentaNotas] = useState("");
   const [pagoMonto, setPagoMonto] = useState("");
@@ -162,13 +165,14 @@ export default function CuentasDeuda() {
         telefono: clienteForm.telefono || null,
         email: clienteForm.email || null,
         notas: clienteForm.notas || null,
-      });
+        tipo_cuenta: clienteForm.tipo_cuenta,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes-cuenta"] });
       setClienteDialog(false);
-      setClienteForm({ nombre: "", telefono: "", email: "", notas: "" });
+      setClienteForm({ nombre: "", telefono: "", email: "", notas: "", tipo_cuenta: "cliente" });
       toast.success("Cliente registrado");
     },
     onError: () => toast.error("Error al guardar cliente"),
@@ -282,9 +286,18 @@ export default function CuentasDeuda() {
     }
   };
 
-  // ── Aggregates
-  const totalDeuda = clientes.reduce((s, c) => s + (c.saldo_total > 0 ? c.saldo_total : 0), 0);
-  const clientesActivos = clientes.filter(c => c.saldo_total > 0).length;
+  // ── Filter by tipo_cuenta
+  const filteredClientes = clientes.filter(c => (c as any).tipo_cuenta === tipoCuenta || (!((c as any).tipo_cuenta) && tipoCuenta === "cliente"));
+  const isInterno = tipoCuenta === "consumo_interno";
+
+  // ── Aggregates (only real client accounts)
+  const clientesReales = clientes.filter(c => (c as any).tipo_cuenta !== "consumo_interno");
+  const totalDeuda = clientesReales.reduce((s, c) => s + (c.saldo_total > 0 ? c.saldo_total : 0), 0);
+  const clientesActivos = clientesReales.filter(c => c.saldo_total > 0).length;
+
+  // ── Aggregates for current tab
+  const tabTotal = filteredClientes.reduce((s, c) => s + (c.saldo_total > 0 ? c.saldo_total : 0), 0);
+  const tabActivos = filteredClientes.filter(c => c.saldo_total > 0).length;
 
   const toggleExpand = (id: string) => setExpandedId(prev => (prev === id ? null : id));
 
@@ -312,24 +325,31 @@ export default function CuentasDeuda() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Cuentas en Deuda</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {isInterno ? "Consumo Interno" : "Cuentas en Deuda"}
+          </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Ventas a crédito · <span className="text-rose-400 font-medium">{COP(totalDeuda)} pendiente</span>
-            {clientesActivos > 0 && <span className="ml-2">· {clientesActivos} cliente{clientesActivos > 1 ? "s" : ""} con saldo</span>}
+            {isInterno
+              ? <>Trazabilidad de consumo de empleados y dueños · <span className="text-blue-400 font-medium">{COP(tabTotal)} acumulado</span></>
+              : <>Ventas a crédito · <span className="text-rose-400 font-medium">{COP(tabTotal)} pendiente</span>
+                {tabActivos > 0 && <span className="ml-2">· {tabActivos} cliente{tabActivos > 1 ? "s" : ""} con saldo</span>}
+              </>
+            }
           </p>
         </div>
-        <Dialog open={clienteDialog} onOpenChange={setClienteDialog}>
+        <Dialog open={clienteDialog} onOpenChange={v => { setClienteDialog(v); if (v) setClienteForm(p => ({ ...p, tipo_cuenta: tipoCuenta })); }}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-1.5 shrink-0">
-              <UserPlus className="h-4 w-4" /> Nuevo cliente
+              {isInterno ? <Coffee className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+              {isInterno ? "Nueva cuenta interna" : "Nuevo cliente"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Registrar Cliente</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{isInterno ? "Cuenta de Consumo Interno" : "Registrar Cliente"}</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
               <div className="space-y-1">
-                <Label className="text-xs">Nombre *</Label>
-                <Input placeholder="Nombre completo" value={clienteForm.nombre}
+                <Label className="text-xs">{isInterno ? "Nombre del empleado / dueño *" : "Nombre *"}</Label>
+                <Input placeholder={isInterno ? "Ej: Juan (Mesero), Dueño" : "Nombre completo"} value={clienteForm.nombre}
                   onChange={e => setClienteForm(p => ({ ...p, nombre: e.target.value }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -346,24 +366,42 @@ export default function CuentasDeuda() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Notas</Label>
-                <Textarea rows={2} placeholder="Observaciones..." value={clienteForm.notas}
+                <Textarea rows={2} placeholder={isInterno ? "Cargo, área, etc." : "Observaciones..."} value={clienteForm.notas}
                   onChange={e => setClienteForm(p => ({ ...p, notas: e.target.value }))} />
               </div>
+              {isInterno && (
+                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-3 text-xs text-blue-300">
+                  <Coffee className="h-3.5 w-3.5 inline mr-1.5" />
+                  Esta cuenta es solo para trazabilidad interna. No afecta las cuentas reales ni las finanzas.
+                </div>
+              )}
               <Button className="w-full" onClick={() => saveCliente.mutate()}
                 disabled={!clienteForm.nombre || saveCliente.isPending}>
-                {saveCliente.isPending ? "Guardando..." : "Registrar cliente"}
+                {saveCliente.isPending ? "Guardando..." : isInterno ? "Crear cuenta interna" : "Registrar cliente"}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* ── Tabs ── */}
+      <Tabs value={tipoCuenta} onValueChange={v => { setTipoCuenta(v as any); setExpandedId(null); }}>
+        <TabsList className="grid w-full grid-cols-2 max-w-sm">
+          <TabsTrigger value="cliente" className="gap-1.5 text-xs">
+            <Wallet className="h-3.5 w-3.5" /> Clientes
+          </TabsTrigger>
+          <TabsTrigger value="consumo_interno" className="gap-1.5 text-xs">
+            <Coffee className="h-3.5 w-3.5" /> Consumo Interno
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* ── KPI bar ── */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Deuda total", value: COP(totalDeuda), icon: TrendingDown, color: "text-rose-400" },
-          { label: "Clientes con saldo", value: String(clientesActivos), icon: AlertCircle, color: "text-amber-400" },
-          { label: "Clientes en cero", value: String(clientes.filter(c => c.saldo_total <= 0).length), icon: CheckCircle2, color: "text-emerald-400" },
+          { label: isInterno ? "Consumo total" : "Deuda total", value: COP(tabTotal), icon: isInterno ? Coffee : TrendingDown, color: isInterno ? "text-blue-400" : "text-rose-400" },
+          { label: isInterno ? "Con consumo" : "Con saldo", value: String(tabActivos), icon: AlertCircle, color: "text-amber-400" },
+          { label: "En cero", value: String(filteredClientes.filter(c => c.saldo_total <= 0).length), icon: CheckCircle2, color: "text-emerald-400" },
         ].map(k => (
           <Card key={k.label} className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-3">
@@ -379,19 +417,22 @@ export default function CuentasDeuda() {
 
       {/* ── Client list ── */}
       {isLoading && <p className="text-sm text-muted-foreground">Cargando...</p>}
-      {clientes.length === 0 && !isLoading && (
+      {filteredClientes.length === 0 && !isLoading && (
         <Card className="bg-card border-border">
           <CardContent className="py-14 text-center text-muted-foreground text-sm">
-            No hay clientes registrados aún.<br />
-            Registra un cliente y comienza a cargar ventas en crédito.
+            {isInterno
+              ? <>No hay cuentas de consumo interno.<br />Crea una para llevar trazabilidad del consumo de empleados.</>
+              : <>No hay clientes registrados aún.<br />Registra un cliente y comienza a cargar ventas en crédito.</>
+            }
           </CardContent>
         </Card>
       )}
 
       <div className="space-y-3">
-        {clientes.map(c => {
+        {filteredClientes.map(c => {
           const isOpen = expandedId === c.id;
           const hasDebt = c.saldo_total > 0;
+          const isCuentaInterna = (c as any).tipo_cuenta === "consumo_interno";
           return (
             <Card key={c.id}
               className={`bg-card border transition-colors ${hasDebt ? "border-rose-500/30" : "border-border"}`}>
@@ -401,8 +442,8 @@ export default function CuentasDeuda() {
                 <div className="flex items-center gap-3">
                   {/* Avatar letter */}
                   <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0
-                    ${hasDebt ? "bg-rose-500/15 text-rose-400" : "bg-emerald-500/15 text-emerald-400"}`}>
-                    {c.nombre.charAt(0).toUpperCase()}
+                    ${isCuentaInterna ? "bg-blue-500/15 text-blue-400" : hasDebt ? "bg-rose-500/15 text-rose-400" : "bg-emerald-500/15 text-emerald-400"}`}>
+                    {isCuentaInterna ? <Coffee className="h-4 w-4" /> : c.nombre.charAt(0).toUpperCase()}
                   </div>
 
                   {/* Info */}
@@ -410,8 +451,10 @@ export default function CuentasDeuda() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-sm">{c.nombre}</p>
                       <Badge variant="outline"
-                        className={`text-xs ${hasDebt ? "bg-rose-500/10 text-rose-400 border-rose-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"}`}>
-                        {hasDebt ? "Con saldo" : "Al día"}
+                        className={`text-xs ${isCuentaInterna
+                          ? (hasDebt ? "bg-blue-500/10 text-blue-400 border-blue-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30")
+                          : (hasDebt ? "bg-rose-500/10 text-rose-400 border-rose-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30")}`}>
+                        {isCuentaInterna ? (hasDebt ? "Con consumo" : "Sin consumo") : (hasDebt ? "Con saldo" : "Al día")}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
@@ -422,8 +465,8 @@ export default function CuentasDeuda() {
 
                   {/* Saldo */}
                   <div className="text-right shrink-0 mr-2">
-                    <p className="text-xs text-muted-foreground">Saldo pendiente</p>
-                    <p className={`font-bold text-lg ${hasDebt ? "text-rose-400" : "text-emerald-400"}`}>
+                    <p className="text-xs text-muted-foreground">{isCuentaInterna ? "Consumo acumulado" : "Saldo pendiente"}</p>
+                    <p className={`font-bold text-lg ${isCuentaInterna ? "text-blue-400" : hasDebt ? "text-rose-400" : "text-emerald-400"}`}>
                       {COP(c.saldo_total)}
                     </p>
                   </div>
@@ -431,15 +474,17 @@ export default function CuentasDeuda() {
                   {/* Actions */}
                   <div className="flex items-center gap-1 shrink-0">
                     <Button size="sm" variant="outline"
-                      className="h-8 gap-1 text-xs text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                      className={`h-8 gap-1 text-xs ${isCuentaInterna ? "text-blue-400 border-blue-500/30 hover:bg-blue-500/10" : "text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"}`}
                       onClick={() => openVenta(c)}>
-                      <ShoppingCart className="h-3.5 w-3.5" /> Venta
+                      <ShoppingCart className="h-3.5 w-3.5" /> {isCuentaInterna ? "Consumo" : "Venta"}
                     </Button>
+                    {!isCuentaInterna && (
                     <Button size="sm" variant="outline"
                       className="h-8 gap-1 text-xs text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
                       onClick={() => openPago(c)}>
                       <Wallet className="h-3.5 w-3.5" /> Abono
                     </Button>
+                    )}
                     <Button size="icon" variant="ghost"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => toggleExpand(c.id)}>
@@ -548,8 +593,8 @@ export default function CuentasDeuda() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-emerald-400" />
-              Venta en Crédito — {selectedCliente?.nombre}
+              {isInterno ? <Coffee className="h-4 w-4 text-blue-400" /> : <ShoppingCart className="h-4 w-4 text-emerald-400" />}
+              {isInterno ? "Registrar Consumo" : "Venta en Crédito"} — {selectedCliente?.nombre}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-1">
@@ -592,11 +637,11 @@ export default function CuentasDeuda() {
 
             <Button className="w-full"
               onClick={() => requirePin(
-                `Registrar venta en crédito a "${selectedCliente?.nombre}" por ${COP(ventaItems.reduce((s, i) => s + (Number(i.cantidad)||0)*(Number(i.precio)||0), 0))}`,
+                `${isInterno ? "Registrar consumo interno" : "Registrar venta en crédito"} a "${selectedCliente?.nombre}" por ${COP(ventaItems.reduce((s, i) => s + (Number(i.cantidad)||0)*(Number(i.precio)||0), 0))}`,
                 () => saveVenta.mutate()
               )}
               disabled={saveVenta.isPending}>
-              {saveVenta.isPending ? "Registrando..." : "Registrar venta en crédito"}
+              {saveVenta.isPending ? "Registrando..." : isInterno ? "Registrar consumo" : "Registrar venta en crédito"}
             </Button>
           </div>
         </DialogContent>

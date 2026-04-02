@@ -66,6 +66,7 @@ export type Database = {
           notas: string | null
           saldo_total: number
           telefono: string | null
+          tipo_cuenta: string
           updated_at: string
           user_id: string
         }
@@ -79,6 +80,7 @@ export type Database = {
           notas?: string | null
           saldo_total?: number
           telefono?: string | null
+          tipo_cuenta?: string
           updated_at?: string
           user_id: string
         }
@@ -92,6 +94,7 @@ export type Database = {
           notas?: string | null
           saldo_total?: number
           telefono?: string | null
+          tipo_cuenta?: string
           updated_at?: string
           user_id?: string
         }
