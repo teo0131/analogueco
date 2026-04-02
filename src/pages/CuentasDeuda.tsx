@@ -25,6 +25,7 @@ type Cliente = {
   id: string; user_id: string; nombre: string; telefono: string | null;
   email: string | null; notas: string | null; saldo_total: number;
   estado: string; created_at: string; updated_at: string;
+  tipo_cuenta: string;
 };
 type VentaCredito = {
   id: string; user_id: string; cliente_id: string; total: number;
