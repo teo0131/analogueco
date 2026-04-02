@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import {
   LogOut, Package, History, Building2, ChefHat, BarChart3,
   Menu, Calendar, ShoppingCart, Home, Sun, Moon, Receipt,
@@ -142,6 +143,7 @@ const AppLayout = () => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { isAdmin, isOwner } = useUserRole();
+  const { isPlatformAdmin } = usePlatformAdmin();
   const [mounted, setMounted] = useState(false);
   const [userName, setUserName] = useState("");
   const [storeName, setStoreName] = useState("");
@@ -292,6 +294,12 @@ const AppLayout = () => {
 
             <div className="w-px h-5 bg-sidebar-border mx-1 shrink-0" />
             <NavBtn path="/configuracion-cuenta" label="Mi Cuenta" icon={Settings} />
+            {isPlatformAdmin && (
+              <>
+                <div className="w-px h-5 bg-sidebar-border mx-1 shrink-0" />
+                <NavBtn path="/platform/solicitudes" label="Solicitudes" icon={Shield} />
+              </>
+            )}
           </nav>
 
           {/* Controls */}
