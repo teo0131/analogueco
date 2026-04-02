@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Trash2, ChevronDown, ChevronUp, UserPlus,
   ShoppingCart, Wallet, Receipt, AlertCircle, CheckCircle2,
-  Phone, Mail, TrendingDown, TrendingUp, X,
+  Phone, Mail, TrendingDown, TrendingUp, X, Coffee,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
