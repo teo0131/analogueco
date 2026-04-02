@@ -474,15 +474,17 @@ export default function CuentasDeuda() {
                   {/* Actions */}
                   <div className="flex items-center gap-1 shrink-0">
                     <Button size="sm" variant="outline"
-                      className="h-8 gap-1 text-xs text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                      className={`h-8 gap-1 text-xs ${isCuentaInterna ? "text-blue-400 border-blue-500/30 hover:bg-blue-500/10" : "text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"}`}
                       onClick={() => openVenta(c)}>
-                      <ShoppingCart className="h-3.5 w-3.5" /> Venta
+                      <ShoppingCart className="h-3.5 w-3.5" /> {isCuentaInterna ? "Consumo" : "Venta"}
                     </Button>
+                    {!isCuentaInterna && (
                     <Button size="sm" variant="outline"
                       className="h-8 gap-1 text-xs text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
                       onClick={() => openPago(c)}>
                       <Wallet className="h-3.5 w-3.5" /> Abono
                     </Button>
+                    )}
                     <Button size="icon" variant="ghost"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => toggleExpand(c.id)}>
