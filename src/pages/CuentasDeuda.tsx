@@ -109,7 +109,7 @@ export default function CuentasDeuda() {
 
   // ── Forms
   const [tipoCuenta, setTipoCuenta] = useState<"cliente" | "consumo_interno">("cliente");
-  const [clienteForm, setClienteForm] = useState({ nombre: "", telefono: "", email: "", notas: "", tipo_cuenta: "cliente" as string });
+  const [clienteForm, setClienteForm] = useState({ nombre: "", telefono: "", email: "", notas: "", tipo_cuenta: "cliente" as string, saldo_inicial: "" });
   const [ventaItems, setVentaItems] = useState([{ nombre: "", cantidad: "1", precio: "" }]);
   const [ventaNotas, setVentaNotas] = useState("");
   const [pagoMonto, setPagoMonto] = useState("");
