@@ -159,20 +159,32 @@ export default function CuentasDeuda() {
   const saveCliente = useMutation({
     mutationFn: async () => {
       const uid = await getUserId(); if (!uid) throw new Error("No auth");
-      const { error } = await supabase.from("clientes_cuenta").insert({
+      const { data: newCliente, error } = await supabase.from("clientes_cuenta").insert({
         user_id: uid,
         nombre: clienteForm.nombre,
         telefono: clienteForm.telefono || null,
         email: clienteForm.email || null,
         notas: clienteForm.notas || null,
         tipo_cuenta: clienteForm.tipo_cuenta,
-      } as any);
+      } as any).select().single();
       if (error) throw error;
+
+      // If initial balance provided, create a ventas_credito record
+      const saldoInicial = Number(clienteForm.saldo_inicial);
+      if (saldoInicial > 0 && newCliente) {
+        const { error: ve } = await supabase.from("ventas_credito").insert({
+          user_id: uid,
+          cliente_id: (newCliente as any).id,
+          total: saldoInicial,
+          notas: "Saldo inicial - deuda previa al sistema",
+        } as any);
+        if (ve) throw ve;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes-cuenta"] });
       setClienteDialog(false);
-      setClienteForm({ nombre: "", telefono: "", email: "", notas: "", tipo_cuenta: "cliente" });
+      setClienteForm({ nombre: "", telefono: "", email: "", notas: "", tipo_cuenta: "cliente", saldo_inicial: "" });
       toast.success("Cliente registrado");
     },
     onError: () => toast.error("Error al guardar cliente"),
