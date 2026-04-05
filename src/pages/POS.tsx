@@ -1049,12 +1049,11 @@ const POS = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("clientes_cuenta")
-        .select("id, nombre, saldo_total, telefono")
+        .select("id, nombre, saldo_total, telefono, tipo_cuenta")
         .eq("user_id", user.id)
-        .eq("estado", "activo") as any)
-        .neq("tipo_cuenta", "consumo_interno")
+        .eq("estado", "activo")
         .order("nombre");
       setClientes((data ?? []) as any[]);
     } catch {
