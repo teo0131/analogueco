@@ -52,6 +52,7 @@ const pinnedItems: NavLeaf[] = [
   { path: "/mesas",       label: "Mesas",       icon: LayoutGrid,   user: false, admin: true,  owner: true },
   { path: "/domicilios",  label: "Domicilios",  icon: Bike,         user: true,  admin: true,  owner: true },
   { path: "/crm",         label: "CRM",         icon: Contact,      user: false, admin: true,  owner: true },
+  { path: "/calendario",  label: "Calendario",  icon: Calendar,     user: false, admin: true,  owner: true },
 ];
 
 /** Grouped dropdown menus */

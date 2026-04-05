@@ -50,6 +50,7 @@ import ReportesAvanzados from "./pages/ReportesAvanzados";
 import Domicilios from "./pages/Domicilios";
 import CRM from "./pages/CRM";
 import PlatformSolicitudes from "./pages/PlatformSolicitudes";
+import CalendarioNegocio from "./pages/CalendarioNegocio";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +113,9 @@ const App = () => (
             <Route path="/finanzas/cuentas-cobrar" element={<CuentasPorCobrar />} />
             <Route path="/finanzas/cuentas-deuda" element={<CuentasDeuda />} />
             <Route path="/finanzas/recordatorios" element={<RecordatoriosPago />} />
+            
+            {/* CALENDARIO */}
+            <Route path="/calendario" element={<CalendarioNegocio />} />
             
             {/* ADMINISTRACIÓN */}
             <Route path="/turnos" element={<TurnosChecklists />} />
