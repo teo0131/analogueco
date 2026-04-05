@@ -287,6 +287,42 @@ export default function CuentasDeuda() {
     },
   });
 
+  const ajusteSaldo = useMutation({
+    mutationFn: async () => {
+      const uid = await getUserId(); if (!uid || !selectedCliente) throw new Error("No auth");
+      const monto = Number(ajusteMonto);
+      if (!monto || monto === 0) throw new Error("Monto inválido");
+
+      const nota = ajusteNotas || "Ajuste manual de saldo";
+
+      if (monto > 0) {
+        // Positive = add debt via ventas_credito
+        const { error } = await supabase.from("ventas_credito").insert({
+          user_id: uid, cliente_id: selectedCliente.id, total: monto,
+          notas: `[AJUSTE] ${nota}`,
+        } as any);
+        if (error) throw error;
+      } else {
+        // Negative = reduce debt via pagos_cuenta
+        const { error } = await supabase.from("pagos_cuenta").insert({
+          user_id: uid, cliente_id: selectedCliente.id, monto: Math.abs(monto),
+          notas: `[AJUSTE] ${nota}`,
+        } as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clientes-cuenta"] });
+      queryClient.invalidateQueries({ queryKey: ["ventas-credito", expandedId] });
+      queryClient.invalidateQueries({ queryKey: ["pagos-cuenta", expandedId] });
+      setAjusteDialog(false);
+      setAjusteMonto("");
+      setAjusteNotas("");
+      toast.success("Saldo ajustado correctamente");
+    },
+    onError: () => toast.error("Error al ajustar saldo"),
+  });
+
   // ── PIN helpers
   const requirePin = (description: string, action: () => void) => {
     setPinDescription(description);
@@ -321,6 +357,12 @@ export default function CuentasDeuda() {
     requirePin(
       `Registrar abono para "${c.nombre}". Saldo actual: ${COP(c.saldo_total)}`,
       () => { setSelectedCliente(c); setPagoDialog(true); }
+    );
+  };
+  const openAjuste = (c: Cliente) => {
+    requirePin(
+      `Ajustar manualmente el saldo de "${c.nombre}". Saldo actual: ${COP(c.saldo_total)}`,
+      () => { setSelectedCliente(c); setAjusteDialog(true); }
     );
   };
 
