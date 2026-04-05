@@ -763,6 +763,52 @@ export default function CuentasDeuda() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Dialog: Ajustar Saldo ── */}
+      <Dialog open={ajusteDialog} onOpenChange={v => { setAjusteDialog(v); if (!v) { setAjusteMonto(""); setAjusteNotas(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-amber-400" />
+              Ajustar Saldo — {selectedCliente?.nombre}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            {selectedCliente && (
+              <div className="rounded-lg bg-muted/50 border border-border p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Saldo actual</p>
+                <p className={`font-bold text-xl ${selectedCliente.saldo_total > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                  {COP(selectedCliente.saldo_total)}
+                </p>
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label className="text-xs">Monto del ajuste *</Label>
+              <Input type="number" placeholder="Ej: 50000 o -20000" value={ajusteMonto}
+                onChange={e => setAjusteMonto(e.target.value)} className="text-lg font-bold" />
+              <p className="text-[10px] text-muted-foreground">Positivo = sumar deuda · Negativo = reducir deuda</p>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Motivo del ajuste</Label>
+              <Textarea rows={2} placeholder="Ej: Deuda previa al sistema, corrección de saldo..." value={ajusteNotas}
+                onChange={e => setAjusteNotas(e.target.value)} />
+            </div>
+            {ajusteMonto && selectedCliente && (
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-sm flex justify-between">
+                <p className="text-xs text-muted-foreground">Saldo resultante</p>
+                <p className="font-bold text-amber-400">
+                  {COP(selectedCliente.saldo_total + Number(ajusteMonto))}
+                </p>
+              </div>
+            )}
+            <Button className="w-full"
+              onClick={() => ajusteSaldo.mutate()}
+              disabled={!ajusteMonto || Number(ajusteMonto) === 0 || ajusteSaldo.isPending}>
+              {ajusteSaldo.isPending ? "Aplicando..." : "Aplicar ajuste"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
