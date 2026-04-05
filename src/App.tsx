@@ -50,6 +50,7 @@ import ReportesAvanzados from "./pages/ReportesAvanzados";
 import Domicilios from "./pages/Domicilios";
 import CRM from "./pages/CRM";
 import PlatformSolicitudes from "./pages/PlatformSolicitudes";
+import CalendarioNegocio from "./pages/CalendarioNegocio";
 
 const queryClient = new QueryClient();
 
