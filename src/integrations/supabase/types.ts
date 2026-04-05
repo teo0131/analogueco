@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendario_eventos: {
+        Row: {
+          alerta_dias_antes: number | null
+          color: string | null
+          comercio_id: string | null
+          completado: boolean
+          created_at: string
+          descripcion: string | null
+          dia_recurrente: number | null
+          es_recurrente: boolean
+          fecha_fin: string | null
+          fecha_inicio: string
+          hora: string | null
+          id: string
+          modulo_origen: string | null
+          notas: string | null
+          periodicidad: string | null
+          referencia_id: string | null
+          tipo: string
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alerta_dias_antes?: number | null
+          color?: string | null
+          comercio_id?: string | null
+          completado?: boolean
+          created_at?: string
+          descripcion?: string | null
+          dia_recurrente?: number | null
+          es_recurrente?: boolean
+          fecha_fin?: string | null
+          fecha_inicio: string
+          hora?: string | null
+          id?: string
+          modulo_origen?: string | null
+          notas?: string | null
+          periodicidad?: string | null
+          referencia_id?: string | null
+          tipo?: string
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alerta_dias_antes?: number | null
+          color?: string | null
+          comercio_id?: string | null
+          completado?: boolean
+          created_at?: string
+          descripcion?: string | null
+          dia_recurrente?: number | null
+          es_recurrente?: boolean
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          hora?: string | null
+          id?: string
+          modulo_origen?: string | null
+          notas?: string | null
+          periodicidad?: string | null
+          referencia_id?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendario_eventos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_conversations: {
         Row: {
           comercio_id: string | null
