@@ -551,6 +551,12 @@ export default function CuentasDeuda() {
                     </Button>
                     )}
                     <Button size="icon" variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10"
+                      title="Ajustar saldo"
+                      onClick={() => openAjuste(c)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="icon" variant="ghost"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => toggleExpand(c.id)}>
                       {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
