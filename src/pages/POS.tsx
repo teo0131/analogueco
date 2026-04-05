@@ -1105,7 +1105,7 @@ const POS = () => {
           user_id: user.id,
           numero_orden: orderNumber,
           total,
-          comentario: `[CUENTA CLIENTE] ${pendingOrderComment || ""}`,
+          comentario: `[${clientes.find(c => c.id === selectedClienteDeuda)?.tipo_cuenta === "consumo_interno" ? "CONSUMO INTERNO" : "CUENTA CLIENTE"}] ${pendingOrderComment || ""}`,
           fecha: new Date().toISOString(),
         })
         .select()
