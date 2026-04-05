@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Trash2, ChevronDown, ChevronUp, UserPlus,
   ShoppingCart, Wallet, Receipt, AlertCircle, CheckCircle2,
-  Phone, Mail, TrendingDown, TrendingUp, X, Coffee,
+  Phone, Mail, TrendingDown, TrendingUp, X, Coffee, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -99,6 +99,7 @@ export default function CuentasDeuda() {
   const [clienteDialog, setClienteDialog] = useState(false);
   const [ventaDialog, setVentaDialog] = useState(false);
   const [pagoDialog, setPagoDialog] = useState(false);
+  const [ajusteDialog, setAjusteDialog] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -114,6 +115,8 @@ export default function CuentasDeuda() {
   const [ventaNotas, setVentaNotas] = useState("");
   const [pagoMonto, setPagoMonto] = useState("");
   const [pagoNotas, setPagoNotas] = useState("");
+  const [ajusteMonto, setAjusteMonto] = useState("");
+  const [ajusteNotas, setAjusteNotas] = useState("");
 
   // ── Queries
   const { data: clientes = [], isLoading } = useQuery({
@@ -284,6 +287,42 @@ export default function CuentasDeuda() {
     },
   });
 
+  const ajusteSaldo = useMutation({
+    mutationFn: async () => {
+      const uid = await getUserId(); if (!uid || !selectedCliente) throw new Error("No auth");
+      const monto = Number(ajusteMonto);
+      if (!monto || monto === 0) throw new Error("Monto inválido");
+
+      const nota = ajusteNotas || "Ajuste manual de saldo";
+
+      if (monto > 0) {
+        // Positive = add debt via ventas_credito
+        const { error } = await supabase.from("ventas_credito").insert({
+          user_id: uid, cliente_id: selectedCliente.id, total: monto,
+          notas: `[AJUSTE] ${nota}`,
+        } as any);
+        if (error) throw error;
+      } else {
+        // Negative = reduce debt via pagos_cuenta
+        const { error } = await supabase.from("pagos_cuenta").insert({
+          user_id: uid, cliente_id: selectedCliente.id, monto: Math.abs(monto),
+          notas: `[AJUSTE] ${nota}`,
+        } as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clientes-cuenta"] });
+      queryClient.invalidateQueries({ queryKey: ["ventas-credito", expandedId] });
+      queryClient.invalidateQueries({ queryKey: ["pagos-cuenta", expandedId] });
+      setAjusteDialog(false);
+      setAjusteMonto("");
+      setAjusteNotas("");
+      toast.success("Saldo ajustado correctamente");
+    },
+    onError: () => toast.error("Error al ajustar saldo"),
+  });
+
   // ── PIN helpers
   const requirePin = (description: string, action: () => void) => {
     setPinDescription(description);
@@ -318,6 +357,12 @@ export default function CuentasDeuda() {
     requirePin(
       `Registrar abono para "${c.nombre}". Saldo actual: ${COP(c.saldo_total)}`,
       () => { setSelectedCliente(c); setPagoDialog(true); }
+    );
+  };
+  const openAjuste = (c: Cliente) => {
+    requirePin(
+      `Ajustar manualmente el saldo de "${c.nombre}". Saldo actual: ${COP(c.saldo_total)}`,
+      () => { setSelectedCliente(c); setAjusteDialog(true); }
     );
   };
 
@@ -505,6 +550,12 @@ export default function CuentasDeuda() {
                       <Wallet className="h-3.5 w-3.5" /> Abono
                     </Button>
                     )}
+                    <Button size="icon" variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10"
+                      title="Ajustar saldo"
+                      onClick={() => openAjuste(c)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                     <Button size="icon" variant="ghost"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => toggleExpand(c.id)}>
@@ -708,6 +759,52 @@ export default function CuentasDeuda() {
               )}
               disabled={!pagoMonto || savePago.isPending}>
               {savePago.isPending ? "Registrando..." : "Registrar abono"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: Ajustar Saldo ── */}
+      <Dialog open={ajusteDialog} onOpenChange={v => { setAjusteDialog(v); if (!v) { setAjusteMonto(""); setAjusteNotas(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-amber-400" />
+              Ajustar Saldo — {selectedCliente?.nombre}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            {selectedCliente && (
+              <div className="rounded-lg bg-muted/50 border border-border p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Saldo actual</p>
+                <p className={`font-bold text-xl ${selectedCliente.saldo_total > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                  {COP(selectedCliente.saldo_total)}
+                </p>
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label className="text-xs">Monto del ajuste *</Label>
+              <Input type="number" placeholder="Ej: 50000 o -20000" value={ajusteMonto}
+                onChange={e => setAjusteMonto(e.target.value)} className="text-lg font-bold" />
+              <p className="text-[10px] text-muted-foreground">Positivo = sumar deuda · Negativo = reducir deuda</p>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Motivo del ajuste</Label>
+              <Textarea rows={2} placeholder="Ej: Deuda previa al sistema, corrección de saldo..." value={ajusteNotas}
+                onChange={e => setAjusteNotas(e.target.value)} />
+            </div>
+            {ajusteMonto && selectedCliente && (
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-sm flex justify-between">
+                <p className="text-xs text-muted-foreground">Saldo resultante</p>
+                <p className="font-bold text-amber-400">
+                  {COP(selectedCliente.saldo_total + Number(ajusteMonto))}
+                </p>
+              </div>
+            )}
+            <Button className="w-full"
+              onClick={() => ajusteSaldo.mutate()}
+              disabled={!ajusteMonto || Number(ajusteMonto) === 0 || ajusteSaldo.isPending}>
+              {ajusteSaldo.isPending ? "Aplicando..." : "Aplicar ajuste"}
             </Button>
           </div>
         </DialogContent>
