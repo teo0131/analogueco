@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Trash2, ChevronDown, ChevronUp, UserPlus,
   ShoppingCart, Wallet, Receipt, AlertCircle, CheckCircle2,
-  Phone, Mail, TrendingDown, TrendingUp, X, Coffee,
+  Phone, Mail, TrendingDown, TrendingUp, X, Coffee, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
