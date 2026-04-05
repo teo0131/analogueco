@@ -131,7 +131,7 @@ const POS = () => {
 
   // ── Cargar a cuenta de deuda ─────────────────────────────────────
   const [showDeudaSelector, setShowDeudaSelector] = useState(false);
-  const [clientes, setClientes] = useState<Array<{ id: string; nombre: string; saldo_total: number; telefono: string | null }>>([]);
+  const [clientes, setClientes] = useState<Array<{ id: string; nombre: string; saldo_total: number; telefono: string | null; tipo_cuenta: string }>>([]);
   const [selectedClienteDeuda, setSelectedClienteDeuda] = useState<string>("");
   const [loadingClientes, setLoadingClientes] = useState(false);
   const [cargandoDeuda, setCargandoDeuda] = useState(false);
@@ -1049,12 +1049,11 @@ const POS = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("clientes_cuenta")
-        .select("id, nombre, saldo_total, telefono")
+        .select("id, nombre, saldo_total, telefono, tipo_cuenta")
         .eq("user_id", user.id)
-        .eq("estado", "activo") as any)
-        .neq("tipo_cuenta", "consumo_interno")
+        .eq("estado", "activo")
         .order("nombre");
       setClientes((data ?? []) as any[]);
     } catch {
@@ -1106,7 +1105,7 @@ const POS = () => {
           user_id: user.id,
           numero_orden: orderNumber,
           total,
-          comentario: `[CUENTA CLIENTE] ${pendingOrderComment || ""}`,
+          comentario: `[${clientes.find(c => c.id === selectedClienteDeuda)?.tipo_cuenta === "consumo_interno" ? "CONSUMO INTERNO" : "CUENTA CLIENTE"}] ${pendingOrderComment || ""}`,
           fecha: new Date().toISOString(),
         })
         .select()
@@ -1645,7 +1644,12 @@ const POS = () => {
                         : "border-border hover:border-amber-500/30 hover:bg-muted/50"}`}
                   >
                     <div>
-                      <p className="text-sm font-medium">{c.nombre}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium">{c.nombre}</p>
+                        {c.tipo_cuenta === "consumo_interno" && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-500/10 text-blue-400 border-blue-500/30">Interno</Badge>
+                        )}
+                      </div>
                       {c.telefono && <p className="text-xs text-muted-foreground">{c.telefono}</p>}
                     </div>
                     <div className="text-right shrink-0">
