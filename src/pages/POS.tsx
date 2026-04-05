@@ -1644,7 +1644,12 @@ const POS = () => {
                         : "border-border hover:border-amber-500/30 hover:bg-muted/50"}`}
                   >
                     <div>
-                      <p className="text-sm font-medium">{c.nombre}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium">{c.nombre}</p>
+                        {c.tipo_cuenta === "consumo_interno" && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-500/10 text-blue-400 border-blue-500/30">Interno</Badge>
+                        )}
+                      </div>
                       {c.telefono && <p className="text-xs text-muted-foreground">{c.telefono}</p>}
                     </div>
                     <div className="text-right shrink-0">
