@@ -376,10 +376,18 @@ export default function CuentasDeuda() {
                     onChange={e => setClienteForm(p => ({ ...p, email: e.target.value }))} />
                 </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Notas</Label>
-                <Textarea rows={2} placeholder={isInterno ? "Cargo, área, etc." : "Observaciones..."} value={clienteForm.notas}
-                  onChange={e => setClienteForm(p => ({ ...p, notas: e.target.value }))} />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Notas</Label>
+                  <Textarea rows={2} placeholder={isInterno ? "Cargo, área, etc." : "Observaciones..."} value={clienteForm.notas}
+                    onChange={e => setClienteForm(p => ({ ...p, notas: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Saldo inicial</Label>
+                  <Input type="number" placeholder="0" value={clienteForm.saldo_inicial}
+                    onChange={e => setClienteForm(p => ({ ...p, saldo_inicial: e.target.value }))} />
+                  <p className="text-[10px] text-muted-foreground">Deuda previa (opcional)</p>
+                </div>
               </div>
               {isInterno && (
                 <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-3 text-xs text-blue-300">
