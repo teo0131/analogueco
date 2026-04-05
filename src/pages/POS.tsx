@@ -1072,9 +1072,11 @@ const POS = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No auth");
 
+      const clienteData = clientes.find(c => c.id === selectedClienteDeuda);
+      const esInterno = clienteData?.tipo_cuenta === "consumo_interno";
       const total = pendingOrderItems.reduce((s, i) => s + i.price, 0);
 
-      // 1. Create ventas_credito header
+      // 1. Create ventas_credito header (traceability for both types)
       const { data: venta, error: ve } = await supabase
         .from("ventas_credito")
         .insert({
@@ -1098,37 +1100,72 @@ const POS = () => {
       const { error: de } = await supabase.from("detalle_ventas_credito").insert(detalles);
       if (de) throw de;
 
-      // 3. Also register as completed POS order
-      const { data: newOrder, error: oe } = await supabase
-        .from("ordenes_pos")
-        .insert({
-          user_id: user.id,
-          numero_orden: orderNumber,
-          total,
-          comentario: `[${clientes.find(c => c.id === selectedClienteDeuda)?.tipo_cuenta === "consumo_interno" ? "CONSUMO INTERNO" : "CUENTA CLIENTE"}] ${pendingOrderComment || ""}`,
-          fecha: new Date().toISOString(),
-        })
-        .select()
-        .single();
-      if (oe) throw oe;
+      // 3. Deduct inventory for ALL account types
+      const stockWarnings: string[] = [];
+      for (const item of pendingOrderItems) {
+        if (item.tipo_item === 'retail') {
+          const { data: menuItemData } = await supabase
+            .from("menu_items").select("stock_actual").eq("id", item.id).single();
+          if (menuItemData) {
+            if (menuItemData.stock_actual <= 0) stockWarnings.push(`⚠️ ${item.name}: SIN STOCK`);
+            else if (menuItemData.stock_actual < 3) stockWarnings.push(`⚡ ${item.name}: Stock bajo`);
+            await supabase.from("menu_items").update({ stock_actual: menuItemData.stock_actual - 1 }).eq("id", item.id);
+          }
+        } else if (item.tipo_item === 'receta') {
+          const { data: recetaData } = await supabase
+            .from("recetas")
+            .select(`id, detalle_recetas (insumo_id, cantidad_insumo_por_unidad, insumo:productos!detalle_recetas_insumo_id_fkey (id, nombre, stock_actual, costo_promedio))`)
+            .eq("menu_item_id", item.id).maybeSingle();
+          if (recetaData?.detalle_recetas) {
+            for (const dr of recetaData.detalle_recetas) {
+              const insumo = dr.insumo as any;
+              const cant = dr.cantidad_insumo_por_unidad;
+              if (insumo.stock_actual <= 0) stockWarnings.push(`⚠️ ${insumo.nombre}: SIN STOCK`);
+              else if (insumo.stock_actual < cant) stockWarnings.push(`⚠️ ${insumo.nombre}: Stock insuficiente`);
+              const nuevoStock = insumo.stock_actual - cant;
+              await supabase.from("productos").update({ stock_actual: nuevoStock }).eq("id", insumo.id);
+              await supabase.from("movimientos_inventario").insert({
+                producto_id: insumo.id, tipo_movimiento: "consumo", cantidad: cant,
+                stock_resultante: nuevoStock, costo_unitario_referencia: insumo.costo_promedio,
+                referencia: esInterno ? `Consumo Interno - #${orderNumber}` : `Cuenta Cliente - #${orderNumber}`,
+                notas: `Consumo para: ${item.name}`, user_id: user.id,
+              });
+            }
+          }
+        }
+      }
 
-      await supabase.from("detalle_ordenes_pos").insert(
-        pendingOrderItems.map(i => ({
-          orden_id: newOrder.id,
-          menu_item_id: i.id,
-          nombre_item: i.name,
-          precio_unitario: i.price,
-          cantidad: 1,
-          subtotal: i.price,
-        }))
-      );
+      if (stockWarnings.length > 0) {
+        toast.warning("Alerta de inventario", { description: stockWarnings.slice(0, 3).join('\n'), duration: 5000 });
+      }
 
-      const clienteNombre = clientes.find(c => c.id === selectedClienteDeuda)?.nombre ?? "cliente";
-      setCompletedOrders(prev => [{
-        id: newOrder.id, orderNumber, total,
-        items: pendingOrderItems.map(i => ({ name: i.name, price: i.price })),
-        comment: pendingOrderComment, timestamp: new Date(),
-      }, ...prev]);
+      // 4. Only register POS order for REAL client accounts (not internal consumption)
+      if (!esInterno) {
+        const { data: newOrder, error: oe } = await supabase
+          .from("ordenes_pos")
+          .insert({
+            user_id: user.id, numero_orden: orderNumber, total,
+            comentario: `[CUENTA CLIENTE] ${pendingOrderComment || ""}`,
+            fecha: new Date().toISOString(),
+          })
+          .select().single();
+        if (oe) throw oe;
+
+        await supabase.from("detalle_ordenes_pos").insert(
+          pendingOrderItems.map(i => ({
+            orden_id: newOrder.id, menu_item_id: i.id, nombre_item: i.name,
+            precio_unitario: i.price, cantidad: 1, subtotal: i.price,
+          }))
+        );
+
+        setCompletedOrders(prev => [{
+          id: newOrder.id, orderNumber, total,
+          items: pendingOrderItems.map(i => ({ name: i.name, price: i.price })),
+          comment: pendingOrderComment, timestamp: new Date(),
+        }, ...prev]);
+      }
+
+      const clienteNombre = clienteData?.nombre ?? "cliente";
       setOrderNumber(orderNumber + 1);
       setCurrentItems([]);
       setComment("");
@@ -1137,7 +1174,9 @@ const POS = () => {
       setShowCompleteOptions(false);
       setShowDeudaSelector(false);
       setSelectedClienteDeuda("");
-      toast.success(`Cargado a la cuenta de ${clienteNombre}`);
+      toast.success(esInterno
+        ? `Consumo interno registrado para ${clienteNombre} (sin facturación)`
+        : `Cargado a la cuenta de ${clienteNombre}`);
     } catch (e: any) {
       toast.error("Error al cargar a deuda");
       console.error(e);
