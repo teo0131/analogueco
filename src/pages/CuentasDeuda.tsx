@@ -99,6 +99,7 @@ export default function CuentasDeuda() {
   const [clienteDialog, setClienteDialog] = useState(false);
   const [ventaDialog, setVentaDialog] = useState(false);
   const [pagoDialog, setPagoDialog] = useState(false);
+  const [ajusteDialog, setAjusteDialog] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -114,6 +115,8 @@ export default function CuentasDeuda() {
   const [ventaNotas, setVentaNotas] = useState("");
   const [pagoMonto, setPagoMonto] = useState("");
   const [pagoNotas, setPagoNotas] = useState("");
+  const [ajusteMonto, setAjusteMonto] = useState("");
+  const [ajusteNotas, setAjusteNotas] = useState("");
 
   // ── Queries
   const { data: clientes = [], isLoading } = useQuery({
