@@ -131,7 +131,7 @@ const POS = () => {
 
   // ── Cargar a cuenta de deuda ─────────────────────────────────────
   const [showDeudaSelector, setShowDeudaSelector] = useState(false);
-  const [clientes, setClientes] = useState<Array<{ id: string; nombre: string; saldo_total: number; telefono: string | null }>>([]);
+  const [clientes, setClientes] = useState<Array<{ id: string; nombre: string; saldo_total: number; telefono: string | null; tipo_cuenta: string }>>([]);
   const [selectedClienteDeuda, setSelectedClienteDeuda] = useState<string>("");
   const [loadingClientes, setLoadingClientes] = useState(false);
   const [cargandoDeuda, setCargandoDeuda] = useState(false);
