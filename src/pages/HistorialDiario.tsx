@@ -295,7 +295,7 @@ const HistorialDiario = () => {
     return warnings;
   };
 
-  const handleSaveSale = async () => {
+  const handleSaveSale = async (keepOpen = false) => {
     if (cart.length === 0) {
       toast({ title: "Carrito vacío", description: "Agrega al menos un producto", variant: "destructive" });
       return;
@@ -390,8 +390,16 @@ const HistorialDiario = () => {
           toast({ title: "Stock", description: w, variant: "destructive" }));
       }
 
-      setShowSaleDialog(false);
-      setTargetOrder(null);
+      if (keepOpen && saleMode === "add") {
+        // Limpiar carrito y datos de cliente, mantener fecha/hora/mesa/método para registro en cadena
+        setCart([]);
+        setSaleCliente("");
+        setSaleComment("");
+        setSearchTerm("");
+      } else {
+        setShowSaleDialog(false);
+        setTargetOrder(null);
+      }
       fetchOrdersForDate();
     } catch (e) {
       console.error(e);
@@ -752,9 +760,18 @@ const HistorialDiario = () => {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setShowSaleDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSaveSale} disabled={saving || cart.length === 0}>
+            {saleMode === "add" && (
+              <Button
+                variant="secondary"
+                onClick={() => handleSaveSale(true)}
+                disabled={saving || cart.length === 0}
+              >
+                {saving ? "Guardando..." : "Guardar y registrar otra"}
+              </Button>
+            )}
+            <Button onClick={() => handleSaveSale(false)} disabled={saving || cart.length === 0}>
               {saving ? "Guardando..." : saleMode === "add" ? "Registrar Venta" : "Guardar Cambios"}
             </Button>
           </DialogFooter>
