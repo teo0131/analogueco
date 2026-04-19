@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, FileDown, Cloud, ChevronDown, ChevronUp, Plus, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileDown, Cloud, ChevronDown, ChevronUp, Plus, Pencil, Trash2, Search, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfDay, endOfDay, addDays, subDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -11,18 +11,11 @@ import * as XLSX from "xlsx";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { PinVerificationDialog } from "@/components/PinVerificationDialog";
 
 interface OrderDetail {
@@ -31,6 +24,7 @@ interface OrderDetail {
   cantidad: number;
   precio_unitario: number;
   subtotal: number;
+  menu_item_id?: string | null;
 }
 
 interface Order {
@@ -42,13 +36,23 @@ interface Order {
   detalles: OrderDetail[];
 }
 
-interface ManualItem {
-  nombre_item: string;
-  cantidad: number;
-  precio_unitario: number;
+interface MenuItem {
+  id: string;
+  nombre: string;
+  precio: number;
+  categoria: string | null;
+  tipo_item: string;
+  stock_actual: number;
+  es_activo: boolean;
 }
 
-const emptyItem = (): ManualItem => ({ nombre_item: "", cantidad: 1, precio_unitario: 0 });
+interface CartItem {
+  menu_item_id: string;
+  nombre_item: string;
+  precio_unitario: number;
+  cantidad: number;
+  tipo_item: string;
+}
 
 const HistorialDiario = () => {
   const navigate = useNavigate();
@@ -60,97 +64,95 @@ const HistorialDiario = () => {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [savingToDrive, setSavingToDrive] = useState(false);
 
-  // PIN dialog state
+  // PIN
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<"add" | "edit" | null>(null);
   const [targetOrder, setTargetOrder] = useState<Order | null>(null);
 
-  // Manual sale dialog
-  const [showManualDialog, setShowManualDialog] = useState(false);
-  const [manualComment, setManualComment] = useState("");
-  const [manualItems, setManualItems] = useState<ManualItem[]>([emptyItem()]);
-  const [savingManual, setSavingManual] = useState(false);
+  // Menu
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [mesas, setMesas] = useState<{ id: string; numero_mesa: number; nombre: string | null }[]>([]);
 
-  // Edit order dialog
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editComment, setEditComment] = useState("");
-  const [editItems, setEditItems] = useState<ManualItem[]>([emptyItem()]);
-  const [savingEdit, setSavingEdit] = useState(false);
+  // Sale dialog (POS-like)
+  const [showSaleDialog, setShowSaleDialog] = useState(false);
+  const [saleMode, setSaleMode] = useState<"add" | "edit">("add");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("Todas");
+  const [saleHora, setSaleHora] = useState("12:00");
+  const [saleMesa, setSaleMesa] = useState<string>("none");
+  const [saleCliente, setSaleCliente] = useState("");
+  const [saleMetodoPago, setSaleMetodoPago] = useState<string>("Efectivo");
+  const [saleComment, setSaleComment] = useState("");
+  const [adjustInventory, setAdjustInventory] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchOrdersForDate();
-  }, [selectedDate]);
+  useEffect(() => { fetchOrdersForDate(); }, [selectedDate]);
+  useEffect(() => { fetchMenu(); fetchMesas(); }, []);
+
+  const fetchMenu = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("menu_items")
+      .select("id, nombre, precio, categoria, tipo_item, stock_actual, es_activo")
+      .eq("user_id", user.id)
+      .eq("es_activo", true)
+      .order("orden_display", { ascending: true });
+    setMenuItems(data || []);
+  };
+
+  const fetchMesas = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("mesas")
+      .select("id, numero_mesa, nombre")
+      .eq("user_id", user.id)
+      .eq("es_activa", true)
+      .order("numero_mesa", { ascending: true });
+    setMesas(data || []);
+  };
 
   const fetchOrdersForDate = async () => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
       const dayStart = startOfDay(selectedDate).toISOString();
       const dayEnd = endOfDay(selectedDate).toISOString();
-
-      const { data: ordersData, error: ordersError } = await supabase
+      const { data: ordersData, error } = await supabase
         .from("ordenes_pos")
         .select("*")
         .eq("user_id", user.id)
         .gte("fecha", dayStart)
         .lte("fecha", dayEnd)
         .order("fecha", { ascending: true });
-
-      if (ordersError) throw ordersError;
-
-      const ordersWithDetails: Order[] = [];
-
+      if (error) throw error;
+      const out: Order[] = [];
       for (const order of ordersData || []) {
-        const { data: detalles, error: detallesError } = await supabase
-          .from("detalle_ordenes_pos")
-          .select("*")
-          .eq("orden_id", order.id);
-
-        if (detallesError) throw detallesError;
-
-        ordersWithDetails.push({
-          ...order,
-          detalles: detalles || [],
-        });
+        const { data: detalles } = await supabase
+          .from("detalle_ordenes_pos").select("*").eq("orden_id", order.id);
+        out.push({ ...order, detalles: detalles || [] });
       }
-
-      setOrders(ordersWithDetails);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las órdenes",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+      setOrders(out);
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "No se pudieron cargar las órdenes", variant: "destructive" });
+    } finally { setLoading(false); }
   };
 
-  const toggleOrderExpanded = (orderId: string) => {
-    const newExpanded = new Set(expandedOrders);
-    if (newExpanded.has(orderId)) {
-      newExpanded.delete(orderId);
-    } else {
-      newExpanded.add(orderId);
-    }
-    setExpandedOrders(newExpanded);
+  const toggleOrderExpanded = (id: string) => {
+    const s = new Set(expandedOrders);
+    s.has(id) ? s.delete(id) : s.add(id);
+    setExpandedOrders(s);
   };
 
-  const totalDiario = orders.reduce((sum, order) => sum + Number(order.total), 0);
+  const totalDiario = orders.reduce((s, o) => s + Number(o.total), 0);
+  const formatPrice = (p: number) =>
+    new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(p);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
-
-  // ─── PIN flow ────────────────────────────────────────────────────────────────
-
+  // ─── PIN ───
   const requestPin = (action: "add" | "edit", order?: Order) => {
     setPendingAction(action);
     if (order) setTargetOrder(order);
@@ -159,410 +161,334 @@ const HistorialDiario = () => {
 
   const handlePinSuccess = () => {
     if (pendingAction === "add") {
-      setManualItems([emptyItem()]);
-      setManualComment("");
-      setShowManualDialog(true);
+      openSaleDialog("add");
     } else if (pendingAction === "edit" && targetOrder) {
-      setEditComment(targetOrder.comentario || "");
-      setEditItems(
-        targetOrder.detalles.length > 0
-          ? targetOrder.detalles.map((d) => ({
-              nombre_item: d.nombre_item,
-              cantidad: d.cantidad,
-              precio_unitario: d.precio_unitario,
-            }))
-          : [emptyItem()]
-      );
-      setShowEditDialog(true);
+      openSaleDialog("edit", targetOrder);
     }
     setPendingAction(null);
   };
 
-  // ─── Manual sale ─────────────────────────────────────────────────────────────
+  // ─── Sale dialog ───
+  const openSaleDialog = (mode: "add" | "edit", order?: Order) => {
+    setSaleMode(mode);
+    setSearchTerm("");
+    setSelectedCategory("Todas");
+    setAdjustInventory(mode === "add"); // por defecto descuenta solo en nueva venta
+    if (mode === "add") {
+      setCart([]);
+      setSaleHora(format(new Date(), "HH:mm"));
+      setSaleMesa("none");
+      setSaleCliente("");
+      setSaleMetodoPago("Efectivo");
+      setSaleComment("");
+    } else if (order) {
+      // Cargar detalles existentes al carrito
+      setCart(order.detalles.map(d => ({
+        menu_item_id: d.menu_item_id || "",
+        nombre_item: d.nombre_item,
+        precio_unitario: Number(d.precio_unitario),
+        cantidad: Number(d.cantidad),
+        tipo_item: "manual",
+      })));
+      setSaleHora(format(new Date(order.fecha), "HH:mm"));
+      setSaleMesa("none");
+      setSaleCliente("");
+      setSaleMetodoPago("Efectivo");
+      setSaleComment(order.comentario || "");
+    }
+    setShowSaleDialog(true);
+  };
 
-  const manualTotal = manualItems.reduce(
-    (s, i) => s + Number(i.cantidad) * Number(i.precio_unitario),
-    0
-  );
+  const categories = useMemo(() => {
+    const set = new Set<string>(["Todas"]);
+    menuItems.forEach(i => i.categoria && set.add(i.categoria));
+    return Array.from(set);
+  }, [menuItems]);
 
-  const handleAddManualItem = () =>
-    setManualItems((prev) => [...prev, emptyItem()]);
+  const filteredMenu = useMemo(() => {
+    return menuItems.filter(i => {
+      const matchCat = selectedCategory === "Todas" || i.categoria === selectedCategory;
+      const matchSearch = !searchTerm || i.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchCat && matchSearch;
+    });
+  }, [menuItems, searchTerm, selectedCategory]);
 
-  const handleRemoveManualItem = (idx: number) =>
-    setManualItems((prev) => prev.filter((_, i) => i !== idx));
+  const addToCart = (item: MenuItem) => {
+    setCart(prev => {
+      const existing = prev.find(c => c.menu_item_id === item.id);
+      if (existing) {
+        return prev.map(c => c.menu_item_id === item.id ? { ...c, cantidad: c.cantidad + 1 } : c);
+      }
+      return [...prev, {
+        menu_item_id: item.id,
+        nombre_item: item.nombre,
+        precio_unitario: Number(item.precio),
+        cantidad: 1,
+        tipo_item: item.tipo_item,
+      }];
+    });
+  };
 
-  const handleManualItemChange = (
-    idx: number,
-    field: keyof ManualItem,
-    value: string | number
-  ) =>
-    setManualItems((prev) =>
-      prev.map((item, i) => (i === idx ? { ...item, [field]: value } : item))
-    );
+  const updateCartQty = (idx: number, delta: number) => {
+    setCart(prev => prev.map((c, i) => {
+      if (i !== idx) return c;
+      const newQty = c.cantidad + delta;
+      return newQty <= 0 ? c : { ...c, cantidad: newQty };
+    }).filter((c, i) => i !== idx || c.cantidad > 0));
+  };
 
-  const handleSaveManual = async () => {
-    if (manualItems.some((i) => !i.nombre_item.trim())) {
-      toast({ title: "Error", description: "Todos los ítems deben tener nombre", variant: "destructive" });
+  const removeCartItem = (idx: number) =>
+    setCart(prev => prev.filter((_, i) => i !== idx));
+
+  const cartTotal = cart.reduce((s, c) => s + c.cantidad * c.precio_unitario, 0);
+
+  const discountInventoryFor = async (
+    cartItems: CartItem[],
+    userId: string,
+    refLabel: string
+  ): Promise<string[]> => {
+    const warnings: string[] = [];
+    for (const ci of cartItems) {
+      if (!ci.menu_item_id) continue;
+      const { data: menuItem } = await supabase
+        .from("menu_items")
+        .select("id, nombre, tipo_item, stock_actual")
+        .eq("id", ci.menu_item_id)
+        .maybeSingle();
+      if (!menuItem) continue;
+
+      if (menuItem.tipo_item === "retail") {
+        if (menuItem.stock_actual <= 0)
+          warnings.push(`⚠️ ${menuItem.nombre}: SIN STOCK`);
+        const nuevoStock = Number(menuItem.stock_actual) - ci.cantidad;
+        await supabase.from("menu_items").update({ stock_actual: nuevoStock }).eq("id", menuItem.id);
+      } else if (menuItem.tipo_item === "receta") {
+        const { data: recetaData } = await supabase
+          .from("recetas")
+          .select(`id, detalle_recetas (insumo_id, cantidad_insumo_por_unidad, insumo:productos!detalle_recetas_insumo_id_fkey (id, nombre, stock_actual, costo_promedio))`)
+          .eq("menu_item_id", menuItem.id)
+          .maybeSingle();
+        if (recetaData && (recetaData as any).detalle_recetas) {
+          for (const dr of (recetaData as any).detalle_recetas) {
+            const insumo = dr.insumo as any;
+            const cantidadRequerida = dr.cantidad_insumo_por_unidad * ci.cantidad;
+            if (insumo.stock_actual <= 0)
+              warnings.push(`⚠️ ${insumo.nombre} (${menuItem.nombre}): SIN STOCK`);
+            else if (insumo.stock_actual < cantidadRequerida)
+              warnings.push(`⚠️ ${insumo.nombre}: Stock insuficiente`);
+            const nuevoStock = insumo.stock_actual - cantidadRequerida;
+            await supabase.from("productos").update({ stock_actual: nuevoStock }).eq("id", insumo.id);
+            await supabase.from("movimientos_inventario").insert({
+              producto_id: insumo.id,
+              tipo_movimiento: "consumo",
+              cantidad: cantidadRequerida,
+              stock_resultante: nuevoStock,
+              costo_unitario_referencia: insumo.costo_promedio,
+              referencia: refLabel,
+              notas: `Consumo para: ${menuItem.nombre}`,
+              user_id: userId,
+            });
+          }
+        }
+      }
+    }
+    return warnings;
+  };
+
+  const handleSaveSale = async () => {
+    if (cart.length === 0) {
+      toast({ title: "Carrito vacío", description: "Agrega al menos un producto", variant: "destructive" });
       return;
     }
-    setSavingManual(true);
+    setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get max numero_orden for this user
-      const { data: maxData } = await supabase
-        .from("ordenes_pos")
-        .select("numero_orden")
-        .eq("user_id", user.id)
-        .order("numero_orden", { ascending: false })
-        .limit(1);
-
-      const nextNum = maxData && maxData.length > 0 ? maxData[0].numero_orden + 1 : 1;
-
-      // Set timestamp to noon of selected date to preserve the date
+      // Combinar fecha seleccionada + hora del input
+      const [hh, mm] = saleHora.split(":").map(Number);
       const fechaOrden = new Date(selectedDate);
-      fechaOrden.setHours(12, 0, 0, 0);
+      fechaOrden.setHours(hh || 12, mm || 0, 0, 0);
 
-      const { data: newOrder, error: orderError } = await supabase
-        .from("ordenes_pos")
-        .insert({
-          user_id: user.id,
-          numero_orden: nextNum,
-          total: manualTotal,
-          fecha: fechaOrden.toISOString(),
-          comentario: manualComment || null,
-        })
-        .select()
-        .single();
+      // Comentario compuesto
+      const partes: string[] = [];
+      if (saleMesa !== "none") {
+        const m = mesas.find(x => x.id === saleMesa);
+        if (m) partes.push(`Mesa: ${m.numero_mesa}${m.nombre ? ` (${m.nombre})` : ""}`);
+      }
+      if (saleCliente.trim()) partes.push(`Cliente: ${saleCliente.trim()}`);
+      if (saleMetodoPago) partes.push(`Pago: ${saleMetodoPago}`);
+      if (saleComment.trim()) partes.push(saleComment.trim());
+      const comentarioFinal = partes.join(" — ") || null;
 
-      if (orderError) throw orderError;
+      let orderId: string;
+      let orderNumber: number;
 
-      const detallesInsert = manualItems.map((item) => ({
-        orden_id: newOrder.id,
-        nombre_item: item.nombre_item.trim(),
-        cantidad: Number(item.cantidad),
-        precio_unitario: Number(item.precio_unitario),
-        subtotal: Number(item.cantidad) * Number(item.precio_unitario),
-      }));
+      if (saleMode === "add") {
+        const { data: maxData } = await supabase
+          .from("ordenes_pos").select("numero_orden")
+          .eq("user_id", user.id).order("numero_orden", { ascending: false }).limit(1);
+        orderNumber = maxData && maxData.length > 0 ? maxData[0].numero_orden + 1 : 1;
 
-      const { error: detError } = await supabase
-        .from("detalle_ordenes_pos")
-        .insert(detallesInsert);
+        const { data: newOrder, error } = await supabase
+          .from("ordenes_pos")
+          .insert({
+            user_id: user.id,
+            numero_orden: orderNumber,
+            total: cartTotal,
+            fecha: fechaOrden.toISOString(),
+            comentario: comentarioFinal,
+          }).select().single();
+        if (error) throw error;
+        orderId = newOrder.id;
 
-      if (detError) throw detError;
+        const detalles = cart.map(c => ({
+          orden_id: orderId,
+          menu_item_id: c.menu_item_id || null,
+          nombre_item: c.nombre_item,
+          cantidad: c.cantidad,
+          precio_unitario: c.precio_unitario,
+          subtotal: c.cantidad * c.precio_unitario,
+        }));
+        const { error: detErr } = await supabase.from("detalle_ordenes_pos").insert(detalles);
+        if (detErr) throw detErr;
+      } else {
+        if (!targetOrder) return;
+        orderId = targetOrder.id;
+        orderNumber = targetOrder.numero_orden;
 
-      toast({ title: "Venta ingresada", description: `Orden #${nextNum} registrada correctamente` });
-      setShowManualDialog(false);
-      fetchOrdersForDate();
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error", description: "No se pudo guardar la venta", variant: "destructive" });
-    } finally {
-      setSavingManual(false);
-    }
-  };
+        const { error: upErr } = await supabase.from("ordenes_pos")
+          .update({ total: cartTotal, comentario: comentarioFinal, fecha: fechaOrden.toISOString() })
+          .eq("id", orderId);
+        if (upErr) throw upErr;
 
-  // ─── Edit order ──────────────────────────────────────────────────────────────
+        await supabase.from("detalle_ordenes_pos").delete().eq("orden_id", orderId);
+        const detalles = cart.map(c => ({
+          orden_id: orderId,
+          menu_item_id: c.menu_item_id || null,
+          nombre_item: c.nombre_item,
+          cantidad: c.cantidad,
+          precio_unitario: c.precio_unitario,
+          subtotal: c.cantidad * c.precio_unitario,
+        }));
+        const { error: detErr } = await supabase.from("detalle_ordenes_pos").insert(detalles);
+        if (detErr) throw detErr;
+      }
 
-  const editTotal = editItems.reduce(
-    (s, i) => s + Number(i.cantidad) * Number(i.precio_unitario),
-    0
-  );
+      // Inventario
+      let warnings: string[] = [];
+      if (adjustInventory) {
+        warnings = await discountInventoryFor(cart, user.id, `Venta Manual - Orden #${orderNumber}`);
+      }
 
-  const handleAddEditItem = () =>
-    setEditItems((prev) => [...prev, emptyItem()]);
+      toast({
+        title: saleMode === "add" ? "Venta registrada" : "Orden actualizada",
+        description: `Orden #${orderNumber} · ${formatPrice(cartTotal)}${warnings.length ? ` · ${warnings.length} aviso(s) de stock` : ""}`,
+      });
+      if (warnings.length) {
+        warnings.slice(0, 3).forEach(w =>
+          toast({ title: "Stock", description: w, variant: "destructive" }));
+      }
 
-  const handleRemoveEditItem = (idx: number) =>
-    setEditItems((prev) => prev.filter((_, i) => i !== idx));
-
-  const handleEditItemChange = (
-    idx: number,
-    field: keyof ManualItem,
-    value: string | number
-  ) =>
-    setEditItems((prev) =>
-      prev.map((item, i) => (i === idx ? { ...item, [field]: value } : item))
-    );
-
-  const handleSaveEdit = async () => {
-    if (!targetOrder) return;
-    if (editItems.some((i) => !i.nombre_item.trim())) {
-      toast({ title: "Error", description: "Todos los ítems deben tener nombre", variant: "destructive" });
-      return;
-    }
-    setSavingEdit(true);
-    try {
-      // Update order header
-      const { error: orderError } = await supabase
-        .from("ordenes_pos")
-        .update({ total: editTotal, comentario: editComment || null })
-        .eq("id", targetOrder.id);
-
-      if (orderError) throw orderError;
-
-      // Delete old details and reinsert
-      const { error: delError } = await supabase
-        .from("detalle_ordenes_pos")
-        .delete()
-        .eq("orden_id", targetOrder.id);
-
-      if (delError) throw delError;
-
-      const detallesInsert = editItems.map((item) => ({
-        orden_id: targetOrder.id,
-        nombre_item: item.nombre_item.trim(),
-        cantidad: Number(item.cantidad),
-        precio_unitario: Number(item.precio_unitario),
-        subtotal: Number(item.cantidad) * Number(item.precio_unitario),
-      }));
-
-      const { error: detError } = await supabase
-        .from("detalle_ordenes_pos")
-        .insert(detallesInsert);
-
-      if (detError) throw detError;
-
-      toast({ title: "Orden actualizada", description: `Orden #${targetOrder.numero_orden} editada correctamente` });
-      setShowEditDialog(false);
+      setShowSaleDialog(false);
       setTargetOrder(null);
       fetchOrdersForDate();
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error", description: "No se pudo editar la orden", variant: "destructive" });
-    } finally {
-      setSavingEdit(false);
-    }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "No se pudo guardar la venta", variant: "destructive" });
+    } finally { setSaving(false); }
   };
 
-  // ─── Export ──────────────────────────────────────────────────────────────────
-
+  // ─── Export ───
   const handleExportToExcel = () => {
     if (orders.length === 0) {
       toast({ title: "Sin datos", description: "No hay órdenes para exportar en esta fecha", variant: "destructive" });
       return;
     }
-
     const exportData: any[] = [];
-
-    orders.forEach((order) => {
-      order.detalles.forEach((detalle) => {
+    orders.forEach(order => {
+      order.detalles.forEach(d => {
         exportData.push({
           "Número de Orden": order.numero_orden,
           "Hora": format(new Date(order.fecha), "HH:mm:ss"),
-          "Producto": detalle.nombre_item,
-          "Cantidad": detalle.cantidad,
-          "Precio Unitario": detalle.precio_unitario,
-          "Subtotal": detalle.subtotal,
+          "Producto": d.nombre_item,
+          "Cantidad": d.cantidad,
+          "Precio Unitario": d.precio_unitario,
+          "Subtotal": d.subtotal,
           "Total Orden": order.total,
           "Comentario": order.comentario || "",
         });
       });
     });
-
-    exportData.push({
-      "Número de Orden": "",
-      "Hora": "",
-      "Producto": "TOTAL DEL DÍA",
-      "Cantidad": "",
-      "Precio Unitario": "",
-      "Subtotal": "",
-      "Total Orden": totalDiario,
-      "Comentario": "",
-    });
-
+    exportData.push({ "Producto": "TOTAL DEL DÍA", "Total Orden": totalDiario });
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Órdenes");
-
-    const fileName = `ordenes_${format(selectedDate, "yyyy-MM-dd")}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-
-    toast({ title: "Exportado", description: `Archivo ${fileName} descargado correctamente` });
+    XLSX.writeFile(wb, `ordenes_${format(selectedDate, "yyyy-MM-dd")}.xlsx`);
+    toast({ title: "Exportado" });
   };
 
   const handleSaveToGoogleDrive = async () => {
-    if (!webhookUrl) {
-      toast({ title: "Error", description: "Por favor ingresa tu URL de webhook de Zapier", variant: "destructive" });
-      return;
-    }
-    if (orders.length === 0) {
-      toast({ title: "Sin datos", description: "No hay órdenes para guardar en esta fecha", variant: "destructive" });
-      return;
-    }
-
+    if (!webhookUrl) { toast({ title: "Error", description: "Ingresa el webhook", variant: "destructive" }); return; }
+    if (orders.length === 0) { toast({ title: "Sin datos", variant: "destructive" }); return; }
     setSavingToDrive(true);
     try {
-      const exportData = orders.map((order) => ({
-        numero_orden: order.numero_orden,
-        fecha: format(new Date(order.fecha), "yyyy-MM-dd HH:mm:ss"),
-        total: order.total,
-        comentario: order.comentario,
-        detalles: order.detalles.map((d) => ({
-          producto: d.nombre_item,
-          cantidad: d.cantidad,
-          precio_unitario: d.precio_unitario,
-          subtotal: d.subtotal,
-        })),
-      }));
-
       await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        mode: "no-cors",
+        method: "POST", headers: { "Content-Type": "application/json" }, mode: "no-cors",
         body: JSON.stringify({
           fecha: format(selectedDate, "yyyy-MM-dd"),
           total_diario: totalDiario,
-          ordenes: exportData,
-          timestamp: new Date().toISOString(),
+          ordenes: orders, timestamp: new Date().toISOString(),
         }),
       });
-
-      toast({ title: "Enviado", description: "Los datos fueron enviados a Zapier. Verifica tu Google Drive." });
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error", description: "No se pudo enviar a Google Drive", variant: "destructive" });
-    } finally {
-      setSavingToDrive(false);
-    }
+      toast({ title: "Enviado a Zapier" });
+    } catch { toast({ title: "Error", variant: "destructive" }); }
+    finally { setSavingToDrive(false); }
   };
 
-  // ─── Item rows helper ─────────────────────────────────────────────────────────
-
-  const ItemRows = ({
-    items,
-    onAdd,
-    onRemove,
-    onChange,
-    total,
-  }: {
-    items: ManualItem[];
-    onAdd: () => void;
-    onRemove: (i: number) => void;
-    onChange: (i: number, field: keyof ManualItem, value: string | number) => void;
-    total: number;
-  }) => (
-    <div className="space-y-3">
-      {items.map((item, idx) => (
-        <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-          <div className="col-span-5">
-            {idx === 0 && <Label className="text-xs mb-1 block">Producto</Label>}
-            <Input
-              placeholder="Nombre del producto"
-              value={item.nombre_item}
-              onChange={(e) => onChange(idx, "nombre_item", e.target.value)}
-            />
-          </div>
-          <div className="col-span-2">
-            {idx === 0 && <Label className="text-xs mb-1 block">Cant.</Label>}
-            <Input
-              type="number"
-              min={1}
-              value={item.cantidad}
-              onChange={(e) => onChange(idx, "cantidad", e.target.value)}
-            />
-          </div>
-          <div className="col-span-3">
-            {idx === 0 && <Label className="text-xs mb-1 block">Precio unit.</Label>}
-            <Input
-              type="number"
-              min={0}
-              value={item.precio_unitario}
-              onChange={(e) => onChange(idx, "precio_unitario", e.target.value)}
-            />
-          </div>
-          <div className="col-span-2 flex justify-end">
-            {idx === 0 && <div className="text-xs mb-1 block invisible">x</div>}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-destructive"
-              onClick={() => onRemove(idx)}
-              disabled={items.length === 1}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      ))}
-      <Button variant="outline" size="sm" onClick={onAdd} className="w-full mt-1">
-        <Plus className="h-4 w-4 mr-1" /> Agregar ítem
-      </Button>
-      <div className="flex justify-between items-center pt-2 border-t">
-        <span className="text-sm text-muted-foreground">Total calculado:</span>
-        <span className="text-lg font-bold text-primary">{formatPrice(total)}</span>
-      </div>
-    </div>
-  );
-
-  // ─── Render ───────────────────────────────────────────────────────────────────
-
+  // ─── Render ───
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
+            <ArrowLeft className="h-4 w-4 mr-2" /> Volver
           </Button>
           <h1 className="text-2xl font-bold text-foreground">Historial Diario</h1>
           <Button onClick={() => requestPin("add")} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Venta Manual
+            <Plus className="h-4 w-4 mr-2" /> Venta Manual
           </Button>
         </div>
 
-        {/* Date Navigation */}
         <Card className="mb-6">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <Button variant="outline" onClick={() => setSelectedDate(subDays(selectedDate, 1))}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Anterior
+                <ArrowLeft className="h-4 w-4 mr-2" /> Anterior
               </Button>
               <div className="text-center">
-                <p className="text-lg font-semibold text-foreground">
-                  {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {orders.length} orden{orders.length !== 1 ? "es" : ""}
-                </p>
+                <p className="text-lg font-semibold">{format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                <p className="text-sm text-muted-foreground">{orders.length} orden{orders.length !== 1 ? "es" : ""}</p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-                disabled={selectedDate >= new Date()}
-              >
-                Siguiente
-                <ArrowRight className="h-4 w-4 ml-2" />
+              <Button variant="outline" onClick={() => setSelectedDate(addDays(selectedDate, 1))} disabled={selectedDate >= new Date()}>
+                Siguiente <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Export Options */}
         <Card className="mb-6">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
               <Button onClick={handleExportToExcel} className="flex-1">
-                <FileDown className="h-4 w-4 mr-2" />
-                Exportar a Excel
+                <FileDown className="h-4 w-4 mr-2" /> Exportar a Excel
               </Button>
               <div className="flex-1 space-y-2">
-                <Label htmlFor="webhook" className="text-sm">
-                  Webhook Zapier (para Google Drive)
-                </Label>
+                <Label htmlFor="webhook" className="text-sm">Webhook Zapier (Google Drive)</Label>
                 <div className="flex gap-2">
-                  <Input
-                    id="webhook"
-                    placeholder="https://hooks.zapier.com/..."
-                    value={webhookUrl}
-                    onChange={(e) => setWebhookUrl(e.target.value)}
-                  />
+                  <Input id="webhook" placeholder="https://hooks.zapier.com/..." value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} />
                   <Button onClick={handleSaveToGoogleDrive} disabled={savingToDrive} variant="secondary">
-                    <Cloud className="h-4 w-4 mr-2" />
-                    {savingToDrive ? "Enviando..." : "Guardar"}
+                    <Cloud className="h-4 w-4 mr-2" />{savingToDrive ? "Enviando..." : "Guardar"}
                   </Button>
                 </div>
               </div>
@@ -570,7 +496,6 @@ const HistorialDiario = () => {
           </CardContent>
         </Card>
 
-        {/* Orders List */}
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -586,50 +511,27 @@ const HistorialDiario = () => {
           </Card>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
-              <Collapsible
-                key={order.id}
-                open={expandedOrders.has(order.id)}
-                onOpenChange={() => toggleOrderExpanded(order.id)}
-              >
+            {orders.map(order => (
+              <Collapsible key={order.id} open={expandedOrders.has(order.id)} onOpenChange={() => toggleOrderExpanded(order.id)}>
                 <Card>
                   <CollapsibleTrigger asChild>
                     <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                            #{order.numero_orden}
-                          </div>
+                          <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">#{order.numero_orden}</div>
                           <div>
-                            <p className="font-medium text-foreground">
-                              {format(new Date(order.fecha), "HH:mm:ss")}
-                            </p>
-                            {order.comentario && (
-                              <p className="text-sm text-muted-foreground">{order.comentario}</p>
-                            )}
+                            <p className="font-medium">{format(new Date(order.fecha), "HH:mm:ss")}</p>
+                            {order.comentario && <p className="text-sm text-muted-foreground">{order.comentario}</p>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <p className="text-lg font-bold text-foreground">
-                            {formatPrice(Number(order.total))}
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              requestPin("edit", order);
-                            }}
-                            title="Editar orden"
-                          >
+                          <p className="text-lg font-bold">{formatPrice(Number(order.total))}</p>
+                          <Button variant="outline" size="icon" className="h-8 w-8"
+                            onClick={(e) => { e.stopPropagation(); requestPin("edit", order); }}
+                            title="Editar orden">
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          {expandedOrders.has(order.id) ? (
-                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                          )}
+                          {expandedOrders.has(order.id) ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
                         </div>
                       </div>
                     </CardHeader>
@@ -647,16 +549,12 @@ const HistorialDiario = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {order.detalles.map((detalle) => (
-                              <tr key={detalle.id} className="border-b border-muted last:border-0">
-                                <td className="py-2 text-foreground">{detalle.nombre_item}</td>
-                                <td className="py-2 text-center text-foreground">{detalle.cantidad}</td>
-                                <td className="py-2 text-right text-muted-foreground">
-                                  {formatPrice(Number(detalle.precio_unitario))}
-                                </td>
-                                <td className="py-2 text-right font-medium text-foreground">
-                                  {formatPrice(Number(detalle.subtotal))}
-                                </td>
+                            {order.detalles.map(d => (
+                              <tr key={d.id} className="border-b border-muted last:border-0">
+                                <td className="py-2">{d.nombre_item}</td>
+                                <td className="py-2 text-center">{d.cantidad}</td>
+                                <td className="py-2 text-right text-muted-foreground">{formatPrice(Number(d.precio_unitario))}</td>
+                                <td className="py-2 text-right font-medium">{formatPrice(Number(d.subtotal))}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -668,15 +566,12 @@ const HistorialDiario = () => {
               </Collapsible>
             ))}
 
-            {/* Daily Total */}
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Total del día</p>
-                    <p className="text-sm text-muted-foreground">
-                      {orders.length} orden{orders.length !== 1 ? "es" : ""}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{orders.length} orden{orders.length !== 1 ? "es" : ""}</p>
                   </div>
                   <p className="text-3xl font-bold text-primary">{formatPrice(totalDiario)}</p>
                 </div>
@@ -686,7 +581,7 @@ const HistorialDiario = () => {
         )}
       </div>
 
-      {/* PIN Dialog */}
+      {/* PIN */}
       <PinVerificationDialog
         open={showPinDialog}
         onOpenChange={(open) => {
@@ -695,84 +590,172 @@ const HistorialDiario = () => {
         }}
         onSuccess={handlePinSuccess}
         title={pendingAction === "add" ? "Ingresar Venta Manual" : "Editar Orden"}
-        description={
-          pendingAction === "add"
-            ? `Ingresa tu PIN para registrar una venta en ${format(selectedDate, "d/MM/yyyy")}`
-            : `Ingresa tu PIN para editar la Orden #${targetOrder?.numero_orden}`
-        }
+        description={pendingAction === "add"
+          ? `Ingresa tu PIN para registrar una venta en ${format(selectedDate, "d/MM/yyyy")}`
+          : `Ingresa tu PIN para editar la Orden #${targetOrder?.numero_orden}`}
       />
 
-      {/* Manual Sale Dialog */}
-      <Dialog open={showManualDialog} onOpenChange={setShowManualDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* Sale Dialog (POS-like) */}
+      <Dialog open={showSaleDialog} onOpenChange={setShowSaleDialog}>
+        <DialogContent className="max-w-5xl max-h-[92vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-primary" />
-              Ingresar Venta Manual — {format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
+              {saleMode === "add" ? <Plus className="h-5 w-5 text-primary" /> : <Pencil className="h-5 w-5 text-primary" />}
+              {saleMode === "add" ? "Nueva Venta" : `Editar Orden #${targetOrder?.numero_orden}`}
+              <Badge variant="outline" className="ml-2">
+                {format(selectedDate, "d MMM yyyy", { locale: es })} {saleHora}
+              </Badge>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div>
-              <Label className="text-sm mb-1 block">Comentario (opcional)</Label>
-              <Textarea
-                placeholder="Ej: Venta en efectivo no registrada..."
-                value={manualComment}
-                onChange={(e) => setManualComment(e.target.value)}
-                rows={2}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 flex-1 overflow-hidden">
+            {/* IZQUIERDA: Menú */}
+            <div className="md:col-span-3 flex flex-col gap-3 overflow-hidden">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar producto..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <ScrollArea className="flex-1 border rounded-md p-2 min-h-[280px]">
+                {filteredMenu.length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground py-8">Sin productos</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {filteredMenu.map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => addToCart(item)}
+                        className="text-left p-2 rounded-md border bg-card hover:border-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <p className="font-medium text-sm line-clamp-2">{item.nombre}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.categoria || "—"}</p>
+                        <p className="text-sm font-bold text-primary mt-1">{formatPrice(Number(item.precio))}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
             </div>
-            <ItemRows
-              items={manualItems}
-              onAdd={handleAddManualItem}
-              onRemove={handleRemoveManualItem}
-              onChange={handleManualItemChange}
-              total={manualTotal}
-            />
+
+            {/* DERECHA: Carrito + Datos */}
+            <div className="md:col-span-2 flex flex-col gap-3 overflow-hidden">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Hora</Label>
+                  <Input type="time" value={saleHora} onChange={e => setSaleHora(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Método de pago</Label>
+                  <Select value={saleMetodoPago} onValueChange={setSaleMetodoPago}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Efectivo">Efectivo</SelectItem>
+                      <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                      <SelectItem value="Transferencia">Transferencia</SelectItem>
+                      <SelectItem value="Nequi">Nequi</SelectItem>
+                      <SelectItem value="Daviplata">Daviplata</SelectItem>
+                      <SelectItem value="Otro">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Mesa</Label>
+                  <Select value={saleMesa} onValueChange={setSaleMesa}>
+                    <SelectTrigger><SelectValue placeholder="Sin mesa" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin mesa</SelectItem>
+                      {mesas.map(m => (
+                        <SelectItem key={m.id} value={m.id}>
+                          Mesa {m.numero_mesa}{m.nombre ? ` · ${m.nombre}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Cliente (opcional)</Label>
+                  <Input value={saleCliente} onChange={e => setSaleCliente(e.target.value)} placeholder="Nombre" />
+                </div>
+              </div>
+
+              <div className="flex-1 border rounded-md flex flex-col overflow-hidden">
+                <div className="p-2 border-b bg-muted/30">
+                  <p className="text-xs font-medium">Carrito ({cart.length})</p>
+                </div>
+                <ScrollArea className="flex-1 p-2">
+                  {cart.length === 0 ? (
+                    <p className="text-center text-xs text-muted-foreground py-6">
+                      Selecciona productos del menú
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {cart.map((c, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 rounded-md bg-muted/40">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{c.nombre_item}</p>
+                            <p className="text-xs text-muted-foreground">{formatPrice(c.precio_unitario)} c/u</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateCartQty(idx, -1)}>
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="text-sm font-medium w-6 text-center">{c.cantidad}</span>
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateCartQty(idx, +1)}>
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeCartItem(idx)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+                <div className="p-2 border-t bg-muted/20">
+                  <Textarea
+                    placeholder="Comentario (opcional)"
+                    value={saleComment}
+                    onChange={e => setSaleComment(e.target.value)}
+                    rows={2}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={adjustInventory}
+                  onChange={e => setAdjustInventory(e.target.checked)}
+                  className="rounded"
+                />
+                Descontar inventario al guardar
+              </label>
+
+              <div className="flex items-center justify-between pt-2 border-t">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-2xl font-bold text-primary">{formatPrice(cartTotal)}</span>
+              </div>
+            </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowManualDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSaveManual} disabled={savingManual || manualTotal === 0}>
-              {savingManual ? "Guardando..." : "Registrar Venta"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Order Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Pencil className="h-5 w-5 text-primary" />
-              Editar Orden #{targetOrder?.numero_orden}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div>
-              <Label className="text-sm mb-1 block">Comentario (opcional)</Label>
-              <Textarea
-                placeholder="Comentario de la orden..."
-                value={editComment}
-                onChange={(e) => setEditComment(e.target.value)}
-                rows={2}
-              />
-            </div>
-            <ItemRows
-              items={editItems}
-              onAdd={handleAddEditItem}
-              onRemove={handleRemoveEditItem}
-              onChange={handleEditItemChange}
-              total={editTotal}
-            />
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSaveEdit} disabled={savingEdit || editTotal === 0}>
-              {savingEdit ? "Guardando..." : "Guardar Cambios"}
+            <Button variant="outline" onClick={() => setShowSaleDialog(false)}>Cancelar</Button>
+            <Button onClick={handleSaveSale} disabled={saving || cart.length === 0}>
+              {saving ? "Guardando..." : saleMode === "add" ? "Registrar Venta" : "Guardar Cambios"}
             </Button>
           </DialogFooter>
         </DialogContent>
