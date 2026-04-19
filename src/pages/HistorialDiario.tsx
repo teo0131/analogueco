@@ -760,9 +760,18 @@ const HistorialDiario = () => {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setShowSaleDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSaveSale} disabled={saving || cart.length === 0}>
+            {saleMode === "add" && (
+              <Button
+                variant="secondary"
+                onClick={() => handleSaveSale(true)}
+                disabled={saving || cart.length === 0}
+              >
+                {saving ? "Guardando..." : "Guardar y registrar otra"}
+              </Button>
+            )}
+            <Button onClick={() => handleSaveSale(false)} disabled={saving || cart.length === 0}>
               {saving ? "Guardando..." : saleMode === "add" ? "Registrar Venta" : "Guardar Cambios"}
             </Button>
           </DialogFooter>
