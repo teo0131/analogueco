@@ -295,7 +295,7 @@ const HistorialDiario = () => {
     return warnings;
   };
 
-  const handleSaveSale = async () => {
+  const handleSaveSale = async (keepOpen = false) => {
     if (cart.length === 0) {
       toast({ title: "Carrito vacío", description: "Agrega al menos un producto", variant: "destructive" });
       return;
