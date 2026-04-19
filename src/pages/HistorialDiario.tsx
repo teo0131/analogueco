@@ -390,8 +390,16 @@ const HistorialDiario = () => {
           toast({ title: "Stock", description: w, variant: "destructive" }));
       }
 
-      setShowSaleDialog(false);
-      setTargetOrder(null);
+      if (keepOpen && saleMode === "add") {
+        // Limpiar carrito y datos de cliente, mantener fecha/hora/mesa/método para registro en cadena
+        setCart([]);
+        setSaleCliente("");
+        setSaleComment("");
+        setSearchTerm("");
+      } else {
+        setShowSaleDialog(false);
+        setTargetOrder(null);
+      }
       fetchOrdersForDate();
     } catch (e) {
       console.error(e);
