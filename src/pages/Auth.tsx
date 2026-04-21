@@ -45,7 +45,7 @@ const Auth = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/");
+        navigate("/supervision");
       }
     });
   }, [navigate]);
@@ -68,7 +68,7 @@ const Auth = () => {
       toast.error(error.message);
     } else {
       toast.success("¡Bienvenido!");
-      navigate("/");
+      navigate("/supervision");
     }
     setLoading(false);
   };
