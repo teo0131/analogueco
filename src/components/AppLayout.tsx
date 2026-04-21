@@ -169,7 +169,7 @@ const AppLayout = () => {
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) { toast.error("Error al cerrar sesión"); }
-    else { toast.success("Sesión cerrada"); navigate("/auth"); }
+    else { toast.success("Sesión cerrada"); navigate("/"); }
   };
 
   const isActive = (path: string) =>
