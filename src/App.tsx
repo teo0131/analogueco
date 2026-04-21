@@ -51,6 +51,7 @@ import Domicilios from "./pages/Domicilios";
 import CRM from "./pages/CRM";
 import PlatformSolicitudes from "./pages/PlatformSolicitudes";
 import CalendarioNegocio from "./pages/CalendarioNegocio";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/pending-approval" element={<PendingApproval />} />
+          <Route path="/pricing" element={<Pricing />} />
           
           {/* Redirect root to Centro de Supervisión (new home) */}
           <Route path="/" element={<Navigate to="/supervision" replace />} />
