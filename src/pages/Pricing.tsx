@@ -221,8 +221,8 @@ const Pricing = () => {
               <div className="flex items-center gap-2 px-4 h-9 border-b border-border bg-muted/40">
                 <div className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-destructive/70" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-primary/70" />
                 </div>
                 <div className="flex-1 mx-4 h-5 rounded-md bg-background/60 border border-border flex items-center px-3">
                   <span className="text-[10px] font-data tracking-wider text-muted-foreground/70">
@@ -277,8 +277,8 @@ const Pricing = () => {
                       <h3 className="text-lg font-bold tracking-tight">Tienda Centro · En vivo</h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/10 text-green-600 text-[10px] font-medium">
-                        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                         Online
                       </span>
                       <span className="text-[10px] font-data tracking-wider text-muted-foreground">
@@ -330,14 +330,14 @@ const Pricing = () => {
                         Actividad
                       </div>
                       {[
-                        { t: "Venta #1284", s: "$45.000", c: "primary" },
-                        { t: "Alerta movimiento", s: "Bodega", c: "destructive" },
-                        { t: "Empleado in", s: "C. Ruiz", c: "muted-foreground" },
-                        { t: "Venta #1283", s: "$12.500", c: "primary" },
+                        { t: "Venta #1284", s: "$45.000", c: "bg-primary" },
+                        { t: "Alerta movimiento", s: "Bodega", c: "bg-destructive" },
+                        { t: "Empleado in", s: "C. Ruiz", c: "bg-muted-foreground" },
+                        { t: "Venta #1283", s: "$12.500", c: "bg-primary" },
                       ].map((a, i) => (
                         <div key={i} className="flex items-center justify-between text-[11px] py-1 border-b border-border/60 last:border-0">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className={`h-1.5 w-1.5 rounded-full bg-${a.c} shrink-0`} />
+                            <span className={`h-1.5 w-1.5 rounded-full ${a.c} shrink-0`} />
                             <span className="truncate">{a.t}</span>
                           </div>
                           <span className="font-data text-muted-foreground tabular-nums">{a.s}</span>
