@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import analoguecoIcon from "@/assets/analogueco-icon.svg";
-import dashboardPreview from "@/assets/dashboard-preview.png";
 import personaCarlos from "@/assets/persona-carlos.png";
 import {
   Check,
