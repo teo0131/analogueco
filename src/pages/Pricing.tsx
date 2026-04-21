@@ -211,9 +211,21 @@ const Pricing = () => {
             </div>
           </div>
         </div>
-      </section>
 
-      {/* PRICING GRID */}
+        {/* Dashboard preview */}
+        <div className="container mx-auto px-4 pb-16 md:pb-20 relative">
+          <div className="max-w-5xl mx-auto">
+            <div className="relative rounded-xl overflow-hidden border border-border shadow-2xl shadow-primary/10 bg-card">
+              <img
+                src={dashboardPreview}
+                alt="AnalogueCo dashboard preview"
+                className="w-full h-auto block"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="container mx-auto px-4 py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-7xl mx-auto">
           {plans.map((plan) => {
@@ -446,6 +458,122 @@ const Pricing = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PERSONA — built for */}
+      <section className="bg-sidebar text-sidebar-foreground border-t border-sidebar-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-primary">
+                Built for
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2 text-white">
+                Dueños que necesitan ver lo invisible.
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Profile card */}
+              <div className="rounded-lg overflow-hidden border border-sidebar-border bg-sidebar-accent/30 backdrop-blur">
+                <div className="aspect-[4/5] overflow-hidden bg-sidebar-accent">
+                  <img
+                    src={personaCarlos}
+                    alt="Carlos, dueño de tienda retail"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5">
+                  <p className="text-[10px] font-data tracking-widest uppercase text-sidebar-foreground/60 mb-2">
+                    Dueño de tienda retail
+                  </p>
+                  <h3 className="text-2xl font-bold tracking-tight text-white mb-4">CARLOS</h3>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="border border-sidebar-border rounded-md py-2">
+                      <div className="text-[10px] font-data tracking-wider uppercase text-sidebar-foreground/60">Edad</div>
+                      <div className="font-data font-bold text-white">44</div>
+                    </div>
+                    <div className="border border-sidebar-border rounded-md py-2">
+                      <div className="text-[10px] font-data tracking-wider uppercase text-sidebar-foreground/60">País</div>
+                      <div className="font-data font-bold text-white">MX</div>
+                    </div>
+                    <div className="border border-sidebar-border rounded-md py-2">
+                      <div className="text-[10px] font-data tracking-wider uppercase text-sidebar-foreground/60">Tech</div>
+                      <div className="font-data font-bold text-white">Bajo</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description + tags */}
+              <div className="lg:col-span-2 flex flex-col gap-5">
+                <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/30 backdrop-blur p-6">
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    {["Dueño del problema", "Dependiente de operación", "Tomador de decisiones"].map((t) => (
+                      <span
+                        key={t}
+                        className="text-[10px] font-data tracking-widest uppercase px-3 py-1.5 rounded-md border border-sidebar-border text-sidebar-foreground/80"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-sidebar-foreground/90 leading-relaxed">
+                    Carlos es dueño de una tienda retail mediana. Construyó el negocio con sus
+                    propias manos y gestiona un equipo de 8 personas. No sabe qué pasa cuando no
+                    está — y eso le está costando. Confía en su gente, pero necesita un sistema en
+                    el que pueda confiar más.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Objetivos */}
+                  <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/30 backdrop-blur p-6">
+                    <p className="text-[10px] font-data tracking-widest uppercase text-primary mb-4">
+                      Objetivos
+                    </p>
+                    <ul className="space-y-3">
+                      {[
+                        "Saber qué pasa remotamente, en tiempo real",
+                        "Detectar pérdidas antes de que se acumulen",
+                        "Entender patrones de comportamiento del equipo",
+                        "Tomar decisiones operativas más rápido",
+                        "Reducir dependencia de reportes manuales",
+                      ].map((o) => (
+                        <li key={o} className="flex items-start gap-2 text-sm text-sidebar-foreground/90">
+                          <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span>{o}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Puntos de dolor */}
+                  <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/30 backdrop-blur p-6">
+                    <p className="text-[10px] font-data tracking-widest uppercase text-destructive mb-4">
+                      Puntos de dolor
+                    </p>
+                    <ul className="space-y-3">
+                      {[
+                        "Sin visibilidad cuando no está en la tienda",
+                        "No confía en los datos actuales de inventario",
+                        "No puede monitorear al equipo remotamente",
+                        "Los datos del POS no coinciden con la realidad física",
+                        "Las pérdidas se descubren semanas después",
+                      ].map((d) => (
+                        <li key={d} className="flex items-start gap-2 text-sm text-sidebar-foreground/90">
+                          <X className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
