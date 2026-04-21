@@ -1,58 +1,40 @@
 
 
-# Panel de Super-Admin para AnalogueCo (Aprobación de Comercios)
+## Separar Pricing pública de la plataforma funcional
 
-## Problema actual
+Mantener la Pricing Page como home pública (`/`) y la plataforma como área protegida, con redirecciones inteligentes según el estado de sesión.
 
-Cuando un nuevo dueño de negocio se registra, se crea con `is_approved = false` y ve la pantalla "Pendiente de Aprobación". Pero **no existe ninguna interfaz** para que tú (como dueño de la plataforma AnalogueCo) veas y apruebes estas solicitudes. Actualmente hay 4 comercios pendientes de aprobación en la base de datos.
+### Cambios
 
-## Concepto: Super-Admin de Plataforma
+**1. `src/pages/Pricing.tsx` — Auto-redirect si hay sesión**
+- Al montar la página, verificar si existe sesión Supabase activa.
+- Si hay sesión → redirigir automáticamente a `/supervision` (no tiene sentido mostrar pricing a un cliente ya logueado).
+- Si no hay sesión → mostrar la Pricing Page normal con el botón "Login" arriba a la derecha (ya existe).
 
-Necesitas un rol de **super-admin** que sea independiente de cualquier comercio. Este es el dueño de AnalogueCo como plataforma SaaS, no un dueño de comercio.
+**2. `src/pages/Auth.tsx` — Confirmar redirect post-login**
+- Verificar que después de iniciar sesión el usuario va a `/supervision` (ya está así, solo confirmar).
+- Mantener `/` libre para visitantes nuevos.
 
-## Plan de implementación
+**3. Logout desde la plataforma → vuelve a Pricing**
+- Revisar dónde está el botón de logout actual (probablemente en `AppLayout.tsx` o `ConfiguracionCuenta.tsx`).
+- Asegurar que al hacer signout, el usuario sea redirigido a `/` (Pricing) y no a `/auth`.
 
-### 1. Base de datos - Tabla `platform_admins`
+**4. Verificación visual**
+- Confirmar que `/` carga la Pricing Page para visitantes anónimos.
+- Confirmar que el botón "Login" en la esquina superior derecha de Pricing lleva a `/auth`.
 
-Crear una tabla simple y ultra-privada:
+### Resultado
 
-```text
-platform_admins
-├── id (uuid)
-├── user_id (uuid, referencia a auth.users)
-└── created_at (timestamp)
-```
+| Estado del usuario | Entra a `/` | Ve |
+|---|---|---|
+| Sin sesión | `/` | Pricing Page con botón Login |
+| Con sesión | `/` | Redirigido a `/supervision` |
+| Después de login | — | `/supervision` |
+| Después de logout | — | `/` (Pricing) |
 
-- RLS: solo los propios platform_admins pueden leer esta tabla (usando una función `SECURITY DEFINER`)
-- Se insertará tu usuario como el primer y único platform admin via migración
-- Para agregar futuros platform admins, solo se podrá hacer directamente desde el backend (no hay UI para eso, ultra-privado)
+### Notas técnicas
 
-### 2. Edge Function - `platform-admin-actions`
-
-- Verificar que el usuario autenticado sea platform_admin
-- Endpoints: listar comercios pendientes, aprobar, rechazar (eliminar)
-- Usa `SUPABASE_SERVICE_ROLE_KEY` para operar sobre perfiles sin restricciones de RLS
-
-### 3. Nueva página - `/platform/solicitudes`
-
-- Accesible solo si eres platform_admin
-- Lista de comercios pendientes con: email del owner, nombre del comercio, fecha de registro
-- Botones: Aprobar (pone `is_approved = true`) / Rechazar (elimina comercio + usuario)
-- UI minimalista y funcional
-
-### 4. Ruta protegida con verificación de super-admin
-
-- Nuevo componente `PlatformAdminRoute` que verifica contra la tabla `platform_admins`
-- Ruta `/platform/solicitudes` solo visible en el sidebar si eres platform admin
-- No aparece en el menú de navegación para nadie más
-
-### 5. Tu cuenta
-
-Puedes usar tu cuenta existente (teovallejoe@gmail.com / user_id: ac808997...) como platform admin. No necesitas crear una cuenta separada -- simplemente te registramos en `platform_admins` y tendrás acceso dual: eres owner de "Fraterno Cafe" Y super-admin de la plataforma.
-
-## Secciones técnicas
-
-- La tabla `platform_admins` usa una función `is_platform_admin(user_id)` con `SECURITY DEFINER` para evitar recursión en RLS
-- La edge function valida el JWT y cruza contra `platform_admins` antes de ejecutar cualquier acción
-- El frontend nunca almacena el estado de super-admin en localStorage (siempre verificación server-side)
+- Usar `supabase.auth.getSession()` + `onAuthStateChange` en `Pricing.tsx` para el chequeo inicial.
+- El redirect debe ejecutarse en `useEffect` con `navigate("/supervision", { replace: true })` para no ensuciar el historial del navegador.
+- No tocar `ProtectedRoute.tsx` — sigue funcionando igual para las rutas internas.
 
