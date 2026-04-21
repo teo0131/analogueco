@@ -157,8 +157,8 @@ const Pricing = () => {
             onClick={() => navigate("/")}
             className="flex items-center gap-2 group"
           >
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-primary/30 transition-shadow">
-              <Box className="h-5 w-5 text-primary-foreground" />
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-primary/30 transition-shadow text-primary-foreground">
+              <img src={analoguecoIcon} alt="" className="h-5 w-5" style={{ filter: "brightness(0) invert(1)" }} />
             </div>
             <span className="font-bold tracking-tight">AnalogueCo</span>
           </button>
@@ -455,7 +455,7 @@ const Pricing = () => {
         <div className="container mx-auto px-4 py-20 md:py-28">
           <div className="max-w-3xl mx-auto text-center">
             <div className="h-14 w-14 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20">
-              <Box className="h-8 w-8 text-primary-foreground" />
+              <img src={analoguecoIcon} alt="" className="h-8 w-8" style={{ filter: "brightness(0) invert(1)" }} />
             </div>
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-5">
               Bring intelligence to your
