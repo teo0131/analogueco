@@ -135,8 +135,30 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* TOP NAV */}
+      <header className="fixed top-0 inset-x-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 group"
+          >
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-primary/30 transition-shadow">
+              <Box className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="font-bold tracking-tight">AnalogueCo</span>
+          </button>
+          <Button
+            onClick={() => navigate("/auth")}
+            size="sm"
+            className="font-medium"
+          >
+            Login
+          </Button>
+        </div>
+      </header>
+
       {/* HERO */}
-      <section className="relative overflow-hidden border-b border-border">
+      <section className="relative overflow-hidden border-b border-border pt-16">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.15),transparent_60%)] pointer-events-none" />
 
