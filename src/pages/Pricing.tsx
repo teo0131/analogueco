@@ -214,14 +214,139 @@ const Pricing = () => {
 
         {/* Dashboard preview */}
         <div className="container mx-auto px-4 pb-16 md:pb-20 relative">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-6xl mx-auto">
+            {/* Browser-style chrome wrapping a literal mock of the platform */}
             <div className="relative rounded-xl overflow-hidden border border-border shadow-2xl shadow-primary/10 bg-card">
-              <img
-                src={dashboardPreview}
-                alt="AnalogueCo dashboard preview"
-                className="w-full h-auto block"
-                loading="lazy"
-              />
+              {/* Top bar */}
+              <div className="flex items-center gap-2 px-4 h-9 border-b border-border bg-muted/40">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-destructive/70" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+                </div>
+                <div className="flex-1 mx-4 h-5 rounded-md bg-background/60 border border-border flex items-center px-3">
+                  <span className="text-[10px] font-data tracking-wider text-muted-foreground/70">
+                    app.analogueco.com / supervision
+                  </span>
+                </div>
+              </div>
+
+              {/* App body */}
+              <div className="grid grid-cols-12 min-h-[420px]">
+                {/* Sidebar */}
+                <aside className="col-span-3 border-r border-border bg-muted/30 p-4 hidden md:block">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center">
+                      <img src={analoguecoIcon} alt="" className="h-4 w-4" style={{ filter: "brightness(0) invert(1)" }} />
+                    </div>
+                    <span className="font-bold text-sm tracking-tight">AnalogueCo</span>
+                  </div>
+                  <nav className="space-y-1">
+                    {[
+                      { l: "Supervisión", active: true },
+                      { l: "Cámaras" },
+                      { l: "Alertas" },
+                      { l: "POS" },
+                      { l: "Inventario" },
+                      { l: "Finanzas" },
+                      { l: "Empleados" },
+                    ].map((it) => (
+                      <div
+                        key={it.l}
+                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs ${
+                          it.active
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${it.active ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                        {it.l}
+                      </div>
+                    ))}
+                  </nav>
+                </aside>
+
+                {/* Main */}
+                <main className="col-span-12 md:col-span-9 p-5 space-y-4">
+                  {/* Header row */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-data tracking-widest uppercase text-muted-foreground">
+                        Centro de supervisión
+                      </p>
+                      <h3 className="text-lg font-bold tracking-tight">Tienda Centro · En vivo</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/10 text-green-600 text-[10px] font-medium">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                        Online
+                      </span>
+                      <span className="text-[10px] font-data tracking-wider text-muted-foreground">
+                        14:32
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* KPI cards */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { l: "Ventas hoy", v: "$2.4M", d: "+12%" },
+                      { l: "Alertas activas", v: "3", d: "−1" },
+                      { l: "Inconsistencias", v: "0.8%", d: "−0.3" },
+                    ].map((k) => (
+                      <div key={k.l} className="rounded-md border border-border bg-background p-3">
+                        <div className="text-[10px] font-data tracking-wider uppercase text-muted-foreground">
+                          {k.l}
+                        </div>
+                        <div className="font-data text-xl font-bold tracking-tight tabular-nums mt-1">
+                          {k.v}
+                        </div>
+                        <div className="text-[10px] text-primary font-data mt-0.5">{k.d}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Camera + activity */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2 rounded-md border border-border bg-foreground/95 aspect-video relative overflow-hidden">
+                      {/* Fake camera grid */}
+                      <div className="absolute inset-0 opacity-30 bg-[linear-gradient(to_right,hsl(var(--background))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--background))_1px,transparent_1px)] bg-[size:24px_24px]" />
+                      {/* ROI box */}
+                      <div className="absolute top-4 left-6 w-20 h-14 border-2 border-primary rounded-sm">
+                        <span className="absolute -top-4 left-0 text-[9px] font-data tracking-wider text-primary">
+                          ROI · CAJA
+                        </span>
+                      </div>
+                      <div className="absolute bottom-3 right-3 px-1.5 py-0.5 bg-destructive rounded-sm text-destructive-foreground text-[9px] font-data tracking-wider">
+                        ● REC
+                      </div>
+                      <div className="absolute bottom-3 left-3 text-[9px] font-data tracking-wider text-background/80">
+                        CAM 01 · CAJA PRINCIPAL
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border border-border bg-background p-3 space-y-2">
+                      <div className="text-[10px] font-data tracking-wider uppercase text-muted-foreground mb-1">
+                        Actividad
+                      </div>
+                      {[
+                        { t: "Venta #1284", s: "$45.000", c: "primary" },
+                        { t: "Alerta movimiento", s: "Bodega", c: "destructive" },
+                        { t: "Empleado in", s: "C. Ruiz", c: "muted-foreground" },
+                        { t: "Venta #1283", s: "$12.500", c: "primary" },
+                      ].map((a, i) => (
+                        <div key={i} className="flex items-center justify-between text-[11px] py-1 border-b border-border/60 last:border-0">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className={`h-1.5 w-1.5 rounded-full bg-${a.c} shrink-0`} />
+                            <span className="truncate">{a.t}</span>
+                          </div>
+                          <span className="font-data text-muted-foreground tabular-nums">{a.s}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </main>
+              </div>
             </div>
           </div>
         </div>
