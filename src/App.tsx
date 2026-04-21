@@ -66,8 +66,8 @@ const App = () => (
           <Route path="/pending-approval" element={<PendingApproval />} />
           <Route path="/pricing" element={<Pricing />} />
           
-          {/* Redirect root to Centro de Supervisión (new home) */}
-          <Route path="/" element={<Navigate to="/supervision" replace />} />
+          {/* Public landing = Pricing page */}
+          <Route path="/" element={<Pricing />} />
           
           {/* Protected routes with AppLayout */}
           <Route 

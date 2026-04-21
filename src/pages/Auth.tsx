@@ -45,7 +45,7 @@ const Auth = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/");
+        navigate("/supervision");
       }
     });
   }, [navigate]);
