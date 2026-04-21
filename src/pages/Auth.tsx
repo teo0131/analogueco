@@ -68,7 +68,7 @@ const Auth = () => {
       toast.error(error.message);
     } else {
       toast.success("¡Bienvenido!");
-      navigate("/");
+      navigate("/supervision");
     }
     setLoading(false);
   };
