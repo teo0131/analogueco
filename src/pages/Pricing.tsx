@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import analoguecoIcon from "@/assets/analogueco-icon.svg";
-import personaCarlos from "@/assets/persona-carlos.png";
+
 import {
   Check,
   Camera,
@@ -602,13 +602,29 @@ const Pricing = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Profile card */}
               <div className="rounded-lg overflow-hidden border border-sidebar-border bg-sidebar-accent/30 backdrop-blur">
-                <div className="aspect-[4/5] overflow-hidden bg-sidebar-accent">
-                  <img
-                    src={personaCarlos}
-                    alt="Carlos, dueño de tienda retail"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                <div className="aspect-[4/5] relative bg-gradient-to-br from-sidebar-accent to-sidebar overflow-hidden">
+                  {/* Tech grid overlay */}
+                  <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,hsl(var(--sidebar-foreground))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--sidebar-foreground))_1px,transparent_1px)] bg-[size:32px_32px]" />
+                  {/* ROI corner brackets */}
+                  <div className="absolute top-4 left-4 h-5 w-5 border-l-2 border-t-2 border-primary" />
+                  <div className="absolute top-4 right-4 h-5 w-5 border-r-2 border-t-2 border-primary" />
+                  <div className="absolute bottom-4 left-4 h-5 w-5 border-l-2 border-b-2 border-primary" />
+                  <div className="absolute bottom-4 right-4 h-5 w-5 border-r-2 border-b-2 border-primary" />
+                  {/* Identified tag */}
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-primary rounded-sm">
+                    <p className="text-[9px] font-data tracking-widest uppercase text-primary-foreground leading-none">
+                      Sujeto identificado
+                    </p>
+                  </div>
+                  {/* Initials */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="font-data text-7xl font-bold text-white/90 tracking-tight">C</div>
+                      <div className="text-[10px] font-data tracking-widest uppercase text-sidebar-foreground/50 mt-2">
+                        ID · 044-MX
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="p-5">
                   <p className="text-[10px] font-data tracking-widest uppercase text-sidebar-foreground/60 mb-2">
