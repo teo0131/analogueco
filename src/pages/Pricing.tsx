@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -127,6 +128,17 @@ const testimonials = [
 const Pricing = () => {
   const navigate = useNavigate();
   const [yearly, setYearly] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted && session) navigate("/supervision", { replace: true });
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) navigate("/supervision", { replace: true });
+    });
+    return () => { mounted = false; subscription.unsubscribe(); };
+  }, [navigate]);
 
   const getDisplayPrice = (monthly: number | null) => {
     if (monthly === null) return null;
