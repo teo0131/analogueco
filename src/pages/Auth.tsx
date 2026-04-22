@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Lock, Store, Users } from "lucide-react";
-import analoguecoIcon from "@/assets/analogueco-icon.svg";
+import { Box, Lock, Store, Users } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -160,7 +159,7 @@ const Auth = () => {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="h-16 w-16 bg-primary rounded-xl flex items-center justify-center">
-              <img src={analoguecoIcon} alt="AnalogueCo" className="h-10 w-10" style={{ filter: "brightness(0) invert(1)" }} />
+              <Box className="h-10 w-10 text-primary-foreground" />
             </div>
           </div>
           <CardTitle className="text-2xl">AnalogueCo</CardTitle>
