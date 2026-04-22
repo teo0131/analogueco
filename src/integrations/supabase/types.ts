@@ -1409,12 +1409,16 @@ export type Database = {
           base_gravable: number
           cliente_direccion: string | null
           cliente_documento: string | null
+          cliente_dv: string | null
+          cliente_email: string | null
           cliente_nombre: string | null
+          cliente_razon_social: string | null
           comercio_id: string | null
           created_at: string
           descuento: number
           fecha_expedicion: string
           id: string
+          iva_porcentaje: number
           iva_total: number
           medio_pago: string | null
           mesa: string | null
@@ -1422,6 +1426,7 @@ export type Database = {
           orden_id: string | null
           otros_impuestos: number
           subtotal: number
+          tipo_cliente: string
           total: number
           total_en_letras: string | null
           user_id: string
@@ -1431,12 +1436,16 @@ export type Database = {
           base_gravable?: number
           cliente_direccion?: string | null
           cliente_documento?: string | null
+          cliente_dv?: string | null
+          cliente_email?: string | null
           cliente_nombre?: string | null
+          cliente_razon_social?: string | null
           comercio_id?: string | null
           created_at?: string
           descuento?: number
           fecha_expedicion?: string
           id?: string
+          iva_porcentaje?: number
           iva_total?: number
           medio_pago?: string | null
           mesa?: string | null
@@ -1444,6 +1453,7 @@ export type Database = {
           orden_id?: string | null
           otros_impuestos?: number
           subtotal?: number
+          tipo_cliente?: string
           total?: number
           total_en_letras?: string | null
           user_id: string
@@ -1453,12 +1463,16 @@ export type Database = {
           base_gravable?: number
           cliente_direccion?: string | null
           cliente_documento?: string | null
+          cliente_dv?: string | null
+          cliente_email?: string | null
           cliente_nombre?: string | null
+          cliente_razon_social?: string | null
           comercio_id?: string | null
           created_at?: string
           descuento?: number
           fecha_expedicion?: string
           id?: string
+          iva_porcentaje?: number
           iva_total?: number
           medio_pago?: string | null
           mesa?: string | null
@@ -1466,6 +1480,7 @@ export type Database = {
           orden_id?: string | null
           otros_impuestos?: number
           subtotal?: number
+          tipo_cliente?: string
           total?: number
           total_en_letras?: string | null
           user_id?: string
