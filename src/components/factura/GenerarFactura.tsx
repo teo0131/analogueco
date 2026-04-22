@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Printer, FileDown, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Printer, FileDown, X, Building2, User, Plus, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   FacturaFisicaTemplate,
@@ -26,6 +27,7 @@ import {
   DetalleFactura,
 } from "./FacturaFisicaTemplate";
 import html2pdf from "html2pdf.js";
+import { parseNit, isLikelyNit } from "@/lib/nitValidation";
 
 interface OrderItem {
   name: string;
@@ -47,28 +49,67 @@ interface GenerarFacturaProps {
   onClose: () => void;
 }
 
+interface ItemEditable {
+  descripcion: string;
+  cantidad: number;
+  unidad: string;
+  precioUnitario: number;
+}
+
+type TipoCliente = "persona" | "empresa";
+
 export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) => {
   const facturaRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [formato, setFormato] = useState<"termica" | "carta">("carta");
 
-  // Datos fiscales del negocio
   const [datosFiscales, setDatosFiscales] = useState<DatosFiscales>({
     nombreComercial: "Mi Negocio",
-    regimenTributario: "Régimen Simplificado",
+    regimenTributario: "Responsable de IVA",
     leyendaLegal: "Gracias por su compra",
     politicaCambios: "Esta factura es válida como soporte de la transacción",
   });
 
-  // Datos editables de la factura
+  // Tipo de cliente
+  const [tipoCliente, setTipoCliente] = useState<TipoCliente>("persona");
+
+  // Persona
   const [clienteNombre, setClienteNombre] = useState("Consumidor Final");
   const [clienteDocumento, setClienteDocumento] = useState("");
+
+  // Empresa
+  const [razonSocial, setRazonSocial] = useState("");
+  const [nitInput, setNitInput] = useState("");
+  const [clienteEmail, setClienteEmail] = useState("");
+
+  // Compartido
   const [clienteDireccion, setClienteDireccion] = useState("");
+
+  // Factura
   const [medioPago, setMedioPago] = useState("Efectivo");
   const [vendedor, setVendedor] = useState("");
   const [mesa, setMesa] = useState("");
   const [numeroFactura, setNumeroFactura] = useState("");
+  const [ivaPorcentaje, setIvaPorcentaje] = useState<number>(0);
+
+  // Items editables
+  const [items, setItems] = useState<ItemEditable[]>([]);
+
+  // NIT parsing
+  const nitParsed = useMemo(() => (nitInput ? parseNit(nitInput) : null), [nitInput]);
+
+  // Auto-detectar empresa si el documento parece NIT (modo persona)
+  useEffect(() => {
+    if (tipoCliente === "persona" && clienteDocumento && isLikelyNit(clienteDocumento)) {
+      // Sugerir cambio a empresa
+      setTipoCliente("empresa");
+      setNitInput(clienteDocumento);
+      setRazonSocial(clienteNombre !== "Consumidor Final" ? clienteNombre : "");
+      toast.info("Se detectó un NIT. Cambiamos a modo Empresa.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clienteDocumento]);
 
   useEffect(() => {
     const loadDatosFiscales = async () => {
@@ -102,8 +143,7 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
             politicaCambios: data.politica_cambios || undefined,
           });
 
-          // Generar número de factura
-          const consecutivo = (data.consecutivo_actual || 1);
+          const consecutivo = data.consecutivo_actual || 1;
           const prefijo = data.prefijo_factura || "";
           setNumeroFactura(`${prefijo}${String(consecutivo).padStart(6, "0")}`);
         } else {
@@ -119,20 +159,37 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
 
     if (open) {
       loadDatosFiscales();
+      // Inicializar items desde la orden
+      const initial = [...orden.items]
+        .sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }))
+        .map((it) => ({
+          descripcion: it.name,
+          cantidad: 1,
+          unidad: "unidad",
+          precioUnitario: it.price,
+        }));
+      setItems(initial);
     }
-  }, [open, orden.orderNumber]);
+  }, [open, orden.orderNumber, orden.items]);
 
-  const detalles: DetalleFactura[] = [...orden.items]
-    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
-    .map((item) => ({
-      descripcion: item.name,
-      cantidad: 1,
-      unidad: "unidad",
-      precioUnitario: item.price,
-      descuento: 0,
-      iva: 0,
-      total: item.price,
-    }));
+  // Cálculos
+  const subtotal = useMemo(
+    () => items.reduce((acc, it) => acc + it.cantidad * it.precioUnitario, 0),
+    [items]
+  );
+  const baseGravable = subtotal;
+  const ivaTotal = Math.round((baseGravable * ivaPorcentaje) / 100);
+  const total = baseGravable + ivaTotal;
+
+  const detalles: DetalleFactura[] = items.map((it) => ({
+    descripcion: it.descripcion,
+    cantidad: it.cantidad,
+    unidad: it.unidad,
+    precioUnitario: it.precioUnitario,
+    descuento: 0,
+    iva: ivaPorcentaje,
+    total: it.cantidad * it.precioUnitario,
+  }));
 
   const datosFactura: DatosFactura = {
     numeroFactura,
@@ -141,20 +198,56 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
     vendedor: vendedor || undefined,
     mesa: mesa || undefined,
     cliente: {
-      nombre: clienteNombre,
-      documento: clienteDocumento || "N/A",
+      tipo: tipoCliente,
+      nombre: tipoCliente === "empresa" ? razonSocial || "—" : clienteNombre,
+      documento:
+        tipoCliente === "empresa"
+          ? nitParsed?.isValid
+            ? nitParsed.formatted
+            : nitInput || "N/A"
+          : clienteDocumento || "N/A",
       direccion: clienteDireccion,
+      email: clienteEmail || undefined,
     },
     detalles,
-    subtotal: orden.total,
+    subtotal,
     descuento: 0,
-    baseGravable: orden.total,
-    ivaTotal: 0,
+    baseGravable,
+    ivaPorcentaje,
+    ivaTotal,
     otrosImpuestos: 0,
-    total: orden.total,
+    total,
+  };
+
+  const handleItemChange = (idx: number, field: keyof ItemEditable, value: string | number) => {
+    setItems((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      return next;
+    });
+  };
+
+  const addItem = () =>
+    setItems((p) => [...p, { descripcion: "Nuevo ítem", cantidad: 1, unidad: "unidad", precioUnitario: 0 }]);
+  const removeItem = (idx: number) => setItems((p) => p.filter((_, i) => i !== idx));
+
+  const validarAntesDeGuardar = (): string | null => {
+    if (tipoCliente === "empresa") {
+      if (!razonSocial.trim()) return "La Razón Social es obligatoria para empresas";
+      if (!nitParsed?.isValid) return nitParsed?.error || "NIT inválido";
+      if (!clienteDireccion.trim()) return "La Dirección es obligatoria para empresas";
+    }
+    if (items.length === 0) return "La factura debe tener al menos un ítem";
+    return null;
   };
 
   const handleGuardarFactura = async () => {
+    const errorMsg = validarAntesDeGuardar();
+    if (errorMsg) {
+      toast.error(errorMsg);
+      return;
+    }
+
     setGuardando(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -163,7 +256,6 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
         return;
       }
 
-      // Guardar factura
       const { data: facturaData, error: facturaError } = await supabase
         .from("facturas_fisicas")
         .insert({
@@ -171,25 +263,30 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
           numero_factura: numeroFactura,
           orden_id: orden.id,
           fecha_expedicion: orden.timestamp.toISOString(),
-          cliente_nombre: clienteNombre,
-          cliente_documento: clienteDocumento || null,
+          tipo_cliente: tipoCliente,
+          cliente_nombre: tipoCliente === "empresa" ? razonSocial : clienteNombre,
+          cliente_razon_social: tipoCliente === "empresa" ? razonSocial : null,
+          cliente_documento:
+            tipoCliente === "empresa" ? nitParsed?.base || null : clienteDocumento || null,
+          cliente_dv: tipoCliente === "empresa" ? nitParsed?.dv || null : null,
           cliente_direccion: clienteDireccion || null,
+          cliente_email: clienteEmail || null,
           medio_pago: medioPago,
           vendedor: vendedor || null,
           mesa: mesa || null,
-          subtotal: orden.total,
+          subtotal,
           descuento: 0,
-          base_gravable: orden.total,
-          iva_total: 0,
+          base_gravable: baseGravable,
+          iva_porcentaje: ivaPorcentaje,
+          iva_total: ivaTotal,
           otros_impuestos: 0,
-          total: orden.total,
+          total,
         })
         .select()
         .single();
 
       if (facturaError) throw facturaError;
 
-      // Guardar detalles
       const detallesDB = detalles.map((d) => ({
         factura_id: facturaData.id,
         descripcion: d.descripcion,
@@ -207,7 +304,6 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
 
       if (detallesError) throw detallesError;
 
-      // Actualizar consecutivo
       await supabase
         .from("datos_fiscales")
         .update({ consecutivo_actual: (parseInt(numeroFactura.replace(/\D/g, "")) || 0) + 1 })
@@ -224,7 +320,6 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
 
   const handlePrint = () => {
     if (!facturaRef.current) return;
-
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
       toast.error("No se pudo abrir ventana de impresión");
@@ -260,7 +355,6 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
 
   const handleSavePDF = async () => {
     if (!facturaRef.current) return;
-
     try {
       const options = {
         margin: formato === "termica" ? 2 : 10,
@@ -273,7 +367,6 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
           orientation: "portrait" as const,
         },
       };
-
       await html2pdf().set(options).from(facturaRef.current).save();
       toast.success("PDF guardado exitosamente");
     } catch (error) {
@@ -309,9 +402,105 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Panel de edición */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Datos de la Factura</h3>
+            {/* Tipo de cliente */}
+            <div>
+              <Label>Tipo de Cliente</Label>
+              <Tabs value={tipoCliente} onValueChange={(v) => setTipoCliente(v as TipoCliente)}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="persona">
+                    <User className="h-4 w-4 mr-2" />
+                    Persona
+                  </TabsTrigger>
+                  <TabsTrigger value="empresa">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Empresa (NIT)
+                  </TabsTrigger>
+                </TabsList>
 
-            <div className="grid grid-cols-2 gap-4">
+                <TabsContent value="persona" className="space-y-3 pt-3">
+                  <div>
+                    <Label>Nombre</Label>
+                    <Input
+                      value={clienteNombre}
+                      onChange={(e) => setClienteNombre(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Documento (CC)</Label>
+                      <Input
+                        value={clienteDocumento}
+                        onChange={(e) => setClienteDocumento(e.target.value)}
+                        placeholder="Opcional"
+                      />
+                    </div>
+                    <div>
+                      <Label>Dirección</Label>
+                      <Input
+                        value={clienteDireccion}
+                        onChange={(e) => setClienteDireccion(e.target.value)}
+                        placeholder="Opcional"
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="empresa" className="space-y-3 pt-3">
+                  <div>
+                    <Label>Razón Social *</Label>
+                    <Input
+                      value={razonSocial}
+                      onChange={(e) => setRazonSocial(e.target.value)}
+                      placeholder="Ej: Comercializadora ABC S.A.S."
+                    />
+                  </div>
+                  <div>
+                    <Label>NIT *</Label>
+                    <Input
+                      value={nitInput}
+                      onChange={(e) => setNitInput(e.target.value)}
+                      placeholder="900123456 o 900.123.456-7"
+                    />
+                    {nitParsed && (
+                      <div className="mt-1 flex items-center gap-1 text-xs">
+                        {nitParsed.isValid ? (
+                          <>
+                            <CheckCircle2 className="h-3 w-3 text-green-600" />
+                            <span className="text-green-700">
+                              NIT válido: <strong>{nitParsed.formatted}</strong>
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-3 w-3 text-destructive" />
+                            <span className="text-destructive">{nitParsed.error}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <Label>Dirección *</Label>
+                    <Input
+                      value={clienteDireccion}
+                      onChange={(e) => setClienteDireccion(e.target.value)}
+                      placeholder="Dirección fiscal"
+                    />
+                  </div>
+                  <div>
+                    <Label>Correo electrónico</Label>
+                    <Input
+                      type="email"
+                      value={clienteEmail}
+                      onChange={(e) => setClienteEmail(e.target.value)}
+                      placeholder="contacto@empresa.com"
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Número de Factura</Label>
                 <Input
@@ -337,53 +526,90 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label>Vendedor</Label>
-                <Input
-                  value={vendedor}
-                  onChange={(e) => setVendedor(e.target.value)}
-                  placeholder="Opcional"
-                />
+                <Input value={vendedor} onChange={(e) => setVendedor(e.target.value)} placeholder="Opcional" />
               </div>
               <div>
                 <Label>Mesa / Punto</Label>
-                <Input
-                  value={mesa}
-                  onChange={(e) => setMesa(e.target.value)}
-                  placeholder="Opcional"
-                />
+                <Input value={mesa} onChange={(e) => setMesa(e.target.value)} placeholder="Opcional" />
+              </div>
+              <div>
+                <Label>IVA</Label>
+                <Select value={String(ivaPorcentaje)} onValueChange={(v) => setIvaPorcentaje(Number(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0% (Excluido)</SelectItem>
+                    <SelectItem value="5">5%</SelectItem>
+                    <SelectItem value="19">19%</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <h4 className="font-medium pt-2">Datos del Cliente</h4>
-            <div>
-              <Label>Nombre / Razón Social</Label>
-              <Input
-                value={clienteNombre}
-                onChange={(e) => setClienteNombre(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Documento (CC/NIT)</Label>
-                <Input
-                  value={clienteDocumento}
-                  onChange={(e) => setClienteDocumento(e.target.value)}
-                  placeholder="Opcional"
-                />
+            {/* Items editables */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-2">
+                <Label>Ítems de la Factura</Label>
+                <Button size="sm" variant="outline" onClick={addItem}>
+                  <Plus className="h-3 w-3 mr-1" /> Agregar
+                </Button>
               </div>
-              <div>
-                <Label>Dirección</Label>
-                <Input
-                  value={clienteDireccion}
-                  onChange={(e) => setClienteDireccion(e.target.value)}
-                  placeholder="Opcional"
-                />
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {items.map((it, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-1 items-end border rounded-md p-2">
+                    <div className="col-span-5">
+                      <Label className="text-xs">Descripción</Label>
+                      <Input
+                        value={it.descripcion}
+                        onChange={(e) => handleItemChange(idx, "descripcion", e.target.value)}
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Cant.</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={it.cantidad}
+                        onChange={(e) => handleItemChange(idx, "cantidad", Number(e.target.value) || 0)}
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <Label className="text-xs">V. Unit.</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={it.precioUnitario}
+                        onChange={(e) => handleItemChange(idx, "precioUnitario", Number(e.target.value) || 0)}
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeItem(idx)}
+                        className="h-8 w-8"
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between text-xs mt-2 px-1">
+                <span className="text-muted-foreground">Subtotal: ${subtotal.toLocaleString("es-CO")}</span>
+                <span className="text-muted-foreground">IVA: ${ivaTotal.toLocaleString("es-CO")}</span>
+                <Badge variant="secondary">Total: ${total.toLocaleString("es-CO")}</Badge>
               </div>
             </div>
 
-            <div className="pt-4">
+            <div className="pt-2">
               <Label>Formato de Impresión</Label>
               <Tabs value={formato} onValueChange={(v) => setFormato(v as "termica" | "carta")}>
                 <TabsList className="grid w-full grid-cols-2">
@@ -393,14 +619,14 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
               </Tabs>
             </div>
 
-            <div className="flex gap-2 pt-4">
+            <div className="flex gap-2 pt-2">
               <Button onClick={handlePrint} className="flex-1">
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimir
               </Button>
               <Button onClick={handleSavePDF} variant="secondary" className="flex-1">
                 <FileDown className="h-4 w-4 mr-2" />
-                Guardar PDF
+                PDF
               </Button>
             </div>
 
@@ -415,7 +641,7 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
           </div>
 
           {/* Vista previa */}
-          <div className="border rounded-lg p-4 bg-gray-50 overflow-auto max-h-[70vh]">
+          <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[80vh]">
             <h3 className="font-semibold text-lg mb-4 text-center">Vista Previa</h3>
             <div className={`mx-auto ${formato === "termica" ? "w-[80mm]" : ""}`}>
               <FacturaFisicaTemplate
