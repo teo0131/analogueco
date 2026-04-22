@@ -13,9 +13,11 @@ export interface DetalleFactura {
 }
 
 export interface DatosCliente {
-  nombre: string;
-  documento: string;
+  tipo?: "persona" | "empresa";
+  nombre: string;            // Nombre o Razón Social
+  documento: string;         // CC o NIT formateado
   direccion: string;
+  email?: string;
 }
 
 export interface DatosFiscales {
@@ -48,6 +50,7 @@ export interface DatosFactura {
   subtotal: number;
   descuento: number;
   baseGravable: number;
+  ivaPorcentaje?: number;
   ivaTotal: number;
   otrosImpuestos: number;
   total: number;
@@ -123,24 +126,25 @@ export const FacturaFisicaTemplate = forwardRef<HTMLDivElement, FacturaFisicaTem
   ({ datosFiscales, datosFactura, formato }, ref) => {
     const esTermica = formato === "termica";
     const totalEnLetras = numeroALetras(Math.round(datosFactura.total));
+    const esEmpresa = datosFactura.cliente.tipo === "empresa";
 
     return (
       <div
         ref={ref}
-        className={`bg-white text-black font-sans ${
+        className={`bg-white text-black ${
           esTermica ? "w-[80mm] text-[10px] p-2" : "w-full max-w-[210mm] p-8 text-sm"
         }`}
-        style={{ 
-          fontFamily: "'Courier New', monospace",
-          lineHeight: esTermica ? 1.3 : 1.5
+        style={{
+          fontFamily: "'Courier New', 'Consolas', monospace",
+          lineHeight: esTermica ? 1.3 : 1.5,
         }}
       >
-        {/* ENCABEZADO - DATOS DEL NEGOCIO */}
+        {/* ENCABEZADO - DATOS DEL EMISOR */}
         <header className={`text-center ${esTermica ? "mb-2" : "mb-6"} border-b-2 border-black pb-3`}>
           {datosFiscales.logoUrl && (
-            <img 
-              src={datosFiscales.logoUrl} 
-              alt="Logo" 
+            <img
+              src={datosFiscales.logoUrl}
+              alt="Logo"
               width={esTermica ? 40 : 64}
               height={esTermica ? 40 : 64}
               loading="lazy"
@@ -181,7 +185,7 @@ export const FacturaFisicaTemplate = forwardRef<HTMLDivElement, FacturaFisicaTem
           </p>
         </header>
 
-        {/* INFORMACIÓN DE LA FACTURA */}
+        {/* INFO DE LA FACTURA */}
         <section className={`${esTermica ? "mb-2" : "mb-4"} border-b border-dashed border-black pb-2`}>
           <div className={`flex justify-between ${esTermica ? "" : "text-base"}`}>
             <span className="font-bold">FACTURA No.</span>
@@ -211,20 +215,38 @@ export const FacturaFisicaTemplate = forwardRef<HTMLDivElement, FacturaFisicaTem
 
         {/* DATOS DEL CLIENTE */}
         <section className={`${esTermica ? "mb-2" : "mb-4"} border-b border-dashed border-black pb-2`}>
-          <p className="font-bold">CLIENTE:</p>
-          <p>{datosFactura.cliente.nombre}</p>
-          {datosFactura.cliente.documento && datosFactura.cliente.documento !== "N/A" && (
-            <p>Doc: {datosFactura.cliente.documento}</p>
-          )}
-          {datosFactura.cliente.direccion && (
-            <p>{datosFactura.cliente.direccion}</p>
+          <p className="font-bold">
+            {esEmpresa ? "CLIENTE (EMPRESA):" : "CLIENTE:"}
+          </p>
+          {esEmpresa ? (
+            <>
+              <p><span className="font-semibold">Razón Social:</span> {datosFactura.cliente.nombre}</p>
+              {datosFactura.cliente.documento && datosFactura.cliente.documento !== "N/A" && (
+                <p><span className="font-semibold">NIT:</span> {datosFactura.cliente.documento}</p>
+              )}
+              {datosFactura.cliente.direccion && (
+                <p><span className="font-semibold">Dirección:</span> {datosFactura.cliente.direccion}</p>
+              )}
+              {datosFactura.cliente.email && (
+                <p><span className="font-semibold">Email:</span> {datosFactura.cliente.email}</p>
+              )}
+            </>
+          ) : (
+            <>
+              <p>{datosFactura.cliente.nombre}</p>
+              {datosFactura.cliente.documento && datosFactura.cliente.documento !== "N/A" && (
+                <p>Doc: {datosFactura.cliente.documento}</p>
+              )}
+              {datosFactura.cliente.direccion && (
+                <p>{datosFactura.cliente.direccion}</p>
+              )}
+            </>
           )}
         </section>
 
         {/* TABLA DE PRODUCTOS */}
         <section className={`${esTermica ? "mb-2" : "mb-4"}`}>
           {esTermica ? (
-            // Formato térmico: lista simple
             <div>
               <div className="flex justify-between font-bold border-b border-black pb-1 mb-1">
                 <span className="flex-1">Descripción</span>
@@ -240,16 +262,13 @@ export const FacturaFisicaTemplate = forwardRef<HTMLDivElement, FacturaFisicaTem
               ))}
             </div>
           ) : (
-            // Formato carta: tabla completa
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b-2 border-black">
                   <th className="text-left py-2">Descripción</th>
                   <th className="text-center py-2 w-12">Cant</th>
                   <th className="text-center py-2 w-16">Unidad</th>
-                  <th className="text-right py-2 w-24">P. Unit.</th>
-                  <th className="text-right py-2 w-20">Desc.</th>
-                  <th className="text-right py-2 w-16">IVA</th>
+                  <th className="text-right py-2 w-24">V. Unit.</th>
                   <th className="text-right py-2 w-24">Total</th>
                 </tr>
               </thead>
@@ -260,8 +279,6 @@ export const FacturaFisicaTemplate = forwardRef<HTMLDivElement, FacturaFisicaTem
                     <td className="text-center py-2">{item.cantidad}</td>
                     <td className="text-center py-2">{item.unidad}</td>
                     <td className="text-right py-2">{formatCurrency(item.precioUnitario)}</td>
-                    <td className="text-right py-2">{formatCurrency(item.descuento)}</td>
-                    <td className="text-right py-2">{item.iva}%</td>
                     <td className="text-right py-2">{formatCurrency(item.total)}</td>
                   </tr>
                 ))}
@@ -288,7 +305,7 @@ export const FacturaFisicaTemplate = forwardRef<HTMLDivElement, FacturaFisicaTem
           </div>
           {datosFactura.ivaTotal > 0 && (
             <div className="flex justify-between">
-              <span>IVA:</span>
+              <span>IVA ({datosFactura.ivaPorcentaje ?? 19}%):</span>
               <span>{formatCurrency(datosFactura.ivaTotal)}</span>
             </div>
           )}
@@ -308,12 +325,15 @@ export const FacturaFisicaTemplate = forwardRef<HTMLDivElement, FacturaFisicaTem
         </section>
 
         {/* PIE DE PÁGINA */}
-        <footer className={`text-center ${esTermica ? "text-[8px]" : "text-xs"} border-t border-dashed border-black pt-2`}>
-          <p className="font-semibold mb-1">
+        <footer className={`text-center ${esTermica ? "text-[8px]" : "text-xs"} border-t border-dashed border-black pt-2 space-y-1`}>
+          <p className="italic">
+            Esta factura constituye soporte de la operación según el Estatuto Tributario.
+          </p>
+          <p className="font-semibold">
             {datosFiscales.leyendaLegal || "Gracias por su compra"}
           </p>
           {datosFiscales.politicaCambios && (
-            <p className="mb-1">{datosFiscales.politicaCambios}</p>
+            <p>{datosFiscales.politicaCambios}</p>
           )}
           <div className={`${esTermica ? "mt-2" : "mt-4"}`}>
             <p>________________________</p>
