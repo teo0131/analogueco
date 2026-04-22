@@ -465,8 +465,8 @@ export const GenerarFactura = ({ orden, open, onClose }: GenerarFacturaProps) =>
                       <div className="mt-1 flex items-center gap-1 text-xs">
                         {nitParsed.isValid ? (
                           <>
-                            <CheckCircle2 className="h-3 w-3 text-green-600" />
-                            <span className="text-green-700">
+                          <CheckCircle2 className="h-3 w-3 text-primary" />
+                            <span className="text-primary">
                               NIT válido: <strong>{nitParsed.formatted}</strong>
                             </span>
                           </>
