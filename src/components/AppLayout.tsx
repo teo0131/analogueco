@@ -22,8 +22,7 @@ import {
   Warehouse, LineChart, UserCheck, Briefcase, Bike, Contact,
 } from "lucide-react";
 import { toast } from "sonner";
-import analoguecoLogo from "@/assets/analogueco-logo.png";
-import analoguecoIcon from "@/assets/analogueco-icon.png";
+import analoguecoIcon from "@/assets/analogueco-icon.svg";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type AccessLevel = { user: boolean; admin: boolean; owner: boolean };
