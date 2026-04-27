@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Box, ArrowRight, ShoppingCart, Package, BarChart3 } from "lucide-react";
+import { ArrowRight, ShoppingCart, Package, BarChart3 } from "lucide-react";
 import coffeeHeroImage from "@/assets/coffee-woman-hero.jpg";
+import analoguecoIcon from "@/assets/analogueco-icon.svg";
 import { AIAssistant } from "@/components/AIAssistant";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -30,7 +31,12 @@ const Landing = () => {
         <div className="relative h-full container mx-auto px-4 flex flex-col items-center justify-center text-center">
           {/* Logo */}
           <div className="h-16 w-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-xl">
-            <Box className="h-10 w-10 text-primary-foreground" />
+            <img
+              src={analoguecoIcon}
+              alt="AnalogueCo"
+              className="h-9 w-9"
+              style={{ filter: "brightness(0) invert(1)" }}
+            />
           </div>
           
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 tracking-tight drop-shadow-lg">
