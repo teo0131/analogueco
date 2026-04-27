@@ -33,6 +33,7 @@ const demoCameras = [
     lastEventTime: "Hace 2 min",
     detections: { people: 3, alerts: 0 },
     features: ["conteo", "presencia", "zona_interes"],
+    previewImage: camaraCajaDemo,
   },
   {
     id: 2,
