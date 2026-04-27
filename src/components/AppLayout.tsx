@@ -261,7 +261,7 @@ const AppLayout = () => {
             <img
               src={analoguecoIcon}
               alt="AnalogueCo"
-              className="h-7 w-7 shrink-0 object-contain text-foreground"
+              className="h-11 w-11 shrink-0 object-contain dark:invert"
             />
             <div className="text-left hidden md:block">
               <p className="text-xs leading-tight flex items-center gap-1" style={{ color: "hsl(0 0% 55%)", fontFamily: "'Space Grotesk', monospace", fontSize: "10px", letterSpacing: "0.04em" }}>
