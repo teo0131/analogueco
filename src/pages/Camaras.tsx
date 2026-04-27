@@ -83,24 +83,45 @@ const CameraCard = ({ camera }: { camera: typeof demoCameras[0] }) => {
       <CardContent className="p-0">
         {/* Camera preview placeholder */}
         <div className="relative aspect-video bg-muted rounded-t-lg overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center">
-            {camera.status === 'online' ? (
-              <div className="text-center">
-                <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">Vista previa disponible</p>
-                <Badge variant="outline" className="mt-2 gap-1">
+          {camera.status === 'online' && camera.previewImage ? (
+            <>
+              <img
+                src={camera.previewImage}
+                alt={camera.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute top-2 left-2">
+                <Badge variant="outline" className="gap-1 bg-background/70 backdrop-blur-sm border-background/40">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   En vivo
                 </Badge>
               </div>
-            ) : (
-              <div className="text-center">
-                <EyeOff className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">Cámara desconectada</p>
-                <Badge variant="destructive" className="mt-2">Offline</Badge>
+              <div className="absolute top-2 right-2">
+                <Badge variant="outline" className="bg-background/70 backdrop-blur-sm border-background/40 font-mono text-[10px]">
+                  REC ● {new Date().toLocaleTimeString('es-CO', { hour12: false })}
+                </Badge>
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              {camera.status === 'online' ? (
+                <div className="text-center">
+                  <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">Vista previa disponible</p>
+                  <Badge variant="outline" className="mt-2 gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    En vivo
+                  </Badge>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <EyeOff className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">Cámara desconectada</p>
+                  <Badge variant="destructive" className="mt-2">Offline</Badge>
+                </div>
+              )}
+            </div>
+          )}
           
           {/* Camera controls overlay */}
           {camera.status === 'online' && (
