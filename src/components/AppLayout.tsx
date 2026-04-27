@@ -22,8 +22,7 @@ import {
   Warehouse, LineChart, UserCheck, Briefcase, Bike, Contact,
 } from "lucide-react";
 import { toast } from "sonner";
-import analoguecoLogo from "@/assets/analogueco-logo.png";
-import analoguecoIcon from "@/assets/analogueco-icon.png";
+import analoguecoIcon from "@/assets/analogueco-icon.svg";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type AccessLevel = { user: boolean; admin: boolean; owner: boolean };
@@ -262,8 +261,7 @@ const AppLayout = () => {
             <img
               src={analoguecoIcon}
               alt="AnalogueCo"
-              className="h-8 w-8 shrink-0 object-contain"
-              style={{ mixBlendMode: "screen" }}
+              className="h-7 w-7 shrink-0 object-contain text-foreground"
             />
             <div className="text-left hidden md:block">
               <p className="text-xs leading-tight flex items-center gap-1" style={{ color: "hsl(0 0% 55%)", fontFamily: "'Space Grotesk', monospace", fontSize: "10px", letterSpacing: "0.04em" }}>
