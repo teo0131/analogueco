@@ -708,6 +708,188 @@ const Pricing = () => {
         </div>
       </section>
 
+      {/* SYSTEM MODULES — del brandbook */}
+      <section className="border-t border-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-muted-foreground">
+                06 — Módulos del sistema
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
+                Conjunto de funciones
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto mt-3">
+                Cinco módulos. Una plataforma. Diseñada para hacer visible lo invisible — y convertir la realidad física en datos estructurados y accionables.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {modules.map((m) => (
+                <Card key={m.n} className="hover:border-primary/40 hover:shadow-md transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="font-data text-xs tracking-widest text-primary">{m.n}</span>
+                      <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
+                        <m.icon className="h-5 w-5 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-bold tracking-tight mb-2">{m.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{m.desc}</p>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {m.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="text-[10px] font-data tracking-wider uppercase px-2 py-1 rounded border border-border bg-muted/50 text-muted-foreground"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="pt-3 border-t border-border">
+                      <span className="font-data text-xs tracking-wider text-primary">{m.metric}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COMPETITIVE MATRIX */}
+      <section className="bg-muted/40 border-y border-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-muted-foreground">
+                07 — Posición de mercado
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
+                Matriz competitiva
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto mt-3">
+                POS ve transacciones. CCTV ve grabaciones. AnalogueCo ve ambos — y los conecta en inteligencia accionable.
+              </p>
+            </div>
+
+            <Card className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-background">
+                      <th className="text-left p-4 font-data text-xs tracking-widest uppercase text-muted-foreground">Capacidad</th>
+                      <th className="p-4 font-data text-xs tracking-widest uppercase text-muted-foreground">POS</th>
+                      <th className="p-4 font-data text-xs tracking-widest uppercase text-muted-foreground">CCTV</th>
+                      <th className="p-4 font-data text-xs tracking-widest uppercase text-primary">AnalogueCo ↗</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {competitive.map((row, i) => (
+                      <tr key={row.cap} className={`border-b border-border ${i % 2 === 0 ? "bg-card" : "bg-background"}`}>
+                        <td className="p-4 text-foreground/90">{row.cap}</td>
+                        <td className="p-4 text-center font-data text-muted-foreground">{row.pos}</td>
+                        <td className="p-4 text-center font-data text-muted-foreground">{row.cctv}</td>
+                        <td className="p-4 text-center font-data font-bold text-primary">{row.us}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-3 border-t border-border bg-background flex flex-wrap gap-x-6 gap-y-1 text-[11px] font-data tracking-wider uppercase text-muted-foreground">
+                <span>✓ Capacidad completa</span>
+                <span>~ Parcial</span>
+                <span>✕ No soportado</span>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* PITCH 2 MIN */}
+      <section className="border-t border-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-muted-foreground">
+                11 — Presentación empresarial
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
+                Pitch 2 minutos
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto mt-3">
+                Cuatro bloques. Una idea fuerte por bloque. Claridad, orden y ritmo.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {pitchBlocks.map((b) => (
+                <Card key={b.n} className="hover:border-primary/40 hover:shadow-md transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="font-data text-xs tracking-widest text-primary">{b.n}</span>
+                      <span className="text-[10px] font-data tracking-widest uppercase text-muted-foreground border-l border-border pl-3">
+                        {b.label}
+                      </span>
+                      <div className="ml-auto h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center">
+                        <b.icon className="h-4 w-4 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold tracking-tight mb-2">{b.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{b.desc}</p>
+                    <ul className="space-y-2 mb-5">
+                      {b.points.map((p) => (
+                        <li key={p} className="flex items-start gap-2 text-sm">
+                          <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span className="text-foreground/90">{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <blockquote className="text-sm italic text-foreground/80 border-l-2 border-primary pl-3">
+                      "{b.quote}"
+                    </blockquote>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BRAND ECOSYSTEM */}
+      <section className="bg-sidebar text-sidebar-foreground border-t border-sidebar-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-primary">
+                Marca en contexto
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2 text-white">
+                Ecosistema AnalogueCo
+              </h2>
+              <p className="text-sidebar-foreground/70 max-w-2xl mx-auto mt-3">
+                Operamos en todos los puntos de contacto del negocio físico — desde la señalética exterior hasta el dashboard operacional.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {ecosystem.map((e) => (
+                <div
+                  key={e.title}
+                  className="p-6 rounded-lg border border-sidebar-border bg-sidebar-accent/30 backdrop-blur"
+                >
+                  <div className="h-10 w-10 rounded-md bg-primary/20 flex items-center justify-center mb-4">
+                    <e.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-white mb-1">{e.title}</h3>
+                  <p className="text-sm text-sidebar-foreground/70 leading-relaxed">{e.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FINAL CTA */}
       <section className="border-t border-border">
         <div className="container mx-auto px-4 py-20 md:py-28">
