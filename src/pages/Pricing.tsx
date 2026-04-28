@@ -141,6 +141,123 @@ const testimonials = [
   },
 ];
 
+const modules = [
+  {
+    n: "01",
+    icon: Activity,
+    title: "Monitoreo en tiempo real",
+    desc: "Inteligencia de video continua en cada zona. Sabe qué está pasando en el momento exacto — desde actividad en estantes hasta patrones de tráfico.",
+    tags: ["Visión por computadora", "Feed en vivo", "Mapeo de zonas"],
+    metric: "< 200ms latencia",
+  },
+  {
+    n: "02",
+    icon: Users,
+    title: "Tracking de comportamiento",
+    desc: "Detecta y clasifica patrones de comportamiento de empleados y clientes sin auditorías manuales. Revela anomalías antes de que se conviertan en pérdidas.",
+    tags: ["Clasificación ML", "Detección de anomalías", "Análisis de patrones"],
+    metric: "99.4% precisión",
+  },
+  {
+    n: "03",
+    icon: Boxes,
+    title: "Inventario: realidad vs sistema",
+    desc: "Compara lo que la cámara ve en los estantes contra lo que tu sistema dice que debería haber. Elimina stock fantasma y merma no rastreada.",
+    tags: ["Detección de SKU", "Reconciliación", "Alertas de discrepancia"],
+    metric: "±0.3% tolerancia",
+  },
+  {
+    n: "04",
+    icon: ShieldCheck,
+    title: "Detección de pérdidas",
+    desc: "Marca transacciones no registradas, movimiento no autorizado de mercancía e indicadores de comportamiento de robo interno o externo.",
+    tags: ["Correlación transaccional", "Indicadores de robo", "Alertas en tiempo real"],
+    metric: "Prom. 3.1s detección",
+  },
+  {
+    n: "05",
+    icon: BarChart3,
+    title: "Analítica operacional",
+    desc: "Inteligencia de series de tiempo sobre el rendimiento de tu tienda. Entiende horas pico, zonas de bajo rendimiento y brechas de personal.",
+    tags: ["Series de tiempo", "Mapas de calor", "Dashboard KPI"],
+    metric: "Reportes diarios + semanales",
+  },
+];
+
+const competitive = [
+  { cap: "Registro de transacciones", pos: "✓", cctv: "✕", us: "✓" },
+  { cap: "Captura de realidad física", pos: "✕", cctv: "✓", us: "✓" },
+  { cap: "Alertas en tiempo real", pos: "~", cctv: "✕", us: "✓" },
+  { cap: "Detección de discrepancia de inventario", pos: "✕", cctv: "✕", us: "✓" },
+  { cap: "Análisis de comportamiento de empleados", pos: "✕", cctv: "~", us: "✓" },
+  { cap: "Detección de pérdidas", pos: "✕", cctv: "~", us: "✓" },
+  { cap: "Datos para decisiones operativas", pos: "~", cctv: "✕", us: "✓" },
+  { cap: "Monitoreo remoto", pos: "~", cctv: "✓", us: "✓" },
+  { cap: "Inteligencia con IA", pos: "✕", cctv: "✕", us: "✓" },
+];
+
+const pitchBlocks = [
+  {
+    n: "01",
+    label: "Problema",
+    icon: Target,
+    title: "El dolor invisible del retail físico",
+    desc: "Los dueños operan a ciegas y dependen de estar presentes para tener control.",
+    points: [
+      "Sin visibilidad en tiempo real de lo que ocurre en tienda",
+      "Pérdidas, errores y fugas que nadie ve",
+      "El POS no sabe lo que pasó frente al mostrador",
+    ],
+    quote: "Le pasa a cada dueño de retail físico que no puede estar en dos lugares.",
+  },
+  {
+    n: "02",
+    label: "Solución",
+    icon: Lightbulb,
+    title: "Visión + datos, en tiempo real",
+    desc: "Cruzamos visión por computador con el POS para validar la operación al instante.",
+    points: [
+      "Cámaras + IA observan lo que ocurre",
+      "El sistema lo cruza con ventas e inventario",
+      "Detecta inconsistencias y dispara alertas",
+    ],
+    quote: "Data where it happens.",
+  },
+  {
+    n: "03",
+    label: "Impacto",
+    icon: Rocket,
+    title: "Del esfuerzo a la escala",
+    desc: "Reducimos pérdidas y liberamos al dueño de la operación física.",
+    points: [
+      "Menos pérdidas operativas",
+      "Supervisión remota y transparencia real",
+      "Decisiones basadas en lo que de verdad pasa",
+    ],
+    quote: "El control del negocio no debería depender de estar presente.",
+  },
+  {
+    n: "04",
+    label: "Modelo de negocio",
+    icon: Briefcase,
+    title: "SaaS + Setup",
+    desc: "Setup inicial de hardware + suscripción mensual de software e IA.",
+    points: [
+      "Setup desde $3.220.000 COP — hardware, instalación y calibración",
+      "Mensual desde $510.000 COP — software, IA y monitoreo continuo",
+      "El cliente paga por visibilidad, control y escalabilidad",
+    ],
+    quote: "Cobramos por el control que antes solo daba la presencia.",
+  },
+];
+
+const ecosystem = [
+  { icon: Store, title: "Presencia física", desc: "Señalética, retail, espacios F&B" },
+  { icon: Monitor, title: "Identidad digital", desc: "Plataforma, dashboard, app móvil" },
+  { icon: Layers, title: "Sistema de logotipo", desc: "Ícono origami + wordmark" },
+  { icon: Radar, title: "Inteligencia en campo", desc: "Visión por computadora en tiempo real" },
+];
+
 const Pricing = () => {
   const navigate = useNavigate();
   const [yearly, setYearly] = useState(false);
