@@ -22,6 +22,19 @@ import {
   TrendingUp,
   Quote,
   X,
+  Activity,
+  Users,
+  Boxes,
+  ShieldCheck,
+  BarChart3,
+  Target,
+  Lightbulb,
+  Rocket,
+  Briefcase,
+  Store,
+  Monitor,
+  Layers,
+  Radar,
 } from "lucide-react";
 
 const formatCOP = (n: number) =>
