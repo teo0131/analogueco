@@ -22,6 +22,19 @@ import {
   TrendingUp,
   Quote,
   X,
+  Activity,
+  Users,
+  Boxes,
+  ShieldCheck,
+  BarChart3,
+  Target,
+  Lightbulb,
+  Rocket,
+  Briefcase,
+  Store,
+  Monitor,
+  Layers,
+  Radar,
 } from "lucide-react";
 
 const formatCOP = (n: number) =>
@@ -126,6 +139,123 @@ const testimonials = [
     author: "Felipe O.",
     role: "Director · Cadena de cafés",
   },
+];
+
+const modules = [
+  {
+    n: "01",
+    icon: Activity,
+    title: "Monitoreo en tiempo real",
+    desc: "Inteligencia de video continua en cada zona. Sabe qué está pasando en el momento exacto — desde actividad en estantes hasta patrones de tráfico.",
+    tags: ["Visión por computadora", "Feed en vivo", "Mapeo de zonas"],
+    metric: "< 200ms latencia",
+  },
+  {
+    n: "02",
+    icon: Users,
+    title: "Tracking de comportamiento",
+    desc: "Detecta y clasifica patrones de comportamiento de empleados y clientes sin auditorías manuales. Revela anomalías antes de que se conviertan en pérdidas.",
+    tags: ["Clasificación ML", "Detección de anomalías", "Análisis de patrones"],
+    metric: "99.4% precisión",
+  },
+  {
+    n: "03",
+    icon: Boxes,
+    title: "Inventario: realidad vs sistema",
+    desc: "Compara lo que la cámara ve en los estantes contra lo que tu sistema dice que debería haber. Elimina stock fantasma y merma no rastreada.",
+    tags: ["Detección de SKU", "Reconciliación", "Alertas de discrepancia"],
+    metric: "±0.3% tolerancia",
+  },
+  {
+    n: "04",
+    icon: ShieldCheck,
+    title: "Detección de pérdidas",
+    desc: "Marca transacciones no registradas, movimiento no autorizado de mercancía e indicadores de comportamiento de robo interno o externo.",
+    tags: ["Correlación transaccional", "Indicadores de robo", "Alertas en tiempo real"],
+    metric: "Prom. 3.1s detección",
+  },
+  {
+    n: "05",
+    icon: BarChart3,
+    title: "Analítica operacional",
+    desc: "Inteligencia de series de tiempo sobre el rendimiento de tu tienda. Entiende horas pico, zonas de bajo rendimiento y brechas de personal.",
+    tags: ["Series de tiempo", "Mapas de calor", "Dashboard KPI"],
+    metric: "Reportes diarios + semanales",
+  },
+];
+
+const competitive = [
+  { cap: "Registro de transacciones", pos: "✓", cctv: "✕", us: "✓" },
+  { cap: "Captura de realidad física", pos: "✕", cctv: "✓", us: "✓" },
+  { cap: "Alertas en tiempo real", pos: "~", cctv: "✕", us: "✓" },
+  { cap: "Detección de discrepancia de inventario", pos: "✕", cctv: "✕", us: "✓" },
+  { cap: "Análisis de comportamiento de empleados", pos: "✕", cctv: "~", us: "✓" },
+  { cap: "Detección de pérdidas", pos: "✕", cctv: "~", us: "✓" },
+  { cap: "Datos para decisiones operativas", pos: "~", cctv: "✕", us: "✓" },
+  { cap: "Monitoreo remoto", pos: "~", cctv: "✓", us: "✓" },
+  { cap: "Inteligencia con IA", pos: "✕", cctv: "✕", us: "✓" },
+];
+
+const pitchBlocks = [
+  {
+    n: "01",
+    label: "Problema",
+    icon: Target,
+    title: "El dolor invisible del retail físico",
+    desc: "Los dueños operan a ciegas y dependen de estar presentes para tener control.",
+    points: [
+      "Sin visibilidad en tiempo real de lo que ocurre en tienda",
+      "Pérdidas, errores y fugas que nadie ve",
+      "El POS no sabe lo que pasó frente al mostrador",
+    ],
+    quote: "Le pasa a cada dueño de retail físico que no puede estar en dos lugares.",
+  },
+  {
+    n: "02",
+    label: "Solución",
+    icon: Lightbulb,
+    title: "Visión + datos, en tiempo real",
+    desc: "Cruzamos visión por computador con el POS para validar la operación al instante.",
+    points: [
+      "Cámaras + IA observan lo que ocurre",
+      "El sistema lo cruza con ventas e inventario",
+      "Detecta inconsistencias y dispara alertas",
+    ],
+    quote: "Data where it happens.",
+  },
+  {
+    n: "03",
+    label: "Impacto",
+    icon: Rocket,
+    title: "Del esfuerzo a la escala",
+    desc: "Reducimos pérdidas y liberamos al dueño de la operación física.",
+    points: [
+      "Menos pérdidas operativas",
+      "Supervisión remota y transparencia real",
+      "Decisiones basadas en lo que de verdad pasa",
+    ],
+    quote: "El control del negocio no debería depender de estar presente.",
+  },
+  {
+    n: "04",
+    label: "Modelo de negocio",
+    icon: Briefcase,
+    title: "SaaS + Setup",
+    desc: "Setup inicial de hardware + suscripción mensual de software e IA.",
+    points: [
+      "Setup desde $3.220.000 COP — hardware, instalación y calibración",
+      "Mensual desde $510.000 COP — software, IA y monitoreo continuo",
+      "El cliente paga por visibilidad, control y escalabilidad",
+    ],
+    quote: "Cobramos por el control que antes solo daba la presencia.",
+  },
+];
+
+const ecosystem = [
+  { icon: Store, title: "Presencia física", desc: "Señalética, retail, espacios F&B" },
+  { icon: Monitor, title: "Identidad digital", desc: "Plataforma, dashboard, app móvil" },
+  { icon: Layers, title: "Sistema de logotipo", desc: "Ícono origami + wordmark" },
+  { icon: Radar, title: "Inteligencia en campo", desc: "Visión por computadora en tiempo real" },
 ];
 
 const Pricing = () => {
@@ -573,6 +703,188 @@ const Pricing = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SYSTEM MODULES — del brandbook */}
+      <section className="border-t border-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-muted-foreground">
+                06 — Módulos del sistema
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
+                Conjunto de funciones
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto mt-3">
+                Cinco módulos. Una plataforma. Diseñada para hacer visible lo invisible — y convertir la realidad física en datos estructurados y accionables.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {modules.map((m) => (
+                <Card key={m.n} className="hover:border-primary/40 hover:shadow-md transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="font-data text-xs tracking-widest text-primary">{m.n}</span>
+                      <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
+                        <m.icon className="h-5 w-5 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-bold tracking-tight mb-2">{m.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{m.desc}</p>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {m.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="text-[10px] font-data tracking-wider uppercase px-2 py-1 rounded border border-border bg-muted/50 text-muted-foreground"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="pt-3 border-t border-border">
+                      <span className="font-data text-xs tracking-wider text-primary">{m.metric}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COMPETITIVE MATRIX */}
+      <section className="bg-muted/40 border-y border-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-muted-foreground">
+                07 — Posición de mercado
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
+                Matriz competitiva
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto mt-3">
+                POS ve transacciones. CCTV ve grabaciones. AnalogueCo ve ambos — y los conecta en inteligencia accionable.
+              </p>
+            </div>
+
+            <Card className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-background">
+                      <th className="text-left p-4 font-data text-xs tracking-widest uppercase text-muted-foreground">Capacidad</th>
+                      <th className="p-4 font-data text-xs tracking-widest uppercase text-muted-foreground">POS</th>
+                      <th className="p-4 font-data text-xs tracking-widest uppercase text-muted-foreground">CCTV</th>
+                      <th className="p-4 font-data text-xs tracking-widest uppercase text-primary">AnalogueCo ↗</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {competitive.map((row, i) => (
+                      <tr key={row.cap} className={`border-b border-border ${i % 2 === 0 ? "bg-card" : "bg-background"}`}>
+                        <td className="p-4 text-foreground/90">{row.cap}</td>
+                        <td className="p-4 text-center font-data text-muted-foreground">{row.pos}</td>
+                        <td className="p-4 text-center font-data text-muted-foreground">{row.cctv}</td>
+                        <td className="p-4 text-center font-data font-bold text-primary">{row.us}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-3 border-t border-border bg-background flex flex-wrap gap-x-6 gap-y-1 text-[11px] font-data tracking-wider uppercase text-muted-foreground">
+                <span>✓ Capacidad completa</span>
+                <span>~ Parcial</span>
+                <span>✕ No soportado</span>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* PITCH 2 MIN */}
+      <section className="border-t border-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-muted-foreground">
+                11 — Presentación empresarial
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
+                Pitch 2 minutos
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto mt-3">
+                Cuatro bloques. Una idea fuerte por bloque. Claridad, orden y ritmo.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {pitchBlocks.map((b) => (
+                <Card key={b.n} className="hover:border-primary/40 hover:shadow-md transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="font-data text-xs tracking-widest text-primary">{b.n}</span>
+                      <span className="text-[10px] font-data tracking-widest uppercase text-muted-foreground border-l border-border pl-3">
+                        {b.label}
+                      </span>
+                      <div className="ml-auto h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center">
+                        <b.icon className="h-4 w-4 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold tracking-tight mb-2">{b.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{b.desc}</p>
+                    <ul className="space-y-2 mb-5">
+                      {b.points.map((p) => (
+                        <li key={p} className="flex items-start gap-2 text-sm">
+                          <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span className="text-foreground/90">{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <blockquote className="text-sm italic text-foreground/80 border-l-2 border-primary pl-3">
+                      "{b.quote}"
+                    </blockquote>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BRAND ECOSYSTEM */}
+      <section className="bg-sidebar text-sidebar-foreground border-t border-sidebar-border">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-data tracking-widest uppercase text-primary">
+                Marca en contexto
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2 text-white">
+                Ecosistema AnalogueCo
+              </h2>
+              <p className="text-sidebar-foreground/70 max-w-2xl mx-auto mt-3">
+                Operamos en todos los puntos de contacto del negocio físico — desde la señalética exterior hasta el dashboard operacional.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {ecosystem.map((e) => (
+                <div
+                  key={e.title}
+                  className="p-6 rounded-lg border border-sidebar-border bg-sidebar-accent/30 backdrop-blur"
+                >
+                  <div className="h-10 w-10 rounded-md bg-primary/20 flex items-center justify-center mb-4">
+                    <e.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-white mb-1">{e.title}</h3>
+                  <p className="text-sm text-sidebar-foreground/70 leading-relaxed">{e.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
