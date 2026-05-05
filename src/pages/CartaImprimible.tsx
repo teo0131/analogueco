@@ -402,39 +402,74 @@ export default function CartaImprimible() {
               }}
             >
               {/* Header */}
-              <header style={{ borderBottom: `1.5px solid ${config.color_acento}`, paddingBottom: "8mm", marginBottom: "8mm" }}>
+              <header style={{ borderBottom: `1.5px solid ${config.color_acento}`, paddingBottom: "8mm", marginBottom: "10mm" }}>
                 {config.mostrar_logo && config.logo_url && (
-                  <img src={config.logo_url} alt="Logo" style={{ maxHeight: "20mm", marginBottom: "4mm" }} />
+                  <img src={config.logo_url} alt="Logo" style={{ maxHeight: "22mm", marginBottom: "4mm" }} />
                 )}
-                <div className="flex justify-between items-end">
-                  <div>
-                    <h1
+                {config.mostrar_logo && !config.logo_url && (
+                  // Wordmark tipográfico (logo provisional usando el título)
+                  <div style={{ textAlign: "center", marginBottom: "6mm" }}>
+                    <div
                       style={{
-                        fontFamily: `'${config.fuente_titulos}', sans-serif`,
-                        fontSize: "32pt",
+                        fontFamily: `'${config.fuente_titulos}', serif`,
+                        fontSize: "44pt",
                         fontWeight: 700,
-                        letterSpacing: "0.02em",
-                        margin: 0,
+                        letterSpacing: "0.06em",
                         lineHeight: 1,
+                        color: config.color_texto,
                       }}
                     >
-                      {config.titulo.toUpperCase()}
-                    </h1>
-                    {config.subtitulo && (
-                      <p style={{
-                        color: config.color_acento,
-                        fontSize: "9pt",
-                        fontWeight: 600,
-                        letterSpacing: "0.15em",
-                        marginTop: "3mm",
+                      {config.titulo}
+                    </div>
+                    <div style={{
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      gap: "4mm", marginTop: "3mm",
+                    }}>
+                      <span style={{ width: "12mm", height: "0.4px", background: config.color_acento }} />
+                      <span style={{
+                        fontFamily: `'${config.fuente_cuerpo}', serif`,
+                        fontSize: "8pt",
+                        letterSpacing: "0.35em",
                         textTransform: "uppercase",
+                        color: config.color_acento,
                       }}>
-                        {config.subtitulo}
-                      </p>
-                    )}
+                        {config.subtitulo || "Carta"}
+                      </span>
+                      <span style={{ width: "12mm", height: "0.4px", background: config.color_acento }} />
+                    </div>
                   </div>
-                  <div style={{ fontSize: "8pt", letterSpacing: "0.2em", opacity: 0.6 }}>CARTA</div>
-                </div>
+                )}
+                {!config.mostrar_logo && (
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <h1
+                        style={{
+                          fontFamily: `'${config.fuente_titulos}', sans-serif`,
+                          fontSize: "32pt",
+                          fontWeight: 700,
+                          letterSpacing: "0.02em",
+                          margin: 0,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {config.titulo.toUpperCase()}
+                      </h1>
+                      {config.subtitulo && (
+                        <p style={{
+                          color: config.color_acento,
+                          fontSize: "9pt",
+                          fontWeight: 600,
+                          letterSpacing: "0.15em",
+                          marginTop: "3mm",
+                          textTransform: "uppercase",
+                        }}>
+                          {config.subtitulo}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ fontSize: "8pt", letterSpacing: "0.2em", opacity: 0.6 }}>CARTA</div>
+                  </div>
+                )}
               </header>
 
               {/* Body: categories */}
