@@ -48,7 +48,7 @@ interface CartaConfig {
 // Default = Fraterno brand language (warm coffee tones, wordmark logo)
 const DEFAULT_CONFIG: CartaConfig = {
   titulo: "Fraterno",
-  subtitulo: "Café · Pastelería · Cerveza",
+  subtitulo: "Café · Pastelería · Cerveza · Pizza",
   leyenda_pie: "Precios en COP · Sujetos a cambio sin previo aviso",
   mostrar_logo: true,
   logo_url: null, // null → render Fraterno wordmark
