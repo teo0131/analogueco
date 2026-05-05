@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import MenuManagement from "./pages/MenuManagement";
+import CartaImprimible from "./pages/CartaImprimible";
 import HistorialDiario from "./pages/HistorialDiario";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
