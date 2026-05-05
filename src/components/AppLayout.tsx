@@ -62,6 +62,7 @@ const navGroups: NavGroup[] = [
     user: false, admin: true, owner: true,
     items: [
       { path: "/menu",                          label: "Mi Menú",            icon: Menu,     user: false, admin: true, owner: true },
+      { path: "/menu/carta",                    label: "Carta Imprimible",   icon: Receipt,  user: false, admin: true, owner: true },
       { path: "/proveedores",                   label: "Proveedores",        icon: Building2,user: false, admin: true, owner: true },
       { path: "/recetas",                       label: "Recetas",            icon: ChefHat,  user: false, admin: true, owner: true },
       { path: "/inventario/ingreso",            label: "Ingreso",            icon: Package,  user: false, admin: true, owner: true },
