@@ -91,6 +91,81 @@ export type Database = {
           },
         ]
       }
+      carta_config: {
+        Row: {
+          categorias_ocultas: Json
+          color_acento: string
+          color_categorias: string
+          color_fondo: string
+          color_texto: string
+          comercio_id: string
+          created_at: string
+          estilo: string
+          fuente_cuerpo: string
+          fuente_titulos: string
+          id: string
+          items_ocultos: Json
+          leyenda_pie: string | null
+          logo_url: string | null
+          mostrar_descripcion: boolean
+          mostrar_logo: boolean
+          mostrar_precio_decimales: boolean
+          orden_categorias: Json
+          simbolo_moneda: string
+          subtitulo: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          categorias_ocultas?: Json
+          color_acento?: string
+          color_categorias?: string
+          color_fondo?: string
+          color_texto?: string
+          comercio_id: string
+          created_at?: string
+          estilo?: string
+          fuente_cuerpo?: string
+          fuente_titulos?: string
+          id?: string
+          items_ocultos?: Json
+          leyenda_pie?: string | null
+          logo_url?: string | null
+          mostrar_descripcion?: boolean
+          mostrar_logo?: boolean
+          mostrar_precio_decimales?: boolean
+          orden_categorias?: Json
+          simbolo_moneda?: string
+          subtitulo?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          categorias_ocultas?: Json
+          color_acento?: string
+          color_categorias?: string
+          color_fondo?: string
+          color_texto?: string
+          comercio_id?: string
+          created_at?: string
+          estilo?: string
+          fuente_cuerpo?: string
+          fuente_titulos?: string
+          id?: string
+          items_ocultos?: Json
+          leyenda_pie?: string | null
+          logo_url?: string | null
+          mostrar_descripcion?: boolean
+          mostrar_logo?: boolean
+          mostrar_precio_decimales?: boolean
+          orden_categorias?: Json
+          simbolo_moneda?: string
+          subtitulo?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           comercio_id: string | null
