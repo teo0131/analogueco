@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import MenuManagement from "./pages/MenuManagement";
+import CartaImprimible from "./pages/CartaImprimible";
 import HistorialDiario from "./pages/HistorialDiario";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -92,6 +93,7 @@ const App = () => (
             <Route path="/domicilios" element={<Domicilios />} />
             <Route path="/crm" element={<CRM />} />
             <Route path="/menu" element={<MenuManagement />} />
+            <Route path="/menu/carta" element={<CartaImprimible />} />
             <Route path="/mesas" element={<ConfiguracionMesas />} />
             <Route path="/proveedores" element={<ProveedoresManagement />} />
             <Route path="/recetas" element={<RecetasManagement />} />
