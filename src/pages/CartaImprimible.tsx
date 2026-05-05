@@ -417,9 +417,6 @@ export default function CartaImprimible() {
                         height: "32mm",
                         margin: "0 auto",
                         display: "block",
-                        filter: config.color_texto !== "#000000"
-                          ? `brightness(0) saturate(100%)`
-                          : "none",
                       }}
                     />
                     <div style={{
