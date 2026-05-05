@@ -126,6 +126,7 @@ const App = () => (
             <Route path="/turnos" element={<TurnosChecklists />} />
             <Route path="/reportes" element={<ReportesAvanzados />} />
             <Route path="/historial-diario" element={<HistorialDiario />} />
+            <Route path="/facturas" element={<FacturasHistorial />} />
             <Route path="/utilidad" element={<UtilidadDiaria />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/configuracion-cuenta" element={<ConfiguracionCuenta />} />
