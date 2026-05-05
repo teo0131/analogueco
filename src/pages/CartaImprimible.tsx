@@ -44,18 +44,19 @@ interface CartaConfig {
   items_ocultos: string[];
 }
 
+// Default = Fraterno brand language (warm coffee tones, wordmark logo)
 const DEFAULT_CONFIG: CartaConfig = {
-  titulo: "Carta",
-  subtitulo: "",
+  titulo: "Fraterno",
+  subtitulo: "Café · Pastelería · Cerveza",
   leyenda_pie: "Precios en COP · Sujetos a cambio sin previo aviso",
-  mostrar_logo: false,
-  logo_url: null,
-  color_fondo: "#0B0B0B",
-  color_texto: "#F5F5F5",
-  color_acento: "#1E5EFF",
-  color_categorias: "#FFFFFF",
-  fuente_titulos: "Space Grotesk",
-  fuente_cuerpo: "Inter",
+  mostrar_logo: true,
+  logo_url: null, // null → render Fraterno wordmark
+  color_fondo: "#F2E3C6",        // crema cálido
+  color_texto: "#3B2A1F",        // café oscuro
+  color_acento: "#7A3B1F",       // café tostado
+  color_categorias: "#3B2A1F",
+  fuente_titulos: "Playfair Display",
+  fuente_cuerpo: "Georgia",
   estilo: "minimal",
   mostrar_descripcion: false,
   mostrar_precio_decimales: false,
