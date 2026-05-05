@@ -414,7 +414,7 @@ export default function CartaImprimible() {
                       src={fraternoLogo}
                       alt={config.titulo}
                       style={{
-                        height: "70mm",
+                        height: "90mm",
                         maxWidth: "90%",
                         margin: "0 auto",
                         display: "block",
