@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Printer, Save, Eye, Palette, Type, Settings2 } from "lucide-react";
 import { toast } from "sonner";
+import fraternoLogo from "@/assets/fraterno-logo.svg";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface MenuItem {
@@ -407,25 +408,22 @@ export default function CartaImprimible() {
                   <img src={config.logo_url} alt="Logo" style={{ maxHeight: "22mm", marginBottom: "4mm" }} />
                 )}
                 {config.mostrar_logo && !config.logo_url && (
-                  // Wordmark tipográfico (logo provisional usando el título)
+                  // Logo oficial Fraterno (SVG) + subtítulo decorativo
                   <div style={{ textAlign: "center", marginBottom: "6mm" }}>
-                    <div
+                    <img
+                      src={fraternoLogo}
+                      alt={config.titulo}
                       style={{
-                        fontFamily: `'${config.fuente_titulos}', serif`,
-                        fontSize: "44pt",
-                        fontWeight: 700,
-                        letterSpacing: "0.06em",
-                        lineHeight: 1,
-                        color: config.color_texto,
+                        height: "32mm",
+                        margin: "0 auto",
+                        display: "block",
                       }}
-                    >
-                      {config.titulo}
-                    </div>
+                    />
                     <div style={{
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      gap: "4mm", marginTop: "3mm",
+                      gap: "4mm", marginTop: "4mm",
                     }}>
-                      <span style={{ width: "12mm", height: "0.4px", background: config.color_acento }} />
+                      <span style={{ width: "14mm", height: "0.5px", background: config.color_acento }} />
                       <span style={{
                         fontFamily: `'${config.fuente_cuerpo}', serif`,
                         fontSize: "8pt",
@@ -435,7 +433,7 @@ export default function CartaImprimible() {
                       }}>
                         {config.subtitulo || "Carta"}
                       </span>
-                      <span style={{ width: "12mm", height: "0.4px", background: config.color_acento }} />
+                      <span style={{ width: "14mm", height: "0.5px", background: config.color_acento }} />
                     </div>
                   </div>
                 )}
