@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Printer, Save, Eye, Palette, Type, Settings2 } from "lucide-react";
 import { toast } from "sonner";
+import fraternoLogo from "@/assets/fraterno-logo.svg";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface MenuItem {
