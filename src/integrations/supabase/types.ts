@@ -1479,6 +1479,50 @@ export type Database = {
           },
         ]
       }
+      eventos_fisicos: {
+        Row: {
+          comercio_id: string | null
+          confianza: number | null
+          created_at: string
+          fuente: string | null
+          id: string
+          metadata: Json | null
+          tipo: string
+          user_id: string
+          zona: string | null
+        }
+        Insert: {
+          comercio_id?: string | null
+          confianza?: number | null
+          created_at?: string
+          fuente?: string | null
+          id?: string
+          metadata?: Json | null
+          tipo: string
+          user_id: string
+          zona?: string | null
+        }
+        Update: {
+          comercio_id?: string | null
+          confianza?: number | null
+          created_at?: string
+          fuente?: string | null
+          id?: string
+          metadata?: Json | null
+          tipo?: string
+          user_id?: string
+          zona?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_fisicos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       facturas_fisicas: {
         Row: {
           base_gravable: number
@@ -1615,6 +1659,76 @@ export type Database = {
             columns: ["comercio_id"]
             isOneToOne: false
             referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inconsistencias_pos_real: {
+        Row: {
+          comercio_id: string | null
+          created_at: string
+          descripcion: string | null
+          estado: string
+          evento_fisico_id: string | null
+          id: string
+          monto_estimado: number | null
+          notas: string | null
+          orden_pos_id: string | null
+          resuelto_at: string | null
+          severidad: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          comercio_id?: string | null
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          evento_fisico_id?: string | null
+          id?: string
+          monto_estimado?: number | null
+          notas?: string | null
+          orden_pos_id?: string | null
+          resuelto_at?: string | null
+          severidad?: string
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          comercio_id?: string | null
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          evento_fisico_id?: string | null
+          id?: string
+          monto_estimado?: number | null
+          notas?: string | null
+          orden_pos_id?: string | null
+          resuelto_at?: string | null
+          severidad?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inconsistencias_pos_real_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inconsistencias_pos_real_evento_fisico_id_fkey"
+            columns: ["evento_fisico_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_fisicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inconsistencias_pos_real_orden_pos_id_fkey"
+            columns: ["orden_pos_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_pos"
             referencedColumns: ["id"]
           },
         ]
