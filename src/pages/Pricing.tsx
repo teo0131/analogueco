@@ -227,9 +227,25 @@ const Pricing = () => {
               Manual de marca · v1.0
             </span>
           </button>
-          <Button onClick={() => navigate("/auth")} size="sm" className="font-medium">
-            Login
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={async () => {
+                const { loginAsDemo } = await import("@/lib/demoAuth");
+                const ok = await loginAsDemo();
+                if (ok) navigate("/home");
+              }}
+              size="sm"
+              variant="outline"
+              className="font-medium gap-1"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Ver demo
+            </Button>
+            <Button onClick={() => navigate("/auth")} size="sm" className="font-medium">
+              Login
+            </Button>
+          </div>
+
         </div>
       </header>
 
