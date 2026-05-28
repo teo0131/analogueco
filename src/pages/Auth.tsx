@@ -15,6 +15,15 @@ import { loginAsDemo } from "@/lib/demoAuth";
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const handleDemo = async () => {
+    setDemoLoading(true);
+    const ok = await loginAsDemo();
+    if (ok) navigate("/home");
+    setDemoLoading(false);
+  };
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pinSeguridad, setPinSeguridad] = useState("");
