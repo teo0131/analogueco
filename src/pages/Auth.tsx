@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Lock, Store, Users } from "lucide-react";
+import { Lock, Store, Users, Sparkles } from "lucide-react";
 import analoguecoIcon from "@/assets/analogueco-icon.svg";
+import { loginAsDemo } from "@/lib/demoAuth";
+
 
 const Auth = () => {
   const navigate = useNavigate();
