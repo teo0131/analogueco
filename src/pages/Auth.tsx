@@ -7,12 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Lock, Store, Users } from "lucide-react";
+import { Lock, Store, Users, Sparkles } from "lucide-react";
 import analoguecoIcon from "@/assets/analogueco-icon.svg";
+import { loginAsDemo } from "@/lib/demoAuth";
+
 
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const handleDemo = async () => {
+    setDemoLoading(true);
+    const ok = await loginAsDemo();
+    if (ok) navigate("/home");
+    setDemoLoading(false);
+  };
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pinSeguridad, setPinSeguridad] = useState("");
@@ -373,6 +384,32 @@ const Auth = () => {
               </form>
             </TabsContent>
           </Tabs>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground tracking-widest">
+                o explora
+              </span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={handleDemo}
+            disabled={demoLoading || loading}
+          >
+            <Sparkles className="h-4 w-4" />
+            {demoLoading ? "Entrando..." : "Probar cuenta demo"}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Recorre todo el sistema sin registrarte. Datos de demostración.
+          </p>
+
         </CardContent>
       </Card>
     </div>
