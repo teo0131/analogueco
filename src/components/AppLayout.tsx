@@ -20,6 +20,7 @@ import {
   Bell, Clock, AlertTriangle, Camera, Radio, Volume2,
   ClipboardCheck, Activity, DollarSign, Crown, ChevronDown,
   Warehouse, LineChart, UserCheck, Briefcase, Bike, Contact,
+  Target,
 } from "lucide-react";
 import { toast } from "sonner";
 import analoguecoIcon from "@/assets/analogueco-icon.svg";
