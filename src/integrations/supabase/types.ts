@@ -2804,6 +2804,16 @@ export type Database = {
         Returns: boolean
       }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
+      rentabilidad_por_producto: {
+        Args: { desde: string; hasta: string }
+        Returns: {
+          costo_total: number
+          costo_unitario: number
+          producto: string
+          unidades: number
+          venta: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "owner"
