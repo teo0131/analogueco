@@ -25,6 +25,7 @@ import PendingApproval from "./pages/PendingApproval";
 import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminChatInsights from "./pages/AdminChatInsights";
 import UtilidadDiaria from "./pages/UtilidadDiaria";
+import Rentabilidad from "./pages/Rentabilidad";
 import Finanzas from "./pages/Finanzas";
 import CuentasPorPagar from "./pages/CuentasPorPagar";
 import CuentasPorCobrar from "./pages/CuentasPorCobrar";
@@ -128,6 +129,7 @@ const App = () => (
             <Route path="/historial-diario" element={<HistorialDiario />} />
             <Route path="/facturas" element={<FacturasHistorial />} />
             <Route path="/utilidad" element={<UtilidadDiaria />} />
+            <Route path="/finanzas/rentabilidad" element={<Rentabilidad />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/configuracion-cuenta" element={<ConfiguracionCuenta />} />
             
