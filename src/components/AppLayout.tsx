@@ -20,6 +20,7 @@ import {
   Bell, Clock, AlertTriangle, Camera, Radio, Volume2,
   ClipboardCheck, Activity, DollarSign, Crown, ChevronDown,
   Warehouse, LineChart, UserCheck, Briefcase, Bike, Contact,
+  Target,
 } from "lucide-react";
 import { toast } from "sonner";
 import analoguecoIcon from "@/assets/analogueco-icon.svg";
@@ -83,6 +84,7 @@ const navGroups: NavGroup[] = [
       { path: "/historial-diario",            label: "Ventas Diarias",    icon: Calendar,    user: false, admin: true, owner: true },
       { path: "/facturas",                    label: "Facturas Emitidas", icon: Receipt,     user: false, admin: true, owner: true },
       { path: "/utilidad",                    label: "Utilidad",          icon: TrendingUp,  user: false, admin: true, owner: true },
+      { path: "/finanzas/rentabilidad",       label: "Rentabilidad",      icon: Target,      user: false, admin: true, owner: true },
       { path: "/dashboard",                   label: "Dashboard",         icon: BarChart3,   user: false, admin: true, owner: true },
       { path: "/reportes",                    label: "Reportes",          icon: BarChart3,   user: false, admin: true, owner: true },
     ],
