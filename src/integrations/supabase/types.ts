@@ -1622,6 +1622,45 @@ export type Database = {
           },
         ]
       }
+      gastos_fijos: {
+        Row: {
+          activo: boolean
+          categoria: string
+          comercio_id: string | null
+          concepto: string
+          created_at: string
+          id: string
+          monto: number
+          notas: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean
+          categoria?: string
+          comercio_id?: string | null
+          concepto: string
+          created_at?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          activo?: boolean
+          categoria?: string
+          comercio_id?: string | null
+          concepto?: string
+          created_at?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gastos_operativos: {
         Row: {
           categoria: string
