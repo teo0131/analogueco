@@ -25,6 +25,9 @@ export default function ConfiguracionCuenta() {
   const [waPhoneNumberId, setWaPhoneNumberId] = useState("");
   const [waAccessToken, setWaAccessToken] = useState("");
   const [showWaToken, setShowWaToken] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Fetch user settings
   const { data: settings, isLoading } = useQuery({
@@ -218,6 +221,29 @@ export default function ConfiguracionCuenta() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Las contraseñas no coinciden");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Contraseña actualizada correctamente");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast.error(error.message || "Error al cambiar la contraseña");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const hasPin = !!settings?.pin_seguridad;
 
   if (isLoading) {
@@ -292,6 +318,48 @@ export default function ConfiguracionCuenta() {
           >
             <Mail className="h-4 w-4 mr-2" />
             {changingEmail ? "Enviando..." : "Cambiar Correo"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Cambiar contraseña */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Cambiar Contraseña
+          </CardTitle>
+          <CardDescription>
+            Actualiza la contraseña de acceso a tu cuenta
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="new-password">Nueva Contraseña</Label>
+            <Input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirmar Contraseña</Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repite la contraseña"
+            />
+          </div>
+          <Button
+            onClick={handleChangePassword}
+            disabled={changingPassword || !newPassword || !confirmPassword}
+          >
+            <Lock className="h-4 w-4 mr-2" />
+            {changingPassword ? "Actualizando..." : "Actualizar Contraseña"}
           </Button>
         </CardContent>
       </Card>
