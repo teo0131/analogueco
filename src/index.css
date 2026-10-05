@@ -1,157 +1,122 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   AnalogueCo — Design System
+   Brand: Industrial, precise, cold. Zero warmth.
+   Primary font: Inter | Data labels: Space Grotesk
+   ============================================================ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 30% 10%;
+    /* ── Light mode (sobrio, casi monocromo) ── */
+    --background: 0 0% 97%;
+    --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 30% 10%;
+    --card-foreground: 0 0% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 30% 10%;
+    --popover-foreground: 0 0% 8%;
 
+    /* Azul Eléctrico — acción primaria */
     --primary: 224 100% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 224 65% 12%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 16%;
 
-    --muted: 220 20% 96%;
-    --muted-foreground: 224 15% 48%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 224 100% 56%;
+    /* Azul Claro — hover / acento secundario */
+    --accent: 224 100% 65%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 88%;
-    --border-subtle: 220 15% 92%;
-    --input: 220 15% 88%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
     --ring: 224 100% 56%;
 
-    --radius: 0rem;
+    --radius: 0.375rem;
 
-    /* AnalogueCo Brand Tokens */
-    --brand-black: 224 65% 10%;
-    --brand-dark: 224 50% 18%;
-    --brand-blue: 224 100% 56%;
-    --brand-blue-glow: 224 100% 70%;
-    --brand-white: 0 0% 100%;
-    --brand-grey: 220 20% 95%;
+    /* Header bar — oscuro de marca */
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 82%;
+    --sidebar-primary: 224 100% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 30% 22%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 224 100% 56%;
 
-    /* Gradients */
-    --gradient-hero: linear-gradient(160deg, hsl(224, 70%, 10%) 0%, hsl(224, 80%, 30%) 65%, hsl(224, 100%, 56%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 8%) 0%, hsl(224, 50%, 10%) 100%);
-
-    /* Shadows */
-    --shadow-none: none;
-
-    /* Typography */
-    --font-display: 'Inter', sans-serif;
-    --font-mono: 'Space Grotesk', sans-serif;
-    --font-body: 'Inter', sans-serif;
-
-    /* Sidebar tokens */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Brand gradients */
+    --gradient-hero: linear-gradient(160deg, hsl(222 72% 15%) 0%, hsl(224 70% 38%) 65%, hsl(224 100% 56%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(222 72% 15%) 0%, hsl(220 60% 32%) 100%);
   }
 
   .dark {
+    /* ── Dark mode — brand-native, profundo ── */
     --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 98%;
+    --foreground: 0 0% 92%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 92%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 92%;
+
     --primary: 224 100% 56%;
     --primary-foreground: 0 0% 100%;
+
     --secondary: 0 0% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 224 100% 56%;
+    --secondary-foreground: 0 0% 92%;
+
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 224 100% 65%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
     --ring: 224 100% 56%;
+
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 224 100% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 224 100% 56%;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-    border-radius: 0 !important;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-body);
-    -webkit-font-smoothing: antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.05;
-    text-transform: uppercase;
+  /* Space Grotesk para datos, métricas, timestamps */
+  .font-data,
+  .tabular-nums {
+    font-family: 'Space Grotesk', monospace;
   }
-}
-
-@layer utilities {
-  .font-display {
-    font-family: var(--font-display);
-    font-weight: 900;
-    letter-spacing: -0.05em;
-    text-transform: uppercase;
-  }
-  .font-mono-brand {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-  }
-  .text-brand-blue {
-    color: hsl(var(--brand-blue));
-  }
-  .bg-brand-black {
-    background-color: hsl(var(--brand-black));
-  }
-  .bg-brand-blue {
-    background-color: hsl(var(--brand-blue));
-  }
-  .border-brand {
-    border-color: hsl(var(--brand-blue));
-  }
-  .gradient-hero {
-    background: var(--gradient-hero);
-  }
-  .clip-enter {
-    animation: clip-in 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-  }
-}
-
-@keyframes clip-in {
-  from { clip-path: inset(100% 0 0 0); opacity: 0; }
-  to   { clip-path: inset(0% 0 0 0); opacity: 1; }
-}
-
-/* CV bounding box animation */
-@keyframes bbox-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-.bbox-animate {
-  animation: bbox-pulse 2s ease-in-out infinite;
 }

@@ -1,94 +1,483 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
-import { Logo } from "@/components/brand/Logo";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { TrendingUp, Package, AlertTriangle, ChefHat, DollarSign } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { es } from "date-fns/locale";
+import { useMemo } from "react";
 
-export default function Dashboard() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-      if (!session) navigate("/auth?mode=login", { replace: true });
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-      if (!data.session) navigate("/auth?mode=login", { replace: true });
-    });
-    return () => sub.subscription.unsubscribe();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/", { replace: true });
+type MovimientoInventario = {
+  id: string;
+  fecha: string;
+  tipo_movimiento: string;
+  cantidad: number;
+  producto_id: string;
+  productos: {
+    nombre: string;
   };
+};
 
-  if (loading) return null;
-  const plan = (user?.user_metadata as any)?.plan ?? "—";
-  const name = (user?.user_metadata as any)?.full_name ?? user?.email;
+type Producto = {
+  id: string;
+  nombre: string;
+  stock_actual: number;
+  stock_minimo: number;
+  unidad_inventario: string;
+  tipo_producto: string;
+};
+
+const Dashboard = () => {
+  // Fetch movimientos últimos 30 días
+  const { data: movimientos } = useQuery({
+    queryKey: ["dashboard-movimientos"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      const thirtyDaysAgo = subDays(new Date(), 30);
+
+      const { data, error } = await supabase
+        .from("movimientos_inventario")
+        .select(`
+          *,
+          productos (
+            nombre
+          )
+        `)
+        .eq("user_id", user.id)
+        .gte("fecha", thirtyDaysAgo.toISOString())
+        .order("fecha", { ascending: true });
+
+      if (error) throw error;
+      return data as MovimientoInventario[];
+    },
+  });
+
+  // Fetch productos con stock bajo
+  const { data: productosStockBajo } = useQuery({
+    queryKey: ["dashboard-stock-bajo"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      const { data, error } = await supabase
+        .from("productos")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("es_activo", true)
+        .order("stock_actual", { ascending: true });
+
+      if (error) throw error;
+      
+      const productos = data as Producto[];
+      return productos.filter(p => p.stock_actual <= p.stock_minimo);
+    },
+  });
+
+  // Fetch consumos por receta (últimos 30 días)
+  const { data: consumosPorReceta } = useQuery({
+    queryKey: ["dashboard-consumos-receta"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      const thirtyDaysAgo = subDays(new Date(), 30);
+
+      const { data, error } = await supabase
+        .from("movimientos_inventario")
+        .select(`
+          *,
+          productos (
+            nombre,
+            unidad_inventario
+          )
+        `)
+        .eq("user_id", user.id)
+        .eq("tipo_movimiento", "consumo")
+        .gte("fecha", thirtyDaysAgo.toISOString());
+
+      if (error) throw error;
+      
+      return data;
+    },
+  });
+
+  // Fetch completed orders from database
+  const { data: ordenesPOS } = useQuery({
+    queryKey: ["dashboard-ordenes"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      const thirtyDaysAgo = subDays(new Date(), 30);
+
+      const { data, error } = await supabase
+        .from("ordenes_pos")
+        .select(`
+          *,
+          detalle_ordenes_pos (
+            nombre_item,
+            cantidad,
+            subtotal
+          )
+        `)
+        .eq("user_id", user.id)
+        .gte("fecha", thirtyDaysAgo.toISOString())
+        .order("fecha", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Calculate productos más vendidos from database
+  const productosMasVendidos = useMemo(() => {
+    if (!ordenesPOS) return [];
+    
+    const productCount: Record<string, number> = {};
+    
+    ordenesPOS.forEach((order: any) => {
+      order.detalle_ordenes_pos?.forEach((item: any) => {
+        productCount[item.nombre_item] = (productCount[item.nombre_item] || 0) + item.cantidad;
+      });
+    });
+
+    return Object.entries(productCount)
+      .map(([name, count]) => ({ name, cantidad: count }))
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
+  }, [ordenesPOS]);
+
+  // Calculate ventas totales from database
+  const ventasTotales = useMemo(() => {
+    if (!ordenesPOS) return 0;
+    return ordenesPOS.reduce((sum: number, order: any) => sum + Number(order.total), 0);
+  }, [ordenesPOS]);
+
+  // Movimientos por tipo (últimos 30 días)
+  const movimientosPorTipo = useMemo(() => {
+    if (!movimientos) return [];
+
+    const tipos: Record<string, number> = {
+      entrada: 0,
+      salida_venta: 0,
+      ajuste: 0,
+      consumo: 0,
+    };
+
+    movimientos.forEach((mov) => {
+      tipos[mov.tipo_movimiento] = (tipos[mov.tipo_movimiento] || 0) + 1;
+    });
+
+    return [
+      { tipo: "Entradas", cantidad: tipos.entrada, color: "#10b981" },
+      { tipo: "Salidas/Ventas", cantidad: tipos.salida_venta, color: "#ef4444" },
+      { tipo: "Ajustes", cantidad: tipos.ajuste, color: "#f59e0b" },
+      { tipo: "Consumos", cantidad: tipos.consumo, color: "#8b5cf6" },
+    ];
+  }, [movimientos]);
+
+  // Movimientos por día (últimos 7 días)
+  const movimientosPorDia = useMemo(() => {
+    if (!movimientos) return [];
+
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(new Date(), 6 - i);
+      return {
+        fecha: format(date, "dd/MM", { locale: es }),
+        entradas: 0,
+        salidas: 0,
+        consumos: 0,
+      };
+    });
+
+    movimientos.forEach((mov) => {
+      const movDate = new Date(mov.fecha);
+      const dayIndex = last7Days.findIndex((day) => {
+        const targetDate = subDays(new Date(), 6 - last7Days.indexOf(day));
+        return (
+          movDate >= startOfDay(targetDate) &&
+          movDate <= endOfDay(targetDate)
+        );
+      });
+
+      if (dayIndex !== -1) {
+        if (mov.tipo_movimiento === "entrada") {
+          last7Days[dayIndex].entradas += mov.cantidad;
+        } else if (mov.tipo_movimiento === "salida_venta") {
+          last7Days[dayIndex].salidas += mov.cantidad;
+        } else if (mov.tipo_movimiento === "consumo") {
+          last7Days[dayIndex].consumos += mov.cantidad;
+        }
+      }
+    });
+
+    return last7Days;
+  }, [movimientos]);
+
+  // Top 5 insumos más consumidos
+  const insumosTopConsumo = useMemo(() => {
+    if (!consumosPorReceta) return [];
+
+    const consumosPorInsumo: Record<string, { nombre: string; total: number; unidad: string }> = {};
+
+    consumosPorReceta.forEach((mov: any) => {
+      const key = mov.producto_id;
+      if (!consumosPorInsumo[key]) {
+        consumosPorInsumo[key] = {
+          nombre: mov.productos.nombre,
+          total: 0,
+          unidad: mov.productos.unidad_inventario,
+        };
+      }
+      consumosPorInsumo[key].total += mov.cantidad;
+    });
+
+    return Object.values(consumosPorInsumo)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  }, [consumosPorReceta]);
+
+  const COLORS = ["#10b981", "#ef4444", "#f59e0b", "#8b5cf6"];
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
-      <header className="bg-white border-b border-black/10">
-        <div className="max-w-[1200px] mx-auto px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo variant="mark" className="h-7 w-auto text-[#0A1540]" />
-            <span className="font-display text-[#0A1540] text-base tracking-wide">ANALOGUECO</span>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="font-mono text-[10px] uppercase tracking-widest text-black/60 hover:text-black"
-          >
-            Log out
-          </button>
-        </div>
-      </header>
-      <main className="max-w-[1200px] mx-auto px-8 py-16">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/40 mb-4">
-          Dashboard
-        </p>
-        <h1 className="font-display text-4xl text-black mb-2">Hello, {name}</h1>
-        <p className="text-black/60 mb-12">Welcome to your operational intelligence.</p>
+    <div className="container mx-auto py-6 px-4 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <TrendingUp className="h-8 w-8" />
+          Dashboard de Análisis
+        </h1>
+        <p className="text-muted-foreground">Métricas de inventario, ventas y consumos</p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-2xl border border-black/10 p-6">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-black/40 mb-2">
-              Plan
-            </p>
-            <p className="font-display text-2xl text-black capitalize">{plan}</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-black/10 p-6">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-black/40 mb-2">
-              Active cameras
-            </p>
-            <p className="font-display text-2xl text-black">0</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-black/10 p-6">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-black/40 mb-2">
-              Alerts today
-            </p>
-            <p className="font-display text-2xl text-black">0</p>
-          </div>
+        {/* KPIs Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ventas Totales</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                ${ventasTotales.toLocaleString("es-CO")}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {ordenesPOS?.length || 0} órdenes (30 días)
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Alertas Stock Bajo</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">
+                {productosStockBajo?.length || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Productos por debajo del mínimo
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Movimientos (30d)</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {movimientos?.length || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Últimos 30 días
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Consumos Recetas</CardTitle>
+              <ChefHat className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {consumosPorReceta?.length || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Movimientos de consumo
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="mt-12 bg-white rounded-2xl border border-black/10 p-8">
-          <h2 className="font-display text-2xl text-black mb-2">Next steps</h2>
-          <p className="text-black/60 text-sm mb-6">
-            Your account is ready. The payment gateway will be connected in a future phase to activate
-            your subscription and start the installation.
-          </p>
-          <a
-            href="mailto:hola@analogueco.com"
-            className="inline-block bg-[#1E5EFF] text-white font-mono text-xs uppercase tracking-widest px-6 py-3 rounded-md hover:bg-[#0D46CC] transition-colors"
-          >
-            Coordinate installation
-          </a>
+        {/* Alertas de Stock Bajo */}
+        {productosStockBajo && productosStockBajo.length > 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>¡Atención!</strong> Hay {productosStockBajo.length} producto(s) con stock bajo o agotado.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Charts Row 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Movimientos por Día */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Movimientos Últimos 7 Días</CardTitle>
+              <CardDescription>Entradas, salidas y consumos diarios</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={movimientosPorDia}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="fecha" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="entradas" stroke="#10b981" name="Entradas" />
+                  <Line type="monotone" dataKey="salidas" stroke="#ef4444" name="Salidas" />
+                  <Line type="monotone" dataKey="consumos" stroke="#8b5cf6" name="Consumos" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Movimientos por Tipo */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribución de Movimientos</CardTitle>
+              <CardDescription>Por tipo (últimos 30 días)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={movimientosPorTipo}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.tipo}: ${entry.cantidad}`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="cantidad"
+                  >
+                    {movimientosPorTipo.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+
+        {/* Charts Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Productos Más Vendidos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Top 10 Productos Más Vendidos</CardTitle>
+              <CardDescription>Según órdenes completadas en el POS</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {productosMasVendidos.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={productosMasVendidos}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="cantidad" fill="#10b981" name="Unidades Vendidas" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No hay datos de ventas disponibles
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Insumos Consumidos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Top 5 Insumos Más Consumidos</CardTitle>
+              <CardDescription>Por recetas preparadas (últimos 30 días)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {insumosTopConsumo.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={insumosTopConsumo}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="nombre" angle={-45} textAnchor="end" height={100} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="total" fill="#8b5cf6" name="Cantidad Consumida" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No hay datos de consumo disponibles
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Productos con Stock Bajo */}
+        {productosStockBajo && productosStockBajo.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Productos con Stock Bajo
+              </CardTitle>
+              <CardDescription>
+                Productos que están por debajo o en el stock mínimo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-2">
+                  {productosStockBajo.map((producto) => (
+                    <div
+                      key={producto.id}
+                      className="flex justify-between items-center p-3 bg-destructive/10 border border-destructive/20 rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{producto.nombre}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Tipo: {producto.tipo_producto === "retail" ? "Retail" : producto.tipo_producto === "insumo" ? "Insumo" : "Preparado"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="destructive">
+                          {producto.stock_actual} {producto.unidad_inventario}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Mínimo: {producto.stock_minimo}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
-}
+};
+
+export default Dashboard;

@@ -1,1 +1,18 @@
-project_id = "ryrqzqtfmviivfhefstd"
+project_id = "ajmdqbclgoplwvwulzwn"
+
+[functions.ai-assistant]
+verify_jwt = false
+
+[functions.verify-admin]
+verify_jwt = false
+
+[functions.platform-admin-actions]
+verify_jwt = false
+
+[functions.whatsapp-webhook]
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.seed-demo-account]
+verify_jwt = false
+
